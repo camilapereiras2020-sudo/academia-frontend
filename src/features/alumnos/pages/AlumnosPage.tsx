@@ -132,6 +132,14 @@ export default function AlumnosPage() {
   }
 
   const pagadorNombre = (id: number | null) => pagadores.find(p => p.id === id)?.nombre ?? null
+  const pagadorObj    = (id: number | null) => pagadores.find(p => p.id === id) ?? null
+
+  function waUrl(pagTel: string, pagNombre: string, alumnoNombre: string) {
+    const clean = pagTel.replace(/[\s\-().]/g, "")
+    const phone = clean.startsWith("+") ? clean : `+34${clean}`
+    const text  = encodeURIComponent(`Hola ${pagNombre}, te escribo sobre ${alumnoNombre}`)
+    return `https://wa.me/${phone}?text=${text}`
+  }
 
   return (
     <div>
@@ -169,6 +177,7 @@ export default function AlumnosPage() {
           const color = AVATAR_COLORS[a.id % AVATAR_COLORS.length]
           const yearsOld = age(a.fnac)
           const pag = pagadorNombre(a.pagador)
+          const pagObj_ = pagadorObj(a.pagador)
           const gruposDetalle = a.grupos_detalle ?? []
           return (
             <div key={a.id} className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4">
@@ -229,6 +238,14 @@ export default function AlumnosPage() {
 
               {/* Actions */}
               <div className="flex gap-1.5 flex-shrink-0">
+                {pagObj_?.telefono && (
+                  <a
+                    href={waUrl(pagObj_.telefono, pagObj_.nombre, a.nombre)}
+                    target="_blank" rel="noreferrer"
+                    className="px-3 py-1.5 border rounded-lg text-xs text-green-700 hover:bg-green-50 border-green-200">
+                    WhatsApp
+                  </a>
+                )}
                 <button onClick={() => openEdit(a)}
                   className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
                   Editar
