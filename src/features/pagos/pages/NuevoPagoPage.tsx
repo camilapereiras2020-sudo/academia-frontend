@@ -1,0 +1,175 @@
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { pagosApi } from "../api"
+import { alumnosApi } from "@/features/alumnos/alumnos_api"
+import { pagadoresApi } from "@/features/pagadores/api"
+import { gruposApi } from "@/features/grupos/api"
+
+const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
+
+interface ExtraLine { concepto: string; importe: number }
+
+export default function NuevoPagoPage() {
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [error, setError] = useState("")
+
+  const { data: alumnosRaw } = useQuery({ queryKey: ["alumnos"], queryFn: () => alumnosApi.list().then(r => r.data) })
+  const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
+  const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
+
+  const alumnos = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results || []
+  const pagadores = Array.isArray(pagadoresRaw) ? pagadoresRaw : (pagadoresRaw as any)?.results || []
+  const grupos = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
+
+  const [alumno, setAlumno] = useState<number | "">("")
+  const [pagador, setPagador] = useState<number | "">("")
+  const [grupo, setGrupo] = useState<number | "">("")
+  const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
+  const [mensualidad, setMensualidad] = useState(0)
+  const [descuento, setDescuento] = useState(0)
+  const [metodo, setMetodo] = useState("efectivo")
+  const [notas, setNotas] = useState("")
+  const [extras, setExtras] = useState<ExtraLine[]>([])
+  const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pendiente")
+
+  function onGrupoChange(gid: number) {
+    setGrupo(gid)
+    const g = grupos.find((x: any) => x.id === gid)
+    if (g) setMensualidad(Number(g.tarifa))
+  }
+
+  function onAlumnoChange(aid: number) {
+    setAlumno(aid)
+    const a = alumnos.find((x: any) => x.id === aid)
+    if (a?.pagador) setPagador(a.pagador)
+  }
+
+  const extrasTotal = extras.reduce((s, e) => s + e.importe, 0)
+  const total = mensualidad - descuento + extrasTotal
+
+  const saveMut = useMutation({
+    mutationFn: () => pagosApi.create({
+      alumno: alumno as number, pagador: pagador as number, grupo: grupo as number,
+      periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
+      fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+      qc.invalidateQueries({ queryKey: ["pagos-pendientes"] })
+      navigate("/pagos")
+    },
+    onError: () => setError("Error al crear el pago. Verifica todos los campos."),
+  })
+
+  function handleSubmit() {
+    if (!alumno || !pagador || !grupo || !periodo) { setError("Completa todos los campos obligatorios"); return }
+    saveMut.mutate()
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <h1 className="text-3xl font-bold text-slate-800 mb-6">Nuevo pago</h1>
+
+      <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+        {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Alumno *</label>
+            <select value={alumno} onChange={e => onAlumnoChange(+e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Seleccionar...</option>
+              {alumnos.map((a: any) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Pagador *</label>
+            <select value={pagador} onChange={e => setPagador(+e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Seleccionar...</option>
+              {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo *</label>
+            <select value={grupo} onChange={e => onGrupoChange(+e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Seleccionar...</option>
+              {grupos.map((g: any) => <option key={g.id} value={g.id}>{g.nombre} — {Number(g.tarifa).toFixed(2)}€</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Periodo *</label>
+            <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Mensualidad (€)</label>
+            <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)} min="0" step="0.01"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Descuento (€)</label>
+            <input type="number" value={descuento} onChange={e => setDescuento(+e.target.value)} min="0" step="0.01"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Metodo de pago</label>
+            <select value={metodo} onChange={e => setMetodo(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Estado</label>
+            <select value={estado} onChange={e => setEstado(e.target.value as "pagado" | "pendiente" | "parcial")}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="pendiente">Pendiente</option>
+              <option value="pagado">Pagado</option>
+              <option value="parcial">Pago parcial</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-slate-500">Extras</label>
+            <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="text-xs text-blue-600 hover:text-blue-800">+ Anadir extra</button>
+          </div>
+          {extras.map((ex, i) => (
+            <div key={i} className="flex gap-2 mb-2">
+              <input type="text" placeholder="Concepto" value={ex.concepto}
+                onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: e.target.value }; setExtras(n) }}
+                className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="number" placeholder="€" value={ex.importe} min="0" step="0.01"
+                onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
+                className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} className="text-red-500 text-sm">✕</button>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+          <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+        </div>
+
+        <div className="bg-slate-50 rounded-lg p-4 text-right">
+          <p className="text-sm text-slate-500">Mensualidad: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
+          <p className="text-2xl font-bold text-slate-800 mt-1">Total: {total.toFixed(2)} €</p>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <button onClick={() => navigate("/pagos")} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">Cancelar</button>
+          <button onClick={handleSubmit} disabled={saveMut.isPending}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+            {saveMut.isPending ? "Guardando..." : "Crear pago"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

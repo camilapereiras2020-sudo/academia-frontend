@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "dashboard": "Panel", "alumnos": "Alumnos", "pagadores": "Pagadores",
+    "grupos": "Grupos", "schedule": "Horario", "attendance": "Asistencia",
+    "newPayment": "Nuevo pago", "payments": "Pagos", "pending": "Pendientes",
+    "birthdays": "Cumpleaños", "documents": "Documentos", "settings": "Configuracion",
+    "documentos": "Documentos", "crm": "CRM"
+  },
+  
+  "common": {
+    "save": "Guardar", "cancel": "Cancelar", "delete": "Eliminar", "edit": "Editar",
+    "add": "Añadir", "search": "Buscar...", "loading": "Cargando...", "noData": "Sin datos",
+    "confirm": "Estas seguro?", "actions": "Acciones"
+  },
+  "auth": {
+    "login": "Iniciar sesión", "register": "Crear cuenta", "logout": "Cerrar sesion",
+    "email": "Email", "password": "Contraseña", "confirmPassword": "Confirmar contrasena",
+    "academyName": "Rangers Academy"
+  },
+  "students": { "title": "Alumnos", "new": "Nuevo alumno" },
+  "payments": {
+    "title": "Pagos", "new": "Nuevo pago", "paid": "Pagado", "pending": "Pendiente", "partial": "Parcial"
+  },
+  "attendance": { "title": "Asistencia", "newSession": "Nueva sesion" },
+  "birthdays": { "title": "Cumpleaños", "upcoming": "Proximos", "all": "Todos" }
+}

@@ -1,0 +1,26 @@
+{
+ "nav": {
+    "dashboard": "Dashboard", "alumnos": "Students", "pagadores": "Payers",
+    "grupos": "Groups", "schedule": "Schedule", "attendance": "Attendance",
+    "newPayment": "New payment", "payments": "Payments", "pending": "Pending",
+    "birthdays": "Birthdays", "documents": "Documents", "settings": "Settings",
+    "documentos": "Documents", "crm": "CRM"
+  },
+  
+  "common": {
+    "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
+    "add": "Add", "search": "Search...", "loading": "Loading...", "noData": "No data",
+    "confirm": "Are you sure?", "actions": "Actions"
+  },
+  "auth": {
+    "login": "Sign in", "register": "Create account", "logout": "Sign out",
+    "email": "Email", "password": "Password", "confirmPassword": "Confirm password",
+    "academyName": "Academy name"
+  },
+  "students": { "title": "Students", "new": "New student" },
+  "payments": {
+    "title": "Payments", "new": "New payment", "paid": "Paid", "pending": "Pending", "partial": "Partial"
+  },
+  "attendance": { "title": "Attendance", "newSession": "New session" },
+  "birthdays": { "title": "Birthdays", "upcoming": "Upcoming", "all": "All" }
+}
