@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { useState } from "react"
@@ -28,28 +27,29 @@ type Empresa = {
 }
 
 const FACTURACION_OPTS = [
-  { value: "global", label: "Factura global mensual" },
+  { value: "global",     label: "Factura global mensual" },
   { value: "por_alumno", label: "Por alumno" },
-  { value: "fundae", label: "FUNDAE" },
-  { value: "mixta", label: "Mixta" },
+  { value: "fundae",     label: "FUNDAE" },
+  { value: "mixta",      label: "Mixta" },
 ]
 
-const emptyEmpresa = { nombre: "", cif: "", email: "", telefono: "", direccion: "", facturacion: "global", notas: "" }
+const emptyEmpresa  = { nombre: "", cif: "", email: "", telefono: "", direccion: "", facturacion: "global", notas: "" }
 const emptyContacto = { nombre: "", cargo: "", email: "", telefono: "", notas: "" }
 
 export default function EmpresasPage() {
   const qc = useQueryClient()
-  const [selected, setSelected] = useState<Empresa | null>(null)
-  const [showModal, setShowModal] = useState(false)
+  const [selected, setSelected]             = useState<Empresa | null>(null)
+  const [showModal, setShowModal]           = useState(false)
   const [showContactoModal, setShowContactoModal] = useState(false)
-  const [form, setForm] = useState(emptyEmpresa)
-  const [contactoForm, setContactoForm] = useState(emptyContacto)
+  const [confirmDelete, setConfirmDelete]   = useState(false)
+  const [form, setForm]                     = useState(emptyEmpresa)
+  const [contactoForm, setContactoForm]     = useState(emptyContacto)
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ["empresas"],
     queryFn: () => api.get("/empresas/").then(r => r.data),
   })
-  const empresas: Empresa[] = Array.isArray(raw) ? raw : raw?.results || []
+  const empresas: Empresa[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
 
   const { data: empresaDetalle } = useQuery<Empresa>({
     queryKey: ["empresa", selected?.id],
@@ -57,77 +57,78 @@ export default function EmpresasPage() {
     enabled: !!selected,
   })
 
-  const { data: alumnosEmpresa } = useQuery({
+  const { data: alumnosRaw } = useQuery({
     queryKey: ["empresa-alumnos", selected?.id],
     queryFn: () => api.get(`/empresas/${selected?.id}/alumnos/`).then(r => r.data),
     enabled: !!selected,
   })
+  const alumnosEmpresa: any[] = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results ?? []
 
-  const crearEmpresa = useMutation({
-    mutationFn: (data: any) => api.post("/empresas/", data),
+  const crearEmpresaMut = useMutation({
+    mutationFn: (data: typeof emptyEmpresa) => api.post("/empresas/", data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setShowModal(false); setForm(emptyEmpresa) },
   })
 
-  const crearContacto = useMutation({
+  const crearContactoMut = useMutation({
     mutationFn: (data: any) => api.post("/contactos-empresa/", data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresa", selected?.id] }); setShowContactoModal(false); setContactoForm(emptyContacto) },
   })
 
-  const eliminarEmpresa = useMutation({
+  const eliminarEmpresaMut = useMutation({
     mutationFn: (id: number) => api.delete(`/empresas/${id}/`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setSelected(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setSelected(null); setConfirmDelete(false) },
   })
 
-  const inputStyle = {
-    width: "100%", padding: "0.5rem 0.875rem", borderRadius: "8px",
-    border: "1px solid var(--border-subtle, rgba(0,0,0,0.1))",
-    background: "var(--dark-3, #F3F0EB)", color: "var(--text, #1A1714)",
-    fontFamily: "DM Sans, sans-serif", fontSize: "0.875rem", outline: "none",
-  }
+  const inputCls = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
 
   return (
-    <div style={{ display: "flex", gap: "1.5rem" }}>
-      {/* LEFT */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem" }}>
+    <div className="flex gap-5">
+      {/* LEFT — list */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h1 className="page-title">Empresas</h1>
-            <p className="page-subtitle">{empresas.length} empresas registradas</p>
+            <h1 className="text-3xl font-bold text-slate-800">Empresas</h1>
+            <p className="text-sm text-slate-500 mt-1">{empresas.length} empresas registradas</p>
           </div>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>+ Nueva empresa</button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+            + Nueva empresa
+          </button>
         </div>
 
-        {isLoading && <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Cargando...</p>}
+        {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        {!isLoading && !empresas.length && (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            <span className="text-5xl mb-3">🏢</span>
+            <p className="text-sm">Sin empresas registradas.</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
           {empresas.map(emp => (
             <div
               key={emp.id}
               onClick={() => setSelected(emp)}
-              className="card"
-              style={{
-                padding: "1rem 1.25rem",
-                cursor: "pointer",
-                borderColor: selected?.id === emp.id ? "var(--gold)" : undefined,
-              }}
+              className={`bg-white rounded-xl border shadow-sm p-4 cursor-pointer hover:border-blue-300 transition-colors ${
+                selected?.id === emp.id ? "border-blue-500 ring-1 ring-blue-200" : ""
+              }`}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p style={{ fontWeight: 500, color: "var(--text)", fontSize: "0.95rem" }}>{emp.nombre}</p>
-                  <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>
-                    {emp.cif && `${emp.cif} · `}{emp.num_alumnos} alumno{emp.num_alumnos !== 1 ? "s" : ""} · {emp.num_contactos} contacto{emp.num_contactos !== 1 ? "s" : ""}
+                  <p className="font-medium text-slate-800">{emp.nombre}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {emp.cif && `${emp.cif} · `}
+                    {emp.num_alumnos} alumno{emp.num_alumnos !== 1 ? "s" : ""} · {emp.num_contactos} contacto{emp.num_contactos !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <div className="flex gap-1.5 items-center">
                   {emp.facturacion === "fundae" && (
-                    <span style={{ fontSize: "0.65rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "999px", background: "rgba(176,141,87,0.15)", color: "var(--gold)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                      FUNDAE
-                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">FUNDAE</span>
                   )}
                   {!emp.activa && (
-                    <span style={{ fontSize: "0.65rem", fontWeight: 600, padding: "0.2rem 0.6rem", borderRadius: "999px", background: "rgba(0,0,0,0.06)", color: "var(--text-dim)" }}>
-                      Inactiva
-                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Inactiva</span>
                   )}
                 </div>
               </div>
@@ -136,110 +137,148 @@ export default function EmpresasPage() {
         </div>
       </div>
 
-      {/* RIGHT — Detail panel */}
+      {/* RIGHT — detail panel */}
       {selected && empresaDetalle && (
-        <div style={{ width: "320px", flexShrink: 0 }}>
-          <div className="card" style={{ padding: "1.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+        <div className="w-80 flex-shrink-0">
+          <div className="bg-white rounded-xl border shadow-sm p-5 sticky top-4">
+            <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "1.4rem", fontWeight: 400, color: "var(--text)" }}>{empresaDetalle.nombre}</h2>
-                {empresaDetalle.cif && <p style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>CIF: {empresaDetalle.cif}</p>}
+                <h2 className="text-lg font-semibold text-slate-800">{empresaDetalle.nombre}</h2>
+                {empresaDetalle.cif && <p className="text-xs text-slate-500">CIF: {empresaDetalle.cif}</p>}
               </div>
-              <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1.2rem" }}>✕</button>
+              <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
             </div>
 
-            <div className="gold-line" style={{ marginBottom: "1rem" }} />
+            <div className="h-px bg-slate-100 mb-4" />
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
-              {empresaDetalle.email && <div><span style={{ color: "var(--text-dim)" }}>Email: </span><span style={{ color: "var(--text)" }}>{empresaDetalle.email}</span></div>}
-              {empresaDetalle.telefono && <div><span style={{ color: "var(--text-dim)" }}>Tel: </span><span style={{ color: "var(--text)" }}>{empresaDetalle.telefono}</span></div>}
-              {empresaDetalle.direccion && <div><span style={{ color: "var(--text-dim)" }}>Dir: </span><span style={{ color: "var(--text)" }}>{empresaDetalle.direccion}</span></div>}
-              {empresaDetalle.facturacion && <div><span style={{ color: "var(--text-dim)" }}>Facturación: </span><span style={{ color: "var(--text)" }}>{FACTURACION_OPTS.find(f => f.value === empresaDetalle.facturacion)?.label}</span></div>}
-              {empresaDetalle.notas && <div><span style={{ color: "var(--text-dim)" }}>Notas: </span><span style={{ color: "var(--text)" }}>{empresaDetalle.notas}</span></div>}
+            <div className="space-y-1.5 text-sm mb-4">
+              {empresaDetalle.email     && <p><span className="text-slate-400">Email: </span><span className="text-slate-700">{empresaDetalle.email}</span></p>}
+              {empresaDetalle.telefono  && <p><span className="text-slate-400">Tel: </span><span className="text-slate-700">{empresaDetalle.telefono}</span></p>}
+              {empresaDetalle.direccion && <p><span className="text-slate-400">Dir: </span><span className="text-slate-700">{empresaDetalle.direccion}</span></p>}
+              {empresaDetalle.facturacion && (
+                <p><span className="text-slate-400">Facturación: </span><span className="text-slate-700">{FACTURACION_OPTS.find(f => f.value === empresaDetalle.facturacion)?.label}</span></p>
+              )}
+              {empresaDetalle.notas && <p><span className="text-slate-400">Notas: </span><span className="text-slate-700">{empresaDetalle.notas}</span></p>}
             </div>
 
             {/* Contactos */}
-            <div style={{ marginBottom: "1.25rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Contactos</p>
-                <button className="btn-ghost" style={{ fontSize: "0.72rem", padding: "0.2rem 0.6rem" }} onClick={() => setShowContactoModal(true)}>+ Añadir</button>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Contactos</p>
+                <button
+                  onClick={() => setShowContactoModal(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                  + Añadir
+                </button>
               </div>
-              {empresaDetalle.contactos?.length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Sin contactos</p>}
-              {empresaDetalle.contactos?.map(c => (
-                <div key={c.id} style={{ padding: "0.6rem", borderRadius: "8px", background: "var(--surface)", marginBottom: "0.4rem" }}>
-                  <p style={{ fontSize: "0.85rem", fontWeight: 500, color: "var(--text)" }}>{c.nombre || "Sin nombre"}</p>
-                  {c.cargo && <p style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{c.cargo}</p>}
-                  {c.telefono && <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{c.telefono}</p>}
-                  {c.email && <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{c.email}</p>}
-                  {c.notas && <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: "0.25rem" }}>{c.notas}</p>}
-                </div>
-              ))}
+              {(!empresaDetalle.contactos || empresaDetalle.contactos.length === 0) && (
+                <p className="text-xs text-slate-400">Sin contactos</p>
+              )}
+              <div className="space-y-1.5">
+                {empresaDetalle.contactos?.map(c => (
+                  <div key={c.id} className="bg-slate-50 rounded-lg p-2.5">
+                    <p className="text-sm font-medium text-slate-800">{c.nombre || "Sin nombre"}</p>
+                    {c.cargo    && <p className="text-xs text-slate-500">{c.cargo}</p>}
+                    {c.telefono && <p className="text-xs text-slate-500">{c.telefono}</p>}
+                    {c.email    && <p className="text-xs text-slate-500">{c.email}</p>}
+                    {c.notas    && <p className="text-xs text-slate-400 mt-1">{c.notas}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Alumnos */}
-            <div style={{ marginBottom: "1.25rem" }}>
-              <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "0.5rem" }}>Alumnos ({alumnosEmpresa?.length || 0})</p>
-              {alumnosEmpresa?.map((a: any) => (
-                <div key={a.id} style={{ display: "flex", justifyContent: "space-between", padding: "0.4rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text)" }}>{a.nombre}</span>
-                  <div style={{ display: "flex", gap: "0.4rem" }}>
-                    {a.es_fundae && <span style={{ fontSize: "0.6rem", padding: "0.1rem 0.4rem", borderRadius: "999px", background: "rgba(176,141,87,0.15)", color: "var(--gold)" }}>FUNDAE</span>}
-                    {a.nivel && <span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{a.nivel}</span>}
+            <div className="mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                Alumnos ({alumnosEmpresa.length})
+              </p>
+              {alumnosEmpresa.length === 0 && <p className="text-xs text-slate-400">Sin alumnos asignados</p>}
+              <div className="divide-y divide-slate-100">
+                {alumnosEmpresa.map((a: any) => (
+                  <div key={a.id} className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-slate-700">{a.nombre}</span>
+                    <div className="flex gap-1">
+                      {a.es_fundae && <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">FUNDAE</span>}
+                      {a.nivel     && <span className="text-xs text-slate-400">{a.nivel}</span>}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <button
-              onClick={() => { if (confirm(`Eliminar ${empresaDetalle.nombre}?`)) eliminarEmpresa.mutate(empresaDetalle.id) }}
-              className="btn-ghost"
-              style={{ width: "100%", color: "#e53935", borderColor: "rgba(229,57,53,0.3)" }}
-            >
-              Eliminar empresa
-            </button>
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full border border-red-200 text-red-600 rounded-lg text-sm py-2 hover:bg-red-50">
+                Eliminar empresa
+              </button>
+            ) : (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-700 mb-2">¿Eliminar <strong>{empresaDetalle.nombre}</strong>? No se puede deshacer.</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setConfirmDelete(false)} className="flex-1 text-sm py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => eliminarEmpresaMut.mutate(empresaDetalle.id)}
+                    disabled={eliminarEmpresaMut.isPending}
+                    className="flex-1 text-sm py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">
+                    {eliminarEmpresaMut.isPending ? "..." : "Eliminar"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* MODAL — Nueva empresa */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-              <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "1.5rem", fontWeight: 400, color: "var(--text)" }}>Nueva empresa</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1.3rem" }}>✕</button>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <h2 className="text-lg font-semibold text-slate-800">Nueva empresa</h2>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
             </div>
-            <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginBottom: "1.25rem" }}>Solo el nombre es obligatorio. El resto puedes completarlo después.</p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {[
-                { key: "nombre", label: "Nombre *", placeholder: "Empresa S.L." },
-                { key: "cif", label: "CIF", placeholder: "B12345678" },
-                { key: "email", label: "Email", placeholder: "contacto@empresa.com" },
-                { key: "telefono", label: "Teléfono", placeholder: "986 123 456" },
-                { key: "direccion", label: "Dirección", placeholder: "C/ Mayor 1, Pontevedra" },
-              ].map(f => (
+            <p className="text-xs text-slate-400 mb-4 flex-shrink-0">Solo el nombre es obligatorio.</p>
+            <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+              {([
+                { key: "nombre",    label: "Nombre *",   placeholder: "Empresa S.L." },
+                { key: "cif",       label: "CIF",        placeholder: "B12345678" },
+                { key: "email",     label: "Email",      placeholder: "contacto@empresa.com" },
+                { key: "telefono",  label: "Teléfono",   placeholder: "986 123 456" },
+                { key: "direccion", label: "Dirección",  placeholder: "C/ Mayor 1, Pontevedra" },
+              ] as const).map(f => (
                 <div key={f.key}>
-                  <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{f.label}</label>
-                  <input value={form[f.key as keyof typeof form]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inputStyle} />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
+                  <input
+                    value={form[f.key]}
+                    onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className={inputCls}
+                  />
                 </div>
               ))}
               <div>
-                <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Facturación</label>
-                <select value={form.facturacion} onChange={e => setForm(p => ({ ...p, facturacion: e.target.value }))} style={inputStyle}>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Facturación</label>
+                <select value={form.facturacion} onChange={e => setForm(p => ({ ...p, facturacion: e.target.value }))} className={inputCls}>
                   {FACTURACION_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Notas</label>
-                <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...inputStyle, resize: "none" }} />
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
               </div>
             </div>
-
-            <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
-              <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancelar</button>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={() => crearEmpresa.mutate(form)} disabled={!form.nombre || crearEmpresa.isPending}>
-                {crearEmpresa.isPending ? "Guardando..." : "Guardar"}
+            <div className="flex gap-2 mt-4 flex-shrink-0">
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                Cancelar
+              </button>
+              <button
+                onClick={() => crearEmpresaMut.mutate(form)}
+                disabled={!form.nombre || crearEmpresaMut.isPending}
+                className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+                {crearEmpresaMut.isPending ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </div>
@@ -248,36 +287,43 @@ export default function EmpresasPage() {
 
       {/* MODAL — Nuevo contacto */}
       {showContactoModal && selected && (
-        <div className="modal-overlay" onClick={() => setShowContactoModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-              <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "1.5rem", fontWeight: 400, color: "var(--text)" }}>Nuevo contacto</h2>
-              <button onClick={() => setShowContactoModal(false)} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1.3rem" }}>✕</button>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowContactoModal(false)}>
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-800">Nuevo contacto</h2>
+              <button onClick={() => setShowContactoModal(false)} className="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
             </div>
-            <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginBottom: "1.25rem" }}>Ningún campo es obligatorio.</p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {[
-                { key: "nombre", label: "Nombre", placeholder: "Ana Martínez" },
-                { key: "cargo", label: "Cargo", placeholder: "HR Manager" },
-                { key: "email", label: "Email", placeholder: "ana@empresa.com" },
+            <div className="space-y-3">
+              {([
+                { key: "nombre",   label: "Nombre",   placeholder: "Ana Martínez" },
+                { key: "cargo",    label: "Cargo",    placeholder: "HR Manager" },
+                { key: "email",    label: "Email",    placeholder: "ana@empresa.com" },
                 { key: "telefono", label: "Teléfono", placeholder: "666 123 456" },
-              ].map(f => (
+              ] as const).map(f => (
                 <div key={f.key}>
-                  <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{f.label}</label>
-                  <input value={contactoForm[f.key as keyof typeof contactoForm]} onChange={e => setContactoForm(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inputStyle} />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
+                  <input
+                    value={contactoForm[f.key]}
+                    onChange={e => setContactoForm(p => ({ ...p, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className={inputCls}
+                  />
                 </div>
               ))}
               <div>
-                <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Notas</label>
-                <textarea value={contactoForm.notas} onChange={e => setContactoForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...inputStyle, resize: "none" }} />
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                <textarea value={contactoForm.notas} onChange={e => setContactoForm(p => ({ ...p, notas: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
               </div>
             </div>
-
-            <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
-              <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setShowContactoModal(false)}>Cancelar</button>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={() => crearContacto.mutate({ ...contactoForm, empresa: selected.id })} disabled={crearContacto.isPending}>
-                {crearContacto.isPending ? "Guardando..." : "Guardar"}
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setShowContactoModal(false)} className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                Cancelar
+              </button>
+              <button
+                onClick={() => crearContactoMut.mutate({ ...contactoForm, empresa: selected.id })}
+                disabled={crearContactoMut.isPending}
+                className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+                {crearContactoMut.isPending ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </div>
