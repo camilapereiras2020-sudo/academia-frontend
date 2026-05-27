@@ -124,7 +124,7 @@ export default function AsistenciaPage() {
             <div key={s.id} className="border-b last:border-b-0 px-6 py-3">
               <p className="text-sm font-semibold text-slate-700">{s.fecha} {s.hora && `— ${s.hora}`}</p>
               <div className="flex flex-wrap gap-2 mt-1">
-                {s.registros.map(r => (
+                {(s.registros ?? []).map(r => (
                   <span key={r.id} className={`text-xs px-2 py-0.5 rounded-full ${ESTADO_COLORS[r.estado]}`}>
                     {r.alumno_nombre}: {ESTADO_LABELS[r.estado]}
                   </span>
