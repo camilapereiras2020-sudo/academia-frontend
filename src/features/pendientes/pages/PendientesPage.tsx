@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi } from "@/features/pagos/api"
 import { formatEur, formatMonth } from "@/lib/utils"
@@ -10,6 +11,7 @@ const ESTADO_CLS: Record<string, string> = {
 
 export default function PendientesPage() {
   const qc = useQueryClient()
+  const [errorId, setErrorId] = useState<number | null>(null)
 
   const { data: rawPendiente, isLoading: loadingPendiente } = useQuery({
     queryKey: ["pagos-pendientes"],
@@ -30,10 +32,12 @@ export default function PendientesPage() {
   const marcarMut = useMutation({
     mutationFn: pagosApi.marcarPagado,
     onSuccess: () => {
+      setErrorId(null)
       qc.invalidateQueries({ queryKey: ["pagos-pendientes"] })
       qc.invalidateQueries({ queryKey: ["pagos-parcial"] })
       qc.invalidateQueries({ queryKey: ["pagos"] })
     },
+    onError: (_err, id) => setErrorId(id),
   })
 
   return (
@@ -95,12 +99,17 @@ export default function PendientesPage() {
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
               <span className="text-lg font-bold text-red-600">{formatEur(Number(p.total))}</span>
-              <button
-                onClick={() => marcarMut.mutate(p.id)}
-                disabled={marcarMut.isPending && marcarMut.variables === p.id}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                ✓ Cobrar
-              </button>
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  onClick={() => { setErrorId(null); marcarMut.mutate(p.id) }}
+                  disabled={marcarMut.isPending && marcarMut.variables === p.id}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+                  {marcarMut.isPending && marcarMut.variables === p.id ? "..." : "✓ Cobrar"}
+                </button>
+                {errorId === p.id && (
+                  <span className="text-xs text-red-600">Error al cobrar</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
