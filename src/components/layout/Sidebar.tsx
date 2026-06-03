@@ -4,7 +4,7 @@ import {
   LayoutDashboard, GraduationCap, Users, FolderOpen,
   CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
   FileText, UserSearch, Building2,
-  Joystick
+  Joystick, BookOpen, Grid3X3
 } from "lucide-react"
 
 const NAV_SECTIONS = [
@@ -33,6 +33,8 @@ const NAV_SECTIONS = [
     items: [
       { to: "/crm", icon: UserSearch, label: "CRM" },
       { to: "/juegos/vocab", icon: Joystick, label: "Vocab Game" },
+      { to: "/juegos/flashcards", icon: BookOpen, label: "Flashcards" },
+      { to: "/juegos/memoria", icon: Grid3X3, label: "Memory Match" },
       { to: "/empresas", icon: Building2, label: "Empresas" },
     ]
   },

@@ -16,6 +16,8 @@ import ConfigPage from "@/features/config/pages/ConfigPage"
 import PendientesPage from "@/features/pendientes/pages/PendientesPage"
 import CRMPage from "@/features/crm/Pages/CRMPage"
 import VocabGame from "@/features/games/pages/VocabGame"
+import FlashcardGame from "@/features/games/pages/FlashcardGame"
+import MemoryMatch from "@/features/games/pages/MemoryMatch"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 
 export default function App() {
@@ -39,6 +41,8 @@ export default function App() {
           <Route path="/pendientes" element={<PendientesPage />} />
           <Route path="/crm" element={<CRMPage />} />
           <Route path="/juegos/vocab" element={<VocabGame />} />
+          <Route path="/juegos/flashcards" element={<FlashcardGame />} />
+          <Route path="/juegos/memoria" element={<MemoryMatch />} />
           <Route path="/empresas" element={<EmpresasPage />} />
         </Route>
       </Route>
