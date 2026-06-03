@@ -7,17 +7,25 @@ import { formatEur, formatMonth } from "@/lib/utils"
 import type { Pago } from "@/types"
 
 const ESTADO_CLS: Record<string, string> = {
-  pagado: "bg-green-100 text-green-800",
+  pagado:   "bg-green-100 text-green-800",
   pendiente: "bg-red-100 text-red-800",
-  parcial: "bg-amber-100 text-amber-800",
+  parcial:  "bg-amber-100 text-amber-800",
 }
 
-function StatCard({ label, value, sub, colorClass }: { label: string; value: string; sub?: string; colorClass: string }) {
+function StatCard({
+  label, value, sub, accent = false,
+}: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className={`bg-white rounded-xl p-5 shadow-sm border-t-4 ${colorClass}`}>
-      <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">{label}</p>
-      <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+    <div className="stat-card">
+      <p style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "0.5rem" }}>
+        {label}
+      </p>
+      <p style={{ fontSize: "1.75rem", fontWeight: 600, color: accent ? "var(--gold)" : "var(--text)", lineHeight: 1, fontFamily: "Cormorant Garamond, serif" }}>
+        {value}
+      </p>
+      {sub && (
+        <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: "0.35rem" }}>{sub}</p>
+      )}
     </div>
   )
 }
@@ -36,13 +44,13 @@ export default function DashboardPage() {
     queryKey: ["alumnos"],
     queryFn: () => alumnosApi.list().then(r => r.data),
   })
-  const alumnosCount: number = (Array.isArray(alumnosRaw) ? alumnosRaw : []).length
+  const alumnosCount = (Array.isArray(alumnosRaw) ? alumnosRaw : []).length
 
   const { data: gruposRaw } = useQuery({
     queryKey: ["grupos"],
     queryFn: () => gruposApi.list().then(r => r.data),
   })
-  const gruposCount: number = (Array.isArray(gruposRaw) ? gruposRaw : []).length
+  const gruposCount = (Array.isArray(gruposRaw) ? gruposRaw : []).length
 
   const { data: cumpleRaw } = useQuery({
     queryKey: ["cumpleanos", 30],
@@ -56,106 +64,92 @@ export default function DashboardPage() {
   })
 
   // Derived stats
-  const estesMes = pagos.filter(p => p.periodo === mesAct)
-  const cobradoMes = estesMes
-    .filter(p => p.estado === "pagado")
-    .reduce((s, p) => s + Number(p.total), 0)
-  const pendientes = pagos.filter(p => p.estado === "pendiente" || p.estado === "parcial")
+  const estesMes       = pagos.filter(p => p.periodo === mesAct)
+  const cobradoMes     = estesMes.filter(p => p.estado === "pagado").reduce((s, p) => s + Number(p.total), 0)
+  const totalMes       = estesMes.reduce((s, p) => s + Number(p.total), 0)
+  const coleccionRate  = totalMes > 0 ? Math.round((cobradoMes / totalMes) * 100) : null
+  const pendientes     = pagos.filter(p => p.estado === "pendiente" || p.estado === "parcial")
   const importePendiente = pendientes.reduce((s, p) => s + Number(p.total), 0)
-  const recientes = [...pagos].sort((a, b) => b.id - a.id).slice(0, 6)
+  const recientes      = [...pagos].sort((a, b) => b.id - a.id).slice(0, 6)
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
+
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Panel principal</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{formatMonth(mesAct)}</p>
+          <h1 className="page-title">Panel</h1>
+          <p className="page-subtitle">{formatMonth(mesAct)}</p>
         </div>
-        <div className="flex gap-2">
-          <Link to="/asistencia"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-            Pasar lista
-          </Link>
-          <Link to="/pagos"
-            className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700">
-            + Nuevo pago
-          </Link>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <Link to="/asistencia" className="btn-ghost">Pasar lista</Link>
+          <Link to="/pagos/nuevo" className="btn-primary">+ Nuevo pago</Link>
         </div>
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
         <StatCard
           label="Cobrado este mes"
           value={formatEur(cobradoMes)}
-          sub={`${estesMes.filter(p => p.estado === "pagado").length} pagos`}
-          colorClass="border-green-500"
+          sub={`${estesMes.filter(p => p.estado === "pagado").length} pagos cobrados`}
+          accent
         />
         <StatCard
           label="Pendiente de cobro"
           value={formatEur(importePendiente)}
-          sub={`${pendientes.length} pagos sin cobrar`}
-          colorClass="border-red-500"
+          sub={`${pendientes.length} sin cobrar`}
         />
         <StatCard
-          label="Alumnos"
-          value={String(alumnosCount)}
-          sub="registrados"
-          colorClass="border-blue-500"
+          label="Tasa de cobro"
+          value={coleccionRate !== null ? `${coleccionRate}%` : "—"}
+          sub={totalMes > 0 ? `de ${formatEur(totalMes)} en ${formatMonth(mesAct)}` : "sin pagos este mes"}
+          accent={coleccionRate !== null && coleccionRate >= 80}
         />
-        <StatCard
-          label="Grupos activos"
-          value={String(gruposCount)}
-          sub="en curso"
-          colorClass="border-violet-500"
-        />
+        <StatCard label="Alumnos" value={String(alumnosCount)} sub="registrados" />
+        <StatCard label="Grupos activos" value={String(gruposCount)} sub="en curso" />
       </div>
 
-      {/* Middle row: pending + birthdays */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Middle row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+
         {/* Pending payments */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-5 py-4 border-b flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800">Pagos pendientes</h2>
-            <Link to="/pagos" className="text-xs text-blue-600 hover:text-blue-800">
-              Ver todos →
-            </Link>
+        <div className="card" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>Pagos pendientes</span>
+            <Link to="/pendientes" style={{ fontSize: "0.75rem", color: "var(--gold)", textDecoration: "none" }}>Ver todos →</Link>
           </div>
           {!pendientes.length && (
-            <div className="px-5 py-10 text-center text-slate-400">
-              <p className="text-2xl mb-1">✓</p>
-              <p className="text-sm">Todo cobrado. Sin pendientes.</p>
+            <div style={{ padding: "2.5rem 1.25rem", textAlign: "center", color: "var(--text-dim)" }}>
+              <p style={{ fontSize: "1.5rem", marginBottom: "0.35rem" }}>✓</p>
+              <p style={{ fontSize: "0.8rem" }}>Todo cobrado. Sin pendientes.</p>
             </div>
           )}
-          <ul className="divide-y">
+          <ul style={{ listStyle: "none" }}>
             {pendientes.slice(0, 6).map(p => (
-              <li key={p.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{p.alumno_nombre}</p>
-                  <p className="text-xs text-slate-500 truncate">
+              <li key={p.id} style={{ padding: "0.75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border-subtle)" }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.alumno_nombre}</p>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {p.pagador_nombre} · {formatMonth(p.periodo)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-semibold text-slate-800">{formatEur(Number(p.total))}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_CLS[p.estado]}`}>
-                    {p.estado}
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+                  <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text)" }}>{formatEur(Number(p.total))}</span>
+                  <span className={`badge ${ESTADO_CLS[p.estado]}`}>{p.estado}</span>
                   <button
                     onClick={() => marcarMut.mutate(p.id)}
                     disabled={marcarMut.isPending && marcarMut.variables === p.id}
-                    className="text-xs px-2 py-1 border rounded text-green-700 hover:bg-green-50 disabled:opacity-50"
-                  >
-                    ✓
-                  </button>
+                    className="btn-ghost"
+                    style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", color: "var(--gold)" }}
+                  >✓</button>
                 </div>
               </li>
             ))}
           </ul>
           {pendientes.length > 6 && (
-            <div className="px-5 py-3 border-t bg-slate-50 text-center">
-              <Link to="/pagos" className="text-xs text-blue-600 hover:text-blue-800">
+            <div style={{ padding: "0.75rem 1.25rem", background: "var(--dark-3)", textAlign: "center" }}>
+              <Link to="/pendientes" style={{ fontSize: "0.75rem", color: "var(--gold)", textDecoration: "none" }}>
                 +{pendientes.length - 6} más → Ver todos
               </Link>
             </div>
@@ -163,87 +157,76 @@ export default function DashboardPage() {
         </div>
 
         {/* Upcoming birthdays */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-5 py-4 border-b flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800">Próximos cumpleaños</h2>
-            <Link to="/cumpleanos" className="text-xs text-blue-600 hover:text-blue-800">
-              Ver todos →
-            </Link>
+        <div className="card" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>Próximos cumpleaños</span>
+            <Link to="/cumpleanos" style={{ fontSize: "0.75rem", color: "var(--gold)", textDecoration: "none" }}>Ver todos →</Link>
           </div>
           {!cumples.length && (
-            <div className="px-5 py-10 text-center text-slate-400">
-              <p className="text-2xl mb-1">🎂</p>
-              <p className="text-sm">Sin cumpleaños en los próximos 30 días.</p>
+            <div style={{ padding: "2.5rem 1.25rem", textAlign: "center", color: "var(--text-dim)" }}>
+              <p style={{ fontSize: "1.5rem", marginBottom: "0.35rem" }}>🎂</p>
+              <p style={{ fontSize: "0.8rem" }}>Sin cumpleaños en los próximos 30 días.</p>
             </div>
           )}
-          <ul className="divide-y">
+          <ul style={{ listStyle: "none" }}>
             {cumples.slice(0, 6).map((c: any) => (
-              <li key={c.id} className="px-5 py-3 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-lg flex-shrink-0">
+              <li key={c.id} style={{ padding: "0.75rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", borderBottom: "1px solid var(--border-subtle)" }}>
+                <div style={{ width: "2rem", height: "2rem", borderRadius: "50%", background: "var(--gold-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>
                   🎂
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{c.nombre}</p>
-                  <p className="text-xs text-slate-500">
-                    {new Date(c.fnac).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.nombre}</p>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>
+                    {c.fecha_nacimiento
+                      ? new Date(c.fecha_nacimiento).toLocaleDateString("es-ES", { day: "numeric", month: "long" })
+                      : ""}
                   </p>
                 </div>
-                <div className="flex-shrink-0 text-right">
-                  {c.dias === 0
-                    ? <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">¡Hoy!</span>
-                    : c.dias === 1
-                    ? <span className="text-xs font-semibold text-orange-600">Mañana</span>
-                    : <span className="text-xs text-slate-500">en {c.dias} días</span>
+                <div style={{ flexShrink: 0, textAlign: "right" }}>
+                  {c.dias_para_cumpleanos === 0
+                    ? <span className="badge" style={{ background: "var(--gold-muted)", color: "var(--gold)" }}>¡Hoy!</span>
+                    : c.dias_para_cumpleanos === 1
+                    ? <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--gold)" }}>Mañana</span>
+                    : <span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>en {c.dias_para_cumpleanos} días</span>
                   }
                 </div>
               </li>
             ))}
           </ul>
-          {cumples.length > 6 && (
-            <div className="px-5 py-3 border-t bg-slate-50 text-center">
-              <Link to="/cumpleanos" className="text-xs text-blue-600 hover:text-blue-800">
-                +{cumples.length - 6} más → Ver todos
-              </Link>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Recent payments */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-slate-800">Últimos pagos</h2>
-          <Link to="/pagos" className="text-xs text-blue-600 hover:text-blue-800">Ver todos →</Link>
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>Últimos pagos</span>
+          <Link to="/pagos" style={{ fontSize: "0.75rem", color: "var(--gold)", textDecoration: "none" }}>Ver todos →</Link>
         </div>
         {!recientes.length && (
-          <p className="px-6 py-8 text-sm text-slate-400 text-center">Sin pagos registrados.</p>
+          <p style={{ padding: "2rem 1.5rem", fontSize: "0.875rem", color: "var(--text-dim)", textAlign: "center" }}>Sin pagos registrados.</p>
         )}
         {!!recientes.length && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table">
+              <thead>
                 <tr>
                   {["Alumno", "Pagador", "Periodo", "Importe", "Método", "Estado", "Doc"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-500 font-semibold whitespace-nowrap">
-                      {h}
-                    </th>
+                    <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {recientes.map(p => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre}</td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{formatEur(Number(p.total))}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs capitalize whitespace-nowrap">{p.metodo}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_CLS[p.estado]}`}>
-                        {p.estado}
-                      </span>
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 500, color: "var(--text)", whiteSpace: "nowrap" }}>{p.alumno_nombre}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{p.pagador_nombre}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatMonth(p.periodo)}</td>
+                    <td style={{ fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>{formatEur(Number(p.total))}</td>
+                    <td style={{ textTransform: "capitalize", whiteSpace: "nowrap" }}>{p.metodo}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <span className={`badge ${ESTADO_CLS[p.estado]}`}>{p.estado}</span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
+                    <td style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--text-dim)", whiteSpace: "nowrap" }}>{p.num_doc || "—"}</td>
                   </tr>
                 ))}
               </tbody>

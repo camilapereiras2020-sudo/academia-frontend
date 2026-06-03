@@ -16,4 +16,6 @@ export const alumnosApi = {
     api.post(`/alumnos/${id}/asignar-grupo/`, { grupo_id, horarios }),
   cumpleanos: (dias?: number) =>
     api.get(`/alumnos/cumpleanos/${dias ? `?dias=${dias}` : ""}`),
+  enviarEmail: (id: number, asunto: string, cuerpo: string) =>
+    api.post<{ ok: boolean; id: string }>(`/alumnos/${id}/enviar-email/`, { asunto, cuerpo }),
 }

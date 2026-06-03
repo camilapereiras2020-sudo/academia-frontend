@@ -7,4 +7,6 @@ export const pagadoresApi = {
   create: (data: Partial<Pagador>) => api.post<Pagador>("/pagadores/", data),
   update: (id: number, data: Partial<Pagador>) => api.patch<Pagador>(`/pagadores/${id}/`, data),
   delete: (id: number) => api.delete(`/pagadores/${id}/`),
+  enviarEmail: (id: number, asunto: string, cuerpo: string) =>
+    api.post<{ ok: boolean; id: string }>(`/pagadores/${id}/enviar-email/`, { asunto, cuerpo }),
 }

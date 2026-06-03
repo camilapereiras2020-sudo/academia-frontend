@@ -2,6 +2,13 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagadoresApi } from "../api"
 import type { Pagador } from "@/types"
+import EmailModal from "@/components/shared/EmailModal"
+
+function waUrl(tel: string, nombre: string) {
+  const clean = tel.replace(/[\s\-().]/g, "")
+  const phone = clean.startsWith("+") ? clean : `+34${clean}`
+  return `https://wa.me/${phone}?text=${encodeURIComponent(`Hola ${nombre},`)}`
+}
 
 const METODO_OPTS = [
   { value: "", label: "— Sin método —" },
@@ -51,6 +58,7 @@ export default function PagadoresPage() {
   const [formError, setFormError] = useState("")
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Pagador | null>(null)
+  const [emailTarget, setEmailTarget] = useState<Pagador | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ["pagadores"],
@@ -183,6 +191,18 @@ export default function PagadoresPage() {
 
                 {/* Actions */}
                 <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                  {p.telefono && (
+                    <a href={waUrl(p.telefono, p.nombre)} target="_blank" rel="noreferrer"
+                      className="px-3 py-1.5 border rounded-lg text-xs text-green-700 hover:bg-green-50 border-green-200">
+                      WhatsApp
+                    </a>
+                  )}
+                  {p.email && (
+                    <button onClick={() => setEmailTarget(p)}
+                      className="px-3 py-1.5 border rounded-lg text-xs text-blue-700 hover:bg-blue-50 border-blue-200">
+                      ✉ Email
+                    </button>
+                  )}
                   <button onClick={() => openEdit(p)}
                     className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
                     Editar
@@ -346,6 +366,14 @@ export default function PagadoresPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {emailTarget && (
+        <EmailModal
+          to={emailTarget.email}
+          onSend={(asunto, cuerpo) => pagadoresApi.enviarEmail(emailTarget.id, asunto, cuerpo).then(() => {})}
+          onClose={() => setEmailTarget(null)}
+        />
       )}
 
       {/* Delete confirmation modal */}

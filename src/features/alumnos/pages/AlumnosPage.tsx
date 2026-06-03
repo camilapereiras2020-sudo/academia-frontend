@@ -4,6 +4,7 @@ import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import type { Alumno, Pagador, Grupo } from "@/types"
+import EmailModal from "@/components/shared/EmailModal"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
@@ -43,6 +44,7 @@ export default function AlumnosPage() {
   const [form, setForm] = useState<FormState>(emptyForm())
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<Alumno | null>(null)
+  const [emailTarget, setEmailTarget] = useState<Alumno | null>(null)
 
   const { data: alumnosRaw, isLoading } = useQuery({
     queryKey: ["alumnos", search],
@@ -246,6 +248,12 @@ export default function AlumnosPage() {
                     WhatsApp
                   </a>
                 )}
+                {pagObj_?.email && (
+                  <button onClick={() => setEmailTarget(a)}
+                    className="px-3 py-1.5 border rounded-lg text-xs text-blue-700 hover:bg-blue-50 border-blue-200">
+                    ✉ Email
+                  </button>
+                )}
                 <button onClick={() => openEdit(a)}
                   className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
                   Editar
@@ -398,6 +406,14 @@ export default function AlumnosPage() {
       )}
 
       {/* Delete confirmation modal */}
+      {emailTarget && (
+        <EmailModal
+          to={pagadorObj(emailTarget.pagador)?.email ?? ""}
+          onSend={(asunto, cuerpo) => alumnosApi.enviarEmail(emailTarget.id, asunto, cuerpo).then(() => {})}
+          onClose={() => setEmailTarget(null)}
+        />
+      )}
+
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
