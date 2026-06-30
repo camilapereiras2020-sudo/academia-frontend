@@ -38,16 +38,20 @@ export default function DocumentosPage() {
     setDownloadingId(d.id)
     try {
       const token = localStorage.getItem("access_token")
-      const res = await fetch(`/api/v1/documentos/${d.id}/descargar/`, {
+      const base = import.meta.env.VITE_API_URL ?? "/api/v1"
+      const res = await fetch(`${base}/documentos/${d.id}/descargar/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = d.nombre
+      a.target = "_blank"
+      a.rel = "noopener noreferrer"
+      document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
     } finally {
       setDownloadingId(null)
     }
