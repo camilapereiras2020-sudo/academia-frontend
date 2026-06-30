@@ -112,8 +112,15 @@ export default function DocumentosPage() {
                 <p className="text-xs text-slate-500 mt-0.5 truncate">
                   {d.pago_info
                     ? `${d.pago_info.alumno} · ${d.pago_info.pagador} · ${d.pago_info.periodo} · ${Number(d.pago_info.total).toFixed(2)} €`
-                    : new Date(d.created_at).toLocaleDateString("es-ES")
+                    : null
                   }
+                  {d.pago_info ? " · " : null}
+                  <span className="text-slate-400">
+                    {new Date(d.created_at).toLocaleString("es-ES", {
+                      day: "2-digit", month: "2-digit", year: "numeric",
+                      hour: "2-digit", minute: "2-digit"
+                    })}
+                  </span>
                 </p>
               </div>
             </div>
