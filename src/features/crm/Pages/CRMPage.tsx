@@ -79,6 +79,8 @@ const emptyLeadForm = (): LeadForm => ({
 
 const etapaInfo = (v: string) => ETAPAS.find(e => e.value === v) ?? { label: v, color: "bg-slate-100 text-slate-600" }
 
+const isValidSpanishPhone = (v: string) => /^[679]\d{8}$/.test(v.replace(/\s/g, ""))
+
 // ── component ──────────────────────────────────────────────────────────────
 
 export default function CRMPage() {
@@ -200,6 +202,10 @@ export default function CRMPage() {
   function handleSubmit() {
     if (!form.nombre_contacto.trim() || !form.nombre_alumno.trim()) {
       setFormError("Nombre del contacto y del alumno son obligatorios.")
+      return
+    }
+    if (form.telefono.trim() && !isValidSpanishPhone(form.telefono)) {
+      setFormError("El teléfono debe tener 9 dígitos y empezar por 6, 7 o 9.")
       return
     }
     setFormError("")
@@ -498,7 +504,6 @@ export default function CRMPage() {
                   {[
                     { key: "nombre_contacto", label: "Nombre padre/madre *", placeholder: "Ana García" },
                     { key: "nombre_alumno",   label: "Nombre del alumno *",  placeholder: "Carlos García" },
-                    { key: "telefono",        label: "Teléfono",             placeholder: "666 123 456" },
                   ].map(f => (
                     <div key={f.key}>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
@@ -507,6 +512,12 @@ export default function CRMPage() {
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   ))}
+                </div>
+              </section>
+
+              <section>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Opcional</p>
+                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Objetivo</label>
@@ -523,12 +534,19 @@ export default function CRMPage() {
                       </select>
                     </div>
                   </div>
-                </div>
-              </section>
-
-              <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Opcional</p>
-                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+                    <input value={form.telefono} placeholder="666 123 456"
+                      onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                        form.telefono.trim() && !isValidSpanishPhone(form.telefono)
+                          ? "border-red-300 focus:ring-red-400"
+                          : "focus:ring-blue-500"
+                      }`} />
+                    {form.telefono.trim() && !isValidSpanishPhone(form.telefono) && (
+                      <p className="text-xs text-red-600 mt-1">Debe tener 9 dígitos y empezar por 6, 7 o 9.</p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Edad alumno</label>
