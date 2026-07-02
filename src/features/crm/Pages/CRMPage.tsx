@@ -15,21 +15,19 @@ const ETAPAS = [
 ]
 
 const OBJETIVOS = [
-  { value: "cambridge",    label: "Cambridge" },
-  { value: "ib",           label: "IB" },
-  { value: "general",      label: "General" },
-  { value: "conversacion", label: "Conversación" },
-  { value: "otro",         label: "Otro" },
+  { value: "general",   label: "General" },
+  { value: "cambridge", label: "Cambridge" },
+  { value: "ib",        label: "IB" },
+  { value: "adultos",   label: "Adultos" },
 ]
 
 const ORIGENES = [
-  { value: "telefono",    label: "Teléfono" },
-  { value: "boca_a_boca", label: "Boca a boca" },
-  { value: "en_persona",  label: "En persona" },
-  { value: "test_nivel",  label: "Test de nivel" },
-  { value: "instagram",   label: "Instagram" },
-  { value: "email",       label: "Email" },
-  { value: "otro",        label: "Otro" },
+  { value: "telefono",      label: "Teléfono" },
+  { value: "whatsapp",      label: "WhatsApp" },
+  { value: "instagram",     label: "Instagram" },
+  { value: "facebook",      label: "Facebook" },
+  { value: "recomendacion", label: "Recomendación" },
+  { value: "web",           label: "Web" },
 ]
 
 const TIPOS_INTERACCION = [
