@@ -18,6 +18,10 @@ Frontend-specific view of the project timeline. See also: [academia-api DEVLOG](
 | 2026-06-04 | Node >=20 pinned for Vite 8 / Vercel compatibility |
 | 2026-06-10 | Frontend confirmed live on Vercel with custom domain |
 | 2026-06-11 | Payment dashboard prototype; WhatsApp button logic reviewed |
+| 2026-06-21 | DEVLOG.md added for this repo |
+| 2026-06-30 | Fixed app-wide modal positioning bug (all 11 modals); Descargar opens PDF inline; document rows show creation datetime |
+| 2026-07-02 | CRM nueva consulta form: only nombre padre/madre + nombre alumno required |
+| 2026-07-03 | CRM adult/self-pay support: checkbox, payer dropdown, conditional required field, Matricular flow, origen/objetivo taxonomy update |
 
 ---
 
@@ -102,5 +106,47 @@ Claude Code CLI installed locally — AI-assisted dev workflow now active for th
 - **Payment dashboard prototype** — visual summary of monthly income, pending cobros, and overdue payments scoped and prototyped
 - **WhatsApp button logic reviewed** — confirmed correct phone number format (`34XXXXXXXXX`) and pre-filled message text for Spanish numbers
 - Invoice generation flow audited end-to-end from the frontend perspective following the June 10 go-live
+
+---
+
+## June 21, 2026 — DEVLOG Added
+
+| Commit | Detail |
+|--------|--------|
+| **Add DEVLOG.md — full frontend development log with milestones table** | Backfilled this repo's history from the May 27 launch through June 11, with a milestones table for quick scanning |
+
+---
+
+## June 30, 2026 — Modal Positioning Bug (App-Wide) + Documentos Polish
+
+| Commit | Detail |
+|--------|--------|
+| **Fix modal positioning and Descargar button behaviour** | `index.css`'s `fadeUp` animation ended on `transform: translateY(0)` instead of `transform: none` — a zero-translate still creates a new stacking context, which broke `position: fixed` centering on **every modal in the app** (Alumnos, Grupos, Pagadores, Pagos, CRM, Empresas, Documentos — 11 overlays total). One-line CSS fix resolved all of them at once. Also: Descargar in DocumentosPage now opens the PDF in a new tab (`target="_blank"`, no `download` attribute) instead of forcing a silent download, and its fetch URL now uses `VITE_API_URL` instead of a hardcoded `/api/v1` path — the old version only worked on localhost, not in production (Vercel → Railway) |
+| **feat(documentos): show creation datetime on every document row** | Each row in the documents list now shows when it was created |
+
+---
+
+## July 2, 2026 — CRM Form Simplified
+
+| Commit | Detail |
+|--------|--------|
+| **CRM: only require nombre padre/madre and nombre alumno in nueva consulta** | Teléfono, objetivo, origen, edad, curso, and email are now optional in the nueva consulta form. Teléfono is still validated as a Spanish mobile number (9 digits, starting 6/7/9) when a value is entered, with an inline error on malformed input |
+
+---
+
+## July 3, 2026 — CRM Adult/Self-Pay Support + Matriculation Flow
+
+### Milestone: Adult Students Can Be Captured, Enrolled, and Self-Paid Through the CRM
+
+**Context:** Every CRM lead used to assume a parent/guardian contact distinct from the student. This session added a first-class path for adult students who are their own contact and payer, and built the previously-missing flow to actually convert a "Matriculado" lead into a real Alumno/Pagador.
+
+| Commit | Detail |
+|--------|--------|
+| **Update CRM origen/objetivo options to match new taxonomy** | `<select>` options for origen/objetivo realigned to the backend's new fixed choice list (`telefono`/`whatsapp`/`instagram`/`facebook`/`recomendacion`/`web` and `general`/`cambridge`/`ib`/`adultos`) |
+| **CRM: add adult/self-pay checkbox and payer dropdown to nueva consulta form** | New checkbox — "El alumno es adulto / paga el mismo" — reveals a dropdown ("El mismo alumno es el pagador" / "Otro pagador") when checked, wired to the new `es_adulto`/`pagador_es_alumno` Lead fields. Lead detail panel shows the adult/payer status when set |
+| **CRM: add Matricular button to convert a lead into an Alumno/Pagador** | Leads in the "Matriculado" stage now show a **Matricular** button (on the card and in the detail panel) that opens a form to pick grupo (auto-filling the fee from the group's tarifa), mensualidad, and fecha de inicio, then calls `convertir-alumno`. A confirmation modal shows the created alumno/pagador names, a note when the payer was auto-filled from the alumno's own data, and a "Ver perfil del alumno" link. Since there's no per-student detail route, that link goes to `/alumnos?openId=<id>` — `AlumnosPage` was updated to read that query param and auto-open the matching alumno's edit modal |
+| **CRM: make Nombre padre/madre optional when adulto is checked** | Field relabels to "Nombre contacto (opcional)" and is dropped from the required-fields check in `handleSubmit` whenever `es_adulto` is checked, matching the backend's now-conditional requirement |
+
+**Why it matters:** Previously, marking a lead "Matriculado" only changed a status label — no actual student record was created, and every adult lead was forced through a "parent contact" field that didn't apply to them. Both gaps are closed as of this session.
 
 ---
