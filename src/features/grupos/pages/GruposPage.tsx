@@ -32,6 +32,7 @@ const emptyForm = (nextColorIdx = 0): GrupoForm => ({
 
 export default function GruposPage() {
   const qc = useQueryClient()
+  const [search, setSearch] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Grupo | null>(null)
   const [form, setForm] = useState<GrupoForm>(emptyForm())
@@ -43,7 +44,11 @@ export default function GruposPage() {
     queryKey: ["grupos"],
     queryFn: () => gruposApi.list().then(r => r.data),
   })
-  const grupos: Grupo[] = Array.isArray(data) ? data : []
+  const all: Grupo[] = Array.isArray(data) ? data : []
+  const grupos = search
+    ? all.filter(g => g.nombre.toLowerCase().includes(search.toLowerCase()) ||
+        (g.nivel ?? "").toLowerCase().includes(search.toLowerCase()))
+    : all
 
   const saveMut = useMutation({
     mutationFn: (d: GrupoForm) => editing ? gruposApi.update(editing.id, d) : gruposApi.create(d),
@@ -104,7 +109,7 @@ export default function GruposPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Grupos</h1>
-          <p className="text-sm text-slate-500 mt-1">{grupos.length} grupos activos</p>
+          <p className="text-sm text-slate-500 mt-1">{all.length} grupos activos</p>
         </div>
         <button onClick={openNew}
           className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
@@ -112,12 +117,17 @@ export default function GruposPage() {
         </button>
       </div>
 
+      {/* Search */}
+      <input type="text" placeholder="Buscar por nombre o nivel…" value={search}
+        onChange={e => setSearch(e.target.value)}
+        className="mb-5 border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
       {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
 
       {!isLoading && !grupos.length && (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400">
           <span className="text-5xl mb-3">🗂️</span>
-          <p className="text-sm">Sin grupos. Crea el primero.</p>
+          <p className="text-sm">{search ? "Sin resultados para esa búsqueda." : "Sin grupos. Crea el primero."}</p>
         </div>
       )}
 
