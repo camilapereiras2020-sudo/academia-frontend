@@ -34,7 +34,25 @@ export interface RegistroAsistencia {
 
 export interface Sesion {
   id: number; grupo: number; grupo_nombre: string; fecha: string; hora: string | null
-  notas: string; registros: RegistroAsistencia[]; created_at: string
+  notas: string; contenido: string; registros: RegistroAsistencia[]; created_at: string
+}
+
+export interface TareaCompletada {
+  id: number; alumno: number; alumno_nombre: string
+  estado: "pendiente" | "completada" | "parcial" | "no_entregada"; nota: string
+}
+
+export interface Tarea {
+  id: number; grupo: number; grupo_nombre: string; sesion: number | null
+  titulo: string; descripcion: string
+  fecha_asignada: string; fecha_entrega: string
+  completados: TareaCompletada[]; created_at: string
+}
+
+export interface NotaDificultad {
+  id: number; grupo: number; grupo_nombre: string
+  alumno: number; alumno_nombre: string
+  tema: string; nota: string; fecha: string; sesion: number | null; created_at: string
 }
 
 export interface PaginatedResponse<T> {

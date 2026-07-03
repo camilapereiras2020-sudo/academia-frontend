@@ -1,23 +1,14 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { gruposApi } from "../api"
+import { DIAS, PALETTE } from "../palette"
 import type { Grupo } from "@/types"
 
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const NIVELES = [
   "", "A1 - Principiantes", "A2 - Básico", "B1 - Intermedio",
   "B1+ - Intermedio alto", "B2 - Avanzado", "B2 Cambridge FCE",
   "C1 - Proficiency", "Kids A1", "Kids A2",
-]
-const PALETTE = [
-  { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd", accent: "#3b82f6" },
-  { bg: "#dcfce7", text: "#15803d", border: "#86efac", accent: "#22c55e" },
-  { bg: "#fef9c3", text: "#a16207", border: "#fde047", accent: "#eab308" },
-  { bg: "#fce7f3", text: "#9d174d", border: "#f9a8d4", accent: "#ec4899" },
-  { bg: "#ede9fe", text: "#6d28d9", border: "#c4b5fd", accent: "#8b5cf6" },
-  { bg: "#ffedd5", text: "#c2410c", border: "#fdba74", accent: "#f97316" },
-  { bg: "#cffafe", text: "#0e7490", border: "#67e8f9", accent: "#06b6d4" },
-  { bg: "#f0fdf4", text: "#166534", border: "#4ade80", accent: "#16a34a" },
 ]
 
 interface HorarioSlot { dia: number; ini: string; fin: string }
@@ -32,12 +23,12 @@ const emptyForm = (nextColorIdx = 0): GrupoForm => ({
 
 export default function GruposPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Grupo | null>(null)
   const [form, setForm] = useState<GrupoForm>(emptyForm())
   const [formError, setFormError] = useState("")
-  const [expanded, setExpanded] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Grupo | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -135,7 +126,6 @@ export default function GruposPage() {
       <div className="space-y-3">
         {grupos.map(g => {
           const c = PALETTE[g.color_idx % PALETTE.length]
-          const isOpen = expanded === g.id
           const horarios = g.horarios ?? []
           return (
             <div key={g.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
@@ -146,7 +136,7 @@ export default function GruposPage() {
 
                 <div className="flex-1 p-4 flex items-center justify-between flex-wrap gap-3
                   cursor-pointer hover:bg-slate-50 transition-colors"
-                  onClick={() => setExpanded(isOpen ? null : g.id)}>
+                  onClick={() => navigate(`/grupos/${g.id}`)}>
                   <div className="flex items-center gap-3 flex-wrap min-w-0">
                     <span className="font-bold text-slate-800">{g.nombre}</span>
                     {g.nivel && (
@@ -165,8 +155,8 @@ export default function GruposPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* Schedule chips (collapsed) */}
-                    {!isOpen && horarios.length > 0 && (
+                    {/* Schedule chips (quick peek) */}
+                    {horarios.length > 0 && (
                       <div className="hidden sm:flex flex-wrap gap-1">
                         {horarios.map((h, i) => (
                           <span key={i} className="text-xs px-2 py-0.5 rounded-full"
@@ -176,7 +166,6 @@ export default function GruposPage() {
                         ))}
                       </div>
                     )}
-                    <span className="text-slate-400 text-xs select-none">{isOpen ? "▲" : "▼"}</span>
 
                     {/* Action buttons */}
                     <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
@@ -192,27 +181,6 @@ export default function GruposPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Expanded schedule */}
-              {isOpen && (
-                <div className="border-t px-5 py-4" style={{ background: c.bg }}>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: c.text }}>
-                    Horario del grupo
-                  </p>
-                  {horarios.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {horarios.map((h, i) => (
-                        <span key={i} className="text-sm font-medium px-4 py-1.5 rounded-full"
-                          style={{ background: "white", color: c.text, border: `1px solid ${c.border}` }}>
-                          {DIAS[h.dia]} · {h.ini} – {h.fin}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs opacity-60" style={{ color: c.text }}>Sin horario definido.</p>
-                  )}
-                </div>
-              )}
             </div>
           )
         })}

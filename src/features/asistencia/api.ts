@@ -10,7 +10,7 @@ export const asistenciaApi = {
     return api.get<Sesion[]>(`/asistencia/?${qs}`)
   },
   get: (id: number) => api.get<Sesion>(`/asistencia/${id}/`),
-  create: (data: { grupo: number; fecha: string; hora?: string; notas?: string; registros: { alumno: number; estado: string; nota?: string; es_invitado?: boolean }[] }) =>
+  create: (data: { grupo: number; fecha: string; hora?: string; notas?: string; contenido?: string; registros: { alumno: number; estado: string; nota?: string; es_invitado?: boolean }[] }) =>
     api.post<Sesion>("/asistencia/", data),
   historialAlumno: (alumnoId: number) =>
     api.get(`/asistencia/historial-alumno/?alumno=${alumnoId}`),
