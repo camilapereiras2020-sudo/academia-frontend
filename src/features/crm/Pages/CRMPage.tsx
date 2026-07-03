@@ -241,7 +241,7 @@ export default function CRMPage() {
   function closeModal() { setShowModal(false); setEditingId(null) }
 
   function handleSubmit() {
-    if (!form.nombre_contacto.trim() || !form.nombre_alumno.trim()) {
+    if ((!form.es_adulto && !form.nombre_contacto.trim()) || !form.nombre_alumno.trim()) {
       setFormError("Nombre del contacto y del alumno son obligatorios.")
       return
     }
@@ -582,17 +582,20 @@ export default function CRMPage() {
               <section>
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Obligatorio</p>
                 <div className="space-y-3">
-                  {[
-                    { key: "nombre_contacto", label: "Nombre padre/madre *", placeholder: "Ana García" },
-                    { key: "nombre_alumno",   label: "Nombre del alumno *",  placeholder: "Carlos García" },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
-                      <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
-                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                  ))}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">
+                      {form.es_adulto ? "Nombre contacto (opcional)" : "Nombre padre/madre *"}
+                    </label>
+                    <input value={form.nombre_contacto} placeholder="Ana García"
+                      onChange={e => setForm(p => ({ ...p, nombre_contacto: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre del alumno *</label>
+                    <input value={form.nombre_alumno} placeholder="Carlos García"
+                      onChange={e => setForm(p => ({ ...p, nombre_alumno: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
                   <div>
                     <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                       <input type="checkbox" checked={form.es_adulto}
