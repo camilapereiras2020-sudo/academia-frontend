@@ -1,6 +1,9 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
+import { gruposApi } from "@/features/grupos/api"
+import type { Grupo } from "@/types"
 
 // ── constants ──────────────────────────────────────────────────────────────
 
@@ -50,6 +53,7 @@ type Lead = {
   disponibilidad?: string; colegio?: string; necesidades_especiales?: string
   origen: string; origen_display: string; notas?: string
   etapa: string; etapa_display: string; proximo_seguimiento?: string
+  alumno?: number | null
   alerta: boolean; horas_sin_mover: number
   interacciones: { id: number; tipo: string; fecha: string; resumen: string; proxima_accion: string }[]
   created_at: string; updated_at: string
@@ -86,6 +90,7 @@ const isValidSpanishPhone = (v: string) => /^[679]\d{8}$/.test(v.replace(/\s/g, 
 
 export default function CRMPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
 
   // list state
   const [filtroEtapa, setFiltroEtapa] = useState("")
@@ -104,6 +109,14 @@ export default function CRMPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<LeadForm>(emptyLeadForm())
   const [formError, setFormError] = useState("")
+
+  // matricular (convertir a alumno) modal
+  const [matricularLead, setMatricularLead] = useState<Lead | null>(null)
+  const [mForm, setMForm] = useState({ grupo_id: "", mensualidad: "", fecha_inicio: "" })
+  const [mError, setMError] = useState("")
+  const [matriculaResult, setMatriculaResult] = useState<{
+    alumno_id: number; alumno_nombre: string; pagador_nombre: string; pagador_autocompletado: boolean
+  } | null>(null)
 
   // ── queries ──────────────────────────────────────────────────────────────
 
@@ -125,6 +138,12 @@ export default function CRMPage() {
         (l.telefono ?? "").includes(search)
       )
     : leadsAll
+
+  const { data: gruposRaw } = useQuery({
+    queryKey: ["grupos"],
+    queryFn: () => gruposApi.list().then(r => r.data),
+  })
+  const grupos: Grupo[] = Array.isArray(gruposRaw) ? gruposRaw : []
 
   const { data: detalle, isLoading: loadingDetail } = useQuery<Lead>({
     queryKey: ["lead", selectedId],
@@ -175,6 +194,25 @@ export default function CRMPage() {
       setIError("")
     },
     onError: () => setIError("Error al registrar la interacción."),
+  })
+
+  const matricularMut = useMutation({
+    mutationFn: (data: { grupo_id: number; mensualidad: number; fecha_inicio: string }) =>
+      api.post(`/leads/${matricularLead!.id}/convertir-alumno/`, data).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["leads"] })
+      qc.invalidateQueries({ queryKey: ["crm-dashboard"] })
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      setMatriculaResult({
+        alumno_id: data.alumno_id,
+        alumno_nombre: data.alumno_nombre,
+        pagador_nombre: data.pagador_nombre,
+        pagador_autocompletado: data.pagador_autocompletado,
+      })
+      setMatricularLead(null)
+      setMError("")
+    },
+    onError: () => setMError("Error al matricular. Revisa los campos."),
   })
 
   // ── handlers ──────────────────────────────────────────────────────────────
@@ -228,6 +266,32 @@ export default function CRMPage() {
   function selectLead(id: number) {
     setSelectedId(id); setConfirmDeletePanel(false)
     setIForm({ tipo: "llamada", resumen: "", proxima_accion: "" }); setIError("")
+  }
+
+  function openMatricular(lead: Lead) {
+    setMatricularLead(lead)
+    setMForm({ grupo_id: "", mensualidad: "", fecha_inicio: "" })
+    setMError("")
+  }
+
+  function closeMatricular() { setMatricularLead(null); setMError("") }
+
+  function onGrupoChange(value: string) {
+    const g = grupos.find(x => String(x.id) === value)
+    setMForm(f => ({ ...f, grupo_id: value, mensualidad: g ? String(g.tarifa) : f.mensualidad }))
+  }
+
+  function handleMatricular() {
+    if (!mForm.grupo_id || !mForm.mensualidad || !mForm.fecha_inicio) {
+      setMError("Grupo, mensualidad y fecha de inicio son obligatorios.")
+      return
+    }
+    setMError("")
+    matricularMut.mutate({
+      grupo_id: Number(mForm.grupo_id),
+      mensualidad: Number(mForm.mensualidad),
+      fecha_inicio: mForm.fecha_inicio,
+    })
   }
 
   // ── render ────────────────────────────────────────────────────────────────
@@ -327,15 +391,22 @@ export default function CRMPage() {
                       {lead.objetivo && ` · ${OBJETIVOS.find(o => o.value === lead.objetivo)?.label ?? lead.objetivo}`}
                     </p>
                   </div>
-                  {/* Quick stage advance */}
+                  {/* Quick stage advance / matricular */}
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    {ETAPAS.filter(e => e.value !== lead.etapa && e.value !== "archivado" && e.value !== "frio").slice(0, 2).map(e => (
-                      <button key={e.value}
-                        onClick={() => cambiarEtapaMut.mutate({ id: lead.id, etapa: e.value })}
-                        className="px-2 py-1 border rounded-lg text-xs text-slate-600 hover:bg-slate-50 whitespace-nowrap">
-                        → {e.label}
+                    {lead.etapa === "matriculado" && !lead.alumno ? (
+                      <button onClick={() => openMatricular(lead)}
+                        className="px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 whitespace-nowrap">
+                        Matricular
                       </button>
-                    ))}
+                    ) : (
+                      ETAPAS.filter(e => e.value !== lead.etapa && e.value !== "archivado" && e.value !== "frio").slice(0, 2).map(e => (
+                        <button key={e.value}
+                          onClick={() => cambiarEtapaMut.mutate({ id: lead.id, etapa: e.value })}
+                          className="px-2 py-1 border rounded-lg text-xs text-slate-600 hover:bg-slate-50 whitespace-nowrap">
+                          → {e.label}
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -361,6 +432,12 @@ export default function CRMPage() {
                   </span>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
+                  {detalle.etapa === "matriculado" && !detalle.alumno && (
+                    <button onClick={() => openMatricular(detalle)}
+                      className="px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700">
+                      Matricular
+                    </button>
+                  )}
                   <button onClick={() => openEdit(detalle)}
                     className="px-2 py-1 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
                     Editar
@@ -627,6 +704,99 @@ export default function CRMPage() {
               <button onClick={handleSubmit} disabled={saveMut.isPending}
                 className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 disabled:opacity-50">
                 {saveMut.isPending ? "Guardando..." : editingId ? "Guardar cambios" : "Crear consulta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL — matricular (convertir a alumno) ───────────────────────── */}
+      {matricularLead && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) closeMatricular() }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-bold text-slate-800">Matricular a {matricularLead.nombre_alumno}</h2>
+              <button onClick={closeMatricular} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4">
+              {mError && (
+                <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{mError}</p>
+              )}
+              {matricularLead.es_adulto && matricularLead.pagador_es_alumno && (
+                <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  El pagador se creará automáticamente con los datos del alumno.
+                </p>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+                <select value={mForm.grupo_id} onChange={e => onGrupoChange(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Selecciona un grupo…</option>
+                  {grupos.map(g => (
+                    <option key={g.id} value={g.id}>{g.nombre} — {Number(g.tarifa).toFixed(2)}€</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Mensualidad (€)</label>
+                <input type="number" value={mForm.mensualidad}
+                  onChange={e => setMForm(f => ({ ...f, mensualidad: e.target.value }))}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha de inicio</label>
+                <input type="date" value={mForm.fecha_inicio}
+                  onChange={e => setMForm(f => ({ ...f, fecha_inicio: e.target.value }))}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t flex gap-3 flex-shrink-0">
+              <button onClick={closeMatricular}
+                className="flex-1 px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                Cancelar
+              </button>
+              <button onClick={handleMatricular} disabled={matricularMut.isPending}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+                {matricularMut.isPending ? "Matriculando..." : "Matricular"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL — matricula confirmada ──────────────────────────────────── */}
+      {matriculaResult && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setMatriculaResult(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-bold text-slate-800">¡Matrícula completada!</h2>
+              <button onClick={() => setMatriculaResult(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+            <div className="p-6 space-y-3">
+              <p className="text-sm text-slate-700">
+                Alumno creado: <span className="font-semibold">{matriculaResult.alumno_nombre}</span>
+              </p>
+              <p className="text-sm text-slate-700">
+                Pagador: <span className="font-semibold">{matriculaResult.pagador_nombre}</span>
+              </p>
+              {matriculaResult.pagador_autocompletado && (
+                <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  Pagador creado automáticamente con los datos del alumno.
+                </p>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t flex gap-3 flex-shrink-0">
+              <button onClick={() => setMatriculaResult(null)}
+                className="flex-1 px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                Cerrar
+              </button>
+              <button onClick={() => navigate(`/alumnos?openId=${matriculaResult.alumno_id}`)}
+                className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700">
+                Ver perfil del alumno
               </button>
             </div>
           </div>

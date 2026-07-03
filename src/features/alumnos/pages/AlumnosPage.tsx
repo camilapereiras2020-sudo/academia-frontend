@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
@@ -38,6 +39,7 @@ const emptyForm = (): FormState => ({
 
 export default function AlumnosPage() {
   const qc = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Alumno | null>(null)
@@ -51,6 +53,15 @@ export default function AlumnosPage() {
     queryFn: () => alumnosApi.list({ search: search || undefined }).then(r => r.data),
   })
   const alumnos: Alumno[] = Array.isArray(alumnosRaw) ? alumnosRaw : []
+
+  useEffect(() => {
+    const openId = searchParams.get("openId")
+    if (!openId || !alumnos.length) return
+    const a = alumnos.find(x => x.id === Number(openId))
+    if (a) openEdit(a)
+    setSearchParams(params => { params.delete("openId"); return params }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumnos, searchParams])
 
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(pagadoresRaw) ? pagadoresRaw : []
