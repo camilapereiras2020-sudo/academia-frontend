@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { pagosApi } from "../api"
+import { pagosApi, documentosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
@@ -81,6 +81,14 @@ export default function PagosPage() {
   const deleteMut = useMutation({
     mutationFn: pagosApi.delete,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setConfirmDelete(null) },
+  })
+
+  const generarMut = useMutation({
+    mutationFn: (p: Pago) => {
+      const tipo = ["transferencia", "tarjeta"].includes(p.metodo) ? "factura" : "recibo"
+      return documentosApi.generar(p.id, tipo as "factura" | "recibo")
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos"] }),
   })
 
   const createMut = useMutation({
@@ -286,6 +294,16 @@ export default function PagosPage() {
                           className="px-2 py-1 border rounded text-xs text-green-700 hover:bg-green-50 disabled:opacity-50 whitespace-nowrap"
                         >
                           ✓ Cobrar
+                        </button>
+                      )}
+                      {!p.num_doc && (
+                        <button
+                          onClick={() => generarMut.mutate(p)}
+                          disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
+                          className="px-2 py-1 border rounded text-xs text-blue-600 hover:bg-blue-50 disabled:opacity-50 whitespace-nowrap"
+                          title="Generar factura o recibo"
+                        >
+                          🧾
                         </button>
                       )}
                       <button
