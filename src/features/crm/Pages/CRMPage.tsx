@@ -46,6 +46,7 @@ type Lead = {
   nombre_contacto: string; nombre_alumno: string; edad_alumno?: number
   curso_escolar?: string; telefono: string; email?: string
   objetivo: string; objetivo_display: string; nivel_estimado?: string
+  es_adulto: boolean; pagador_es_alumno: boolean
   disponibilidad?: string; colegio?: string; necesidades_especiales?: string
   origen: string; origen_display: string; notas?: string
   etapa: string; etapa_display: string; proximo_seguimiento?: string
@@ -64,6 +65,7 @@ interface LeadForm {
   objetivo: string; nivel_estimado: string; disponibilidad: string
   colegio: string; necesidades_especiales: string; origen: string
   notas: string; proximo_seguimiento: string
+  es_adulto: boolean; pagador_es_alumno: boolean
 }
 
 const emptyLeadForm = (): LeadForm => ({
@@ -71,6 +73,7 @@ const emptyLeadForm = (): LeadForm => ({
   telefono: "", email: "", objetivo: "general", nivel_estimado: "",
   disponibilidad: "", colegio: "", necesidades_especiales: "",
   origen: "telefono", notas: "", proximo_seguimiento: "",
+  es_adulto: false, pagador_es_alumno: false,
 })
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -191,6 +194,8 @@ export default function CRMPage() {
       colegio: lead.colegio ?? "", necesidades_especiales: lead.necesidades_especiales ?? "",
       origen: lead.origen, notas: lead.notas ?? "",
       proximo_seguimiento: lead.proximo_seguimiento ?? "",
+      es_adulto: lead.es_adulto ?? false,
+      pagador_es_alumno: lead.pagador_es_alumno ?? false,
     })
     setFormError(""); setShowModal(true)
   }
@@ -372,6 +377,7 @@ export default function CRMPage() {
                   ["✉", detalle.email],
                   ["🎯", detalle.objetivo_display],
                   ["📍", detalle.origen_display],
+                  ["🧑", detalle.es_adulto ? `Adulto${detalle.pagador_es_alumno ? " · paga el mismo" : " · otro pagador"}` : null],
                   ["🎂", detalle.edad_alumno ? `${detalle.edad_alumno} años${detalle.curso_escolar ? " · " + detalle.curso_escolar : ""}` : null],
                   ["🏫", detalle.colegio],
                   ["📊", detalle.nivel_estimado],
@@ -505,11 +511,34 @@ export default function CRMPage() {
                   ].map(f => (
                     <div key={f.key}>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
-                      <input value={form[f.key as keyof LeadForm]} placeholder={f.placeholder}
+                      <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
                         onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   ))}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input type="checkbox" checked={form.es_adulto}
+                        onChange={e => {
+                          const checked = e.target.checked
+                          setForm(p => ({ ...p, es_adulto: checked, pagador_es_alumno: checked ? p.pagador_es_alumno : false }))
+                        }}
+                        className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-blue-500" />
+                      El alumno es adulto / paga el mismo
+                    </label>
+                  </div>
+                  {form.es_adulto && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Pagador</label>
+                      <select
+                        value={form.pagador_es_alumno ? "mismo" : "otro"}
+                        onChange={e => setForm(p => ({ ...p, pagador_es_alumno: e.target.value === "mismo" }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="mismo">El mismo alumno es el pagador</option>
+                        <option value="otro">Otro pagador</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -568,7 +597,7 @@ export default function CRMPage() {
                   ].map(f => (
                     <div key={f.key}>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
-                      <input value={form[f.key as keyof LeadForm]} placeholder={f.placeholder}
+                      <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
                         onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
