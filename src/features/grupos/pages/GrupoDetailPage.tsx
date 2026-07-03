@@ -125,8 +125,8 @@ export default function GrupoDetailPage() {
   }
 
   function handleSaveTarea() {
-    if (!tareaForm.titulo.trim() || !tareaForm.fecha_entrega) {
-      setTareaError("Título y fecha de entrega son obligatorios.")
+    if (!tareaForm.titulo.trim() || !tareaForm.fecha_asignada || !tareaForm.fecha_entrega) {
+      setTareaError("Título, fecha asignada y fecha de entrega son obligatorios.")
       return
     }
     setTareaError("")
