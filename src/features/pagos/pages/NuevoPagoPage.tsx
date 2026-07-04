@@ -48,12 +48,6 @@ export default function NuevoPagoPage() {
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
-  function onGrupoChange(gid: number) {
-    setGrupo(gid)
-    const g = grupos.find((x: any) => x.id === gid)
-    if (g) setMensualidad(Number(g.tarifa))
-  }
-
   function onAlumnoChange(aid: number) {
     setAlumno(aid)
     const a = alumnos.find((x: any) => x.id === aid)
@@ -71,7 +65,7 @@ export default function NuevoPagoPage() {
 
   const saveMut = useMutation({
     mutationFn: () => pagosApi.create({
-      alumno: alumno as number, pagador: pagador as number, grupo: grupo as number,
+      alumno: alumno as number, pagador: pagador as number, grupo: grupo || null,
       tarifa: tarifa || null,
       periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
@@ -85,7 +79,7 @@ export default function NuevoPagoPage() {
   })
 
   function handleSubmit() {
-    if (!alumno || !pagador || !grupo || !periodo) { setError("Completa todos los campos obligatorios"); return }
+    if (!alumno || !pagador || !periodo) { setError("Completa todos los campos obligatorios"); return }
     saveMut.mutate()
   }
 
@@ -114,11 +108,11 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo *</label>
-            <select value={grupo} onChange={e => onGrupoChange(+e.target.value)}
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+            <select value={grupo} onChange={e => setGrupo(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Seleccionar...</option>
-              {grupos.map((g: any) => <option key={g.id} value={g.id}>{g.nombre} — {Number(g.tarifa).toFixed(2)}€</option>)}
+              <option value="">Sin grupo</option>
+              {grupos.map((g: any) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
             </select>
           </div>
           <div>

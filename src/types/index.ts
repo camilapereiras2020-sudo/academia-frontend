@@ -21,7 +21,7 @@ export interface Alumno {
 
 export interface Pago {
   id: number; pagador: number; pagador_nombre: string; alumno: number; alumno_nombre: string
-  grupo: number; grupo_nombre: string; periodo: string; mensualidad: number; descuento: number
+  grupo: number | null; grupo_nombre: string | null; periodo: string; mensualidad: number; descuento: number
   extras: { concepto: string; importe: number }[]; total: number; metodo: string
   estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string
   num_doc: string; created_at: string
