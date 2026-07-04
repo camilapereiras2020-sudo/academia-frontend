@@ -26,6 +26,7 @@ export interface Pago {
   estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string
   num_doc: string; created_at: string
   tarifa?: number | null; tarifa_nombre?: string | null
+  horas_trabajadas?: number
 }
 
 export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"

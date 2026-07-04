@@ -26,7 +26,7 @@ export default function NuevoPagoPage() {
   const { data: alumnosRaw } = useQuery({ queryKey: ["alumnos"], queryFn: () => alumnosApi.list().then(r => r.data) })
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
-  const { data: tarifasRaw } = useQuery({ queryKey: ["tarifas"], queryFn: () => tarifasApi.list().then(r => r.data) })
+  const { data: tarifasRaw, isLoading: tarifasLoading } = useQuery({ queryKey: ["tarifas"], queryFn: () => tarifasApi.list().then(r => r.data) })
 
   const alumnos = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results || []
   const pagadores = Array.isArray(pagadoresRaw) ? pagadoresRaw : (pagadoresRaw as any)?.results || []
@@ -39,6 +39,7 @@ export default function NuevoPagoPage() {
   const [tarifa, setTarifa] = useState<number | "">("")
   const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
   const [mensualidad, setMensualidad] = useState(0)
+  const [horas, setHoras] = useState<number | "">("")
   const [descuento, setDescuento] = useState(0)
   const [metodo, setMetodo] = useState("efectivo")
   const [notas, setNotas] = useState("")
@@ -68,6 +69,7 @@ export default function NuevoPagoPage() {
       alumno: alumno as number, pagador: pagador as number, grupo: grupo || null,
       tarifa: tarifa || null,
       periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
+      horas_trabajadas: horas === "" ? 0 : horas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
     }),
     onSuccess: () => {
@@ -120,18 +122,29 @@ export default function NuevoPagoPage() {
             <select value={tarifa} onChange={e => onTarifaChange(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Sin tarifa / manual</option>
-              {(["rangers_academy", "cami_and_co"] as const).map(marca => (
-                <optgroup key={marca} label={marca === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}>
-                  {tarifas.filter(t => t.marca === marca).map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.nombre_display}
-                      {t.horas_semanales ? ` — ${t.horas_semanales}h/sem` : ""}
-                      {tarifaAmountIsEditable(t) ? "" : ` — ${Number(t.precio).toFixed(2)}€`}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
+              {tarifasLoading && <option value="" disabled>Cargando tarifas...</option>}
+              {(["rangers_academy", "cami_and_co"] as const).map(marca => {
+                const opciones = tarifas.filter(t => t.marca === marca)
+                if (!opciones.length) return null
+                return (
+                  <optgroup key={marca} label={marca === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}>
+                    {opciones.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre_display}
+                        {t.horas_semanales ? ` — ${t.horas_semanales}h/sem` : ""}
+                        {tarifaAmountIsEditable(t) ? "" : ` — ${Number(t.precio).toFixed(2)}€`}
+                      </option>
+                    ))}
+                  </optgroup>
+                )
+              })}
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Horas</label>
+            <input type="number" value={horas} onChange={e => setHoras(e.target.value === "" ? "" : +e.target.value)} min="0" step="0.1"
+              placeholder="Ej: 1.5"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">Periodo *</label>
