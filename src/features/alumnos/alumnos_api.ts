@@ -1,11 +1,12 @@
 import { api } from "@/lib/axios"
-import type { Alumno } from "@/types"
+import type { Alumno, Marca } from "@/types"
 
 export const alumnosApi = {
-  list: (params?: { search?: string; grupo?: number }) => {
+  list: (params?: { search?: string; grupo?: number; marca?: Marca }) => {
     const qs = new URLSearchParams()
     if (params?.search) qs.append("search", params.search)
     if (params?.grupo) qs.append("grupo", String(params.grupo))
+    if (params?.marca) qs.append("marca", params.marca)
     return api.get<Alumno[]>(`/alumnos/?${qs}`)
   },
   get: (id: number) => api.get<Alumno>(`/alumnos/${id}/`),

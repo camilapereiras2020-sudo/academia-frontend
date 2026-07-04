@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
-import type { Alumno, Pagador, Grupo } from "@/types"
+import type { Alumno, Pagador, Grupo, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
@@ -42,6 +42,7 @@ export default function AlumnosPage() {
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
+  const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Alumno | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm())
@@ -50,8 +51,8 @@ export default function AlumnosPage() {
   const [emailTarget, setEmailTarget] = useState<Alumno | null>(null)
 
   const { data: alumnosRaw, isLoading } = useQuery({
-    queryKey: ["alumnos", search],
-    queryFn: () => alumnosApi.list({ search: search || undefined }).then(r => r.data),
+    queryKey: ["alumnos", search, marcaFilter],
+    queryFn: () => alumnosApi.list({ search: search || undefined, marca: marcaFilter || undefined }).then(r => r.data),
   })
   const alumnos: Alumno[] = Array.isArray(alumnosRaw) ? alumnosRaw : []
 
@@ -169,12 +170,26 @@ export default function AlumnosPage() {
         </button>
       </div>
 
-      {/* Search */}
-      <input
-        type="text" placeholder="Buscar por nombre, email o teléfono..." value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="mb-5 border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      {/* Search + brand filter */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <input
+          type="text" placeholder="Buscar por nombre, email o teléfono..." value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <div className="inline-flex rounded-lg border overflow-hidden text-sm">
+          {([
+            ["", "Todas"],
+            ["rangers_academy", "Rangers Academy"],
+            ["cami_and_co", "Cami & Co"],
+          ] as const).map(([value, label]) => (
+            <button key={value} onClick={() => setMarcaFilter(value)}
+              className={`px-3 py-2 ${marcaFilter === value ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* States */}
       {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}

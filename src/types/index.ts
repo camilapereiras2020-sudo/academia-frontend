@@ -13,14 +13,18 @@ export interface AlumnoGrupo {
   grupo: number; grupo_nombre: string; horarios: { dia: number; ini: string; fin: string }[]
 }
 
+export type Marca = "cami_and_co" | "rangers_academy"
+
 export interface Alumno {
-  id: number; nombre: string; fnac: string | null; telefono: string; email: string
+  id: number; nombre: string; marca: Marca; marca_display?: string
+  fnac: string | null; telefono: string; email: string
   notas: string; aviso_cumple_dias: number | null; pagador: number | null
   grupos_detalle: AlumnoGrupo[]; created_at: string
 }
 
 export interface Pago {
-  id: number; pagador: number; pagador_nombre: string; alumno: number; alumno_nombre: string
+  id: number; marca: Marca; marca_display?: string
+  pagador: number; pagador_nombre: string; alumno: number; alumno_nombre: string
   grupo: number | null; grupo_nombre: string | null; periodo: string; mensualidad: number; descuento: number
   extras: { concepto: string; importe: number }[]; total: number; metodo: string
   estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string
@@ -31,7 +35,7 @@ export interface Pago {
 
 export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"
 export type TarifaTipoCobro = "por_hora" | "mensual" | "bono_familiar"
-export type TarifaMarca = "cami_and_co" | "rangers_academy"
+export type TarifaMarca = Marca
 
 export interface Tarifa {
   id: number

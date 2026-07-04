@@ -5,7 +5,7 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { formatEur, formatMonth } from "@/lib/utils"
-import type { Pago, Alumno, Pagador, Grupo } from "@/types"
+import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
 
 const METODOS = ["efectivo", "bizum", "transferencia", "domiciliacion"] as const
 const METODO_LABEL: Record<string, string> = {
@@ -42,16 +42,18 @@ export default function PagosPage() {
   const qc = useQueryClient()
   const [estadoFilter, setEstadoFilter] = useState("")
   const [periodoFilter, setPeriodoFilter] = useState("")
+  const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
 
   const { data: raw, isLoading } = useQuery({
-    queryKey: ["pagos", estadoFilter, periodoFilter],
+    queryKey: ["pagos", estadoFilter, periodoFilter, marcaFilter],
     queryFn: () => pagosApi.list({
       estado: estadoFilter || undefined,
       periodo: periodoFilter || undefined,
+      marca: marcaFilter || undefined,
     }).then(r => r.data),
   })
   const pagos: Pago[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
@@ -251,6 +253,18 @@ export default function PagosPage() {
             Limpiar mes
           </button>
         )}
+        <div className="inline-flex rounded-lg border overflow-hidden text-sm">
+          {([
+            ["", "Todas"],
+            ["rangers_academy", "Rangers Academy"],
+            ["cami_and_co", "Cami & Co"],
+          ] as const).map(([value, label]) => (
+            <button key={value} onClick={() => setMarcaFilter(value)}
+              className={`px-3 py-2 ${marcaFilter === value ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* List */}
