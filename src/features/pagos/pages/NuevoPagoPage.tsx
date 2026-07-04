@@ -5,8 +5,16 @@ import { pagosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
+import { tarifasApi } from "@/features/tarifas/api"
+import type { Tarifa } from "@/types"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
+
+// Tarifas with no fixed price — amount stays manually editable when one of these is selected.
+function tarifaAmountIsEditable(t: Tarifa | undefined) {
+  if (!t) return true
+  return t.marca === "cami_and_co" || t.nombre === "clase_privada" || t.nombre === "clase_recuperada"
+}
 
 interface ExtraLine { concepto: string; importe: number }
 
@@ -18,14 +26,17 @@ export default function NuevoPagoPage() {
   const { data: alumnosRaw } = useQuery({ queryKey: ["alumnos"], queryFn: () => alumnosApi.list().then(r => r.data) })
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
+  const { data: tarifasRaw } = useQuery({ queryKey: ["tarifas"], queryFn: () => tarifasApi.list().then(r => r.data) })
 
   const alumnos = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results || []
   const pagadores = Array.isArray(pagadoresRaw) ? pagadoresRaw : (pagadoresRaw as any)?.results || []
   const grupos = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
+  const tarifas: Tarifa[] = Array.isArray(tarifasRaw) ? tarifasRaw : (tarifasRaw as any)?.results || []
 
   const [alumno, setAlumno] = useState<number | "">("")
   const [pagador, setPagador] = useState<number | "">("")
   const [grupo, setGrupo] = useState<number | "">("")
+  const [tarifa, setTarifa] = useState<number | "">("")
   const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
   const [mensualidad, setMensualidad] = useState(0)
   const [descuento, setDescuento] = useState(0)
@@ -33,6 +44,9 @@ export default function NuevoPagoPage() {
   const [notas, setNotas] = useState("")
   const [extras, setExtras] = useState<ExtraLine[]>([])
   const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pendiente")
+
+  const selectedTarifa = tarifas.find(t => t.id === tarifa)
+  const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
   function onGrupoChange(gid: number) {
     setGrupo(gid)
@@ -46,12 +60,19 @@ export default function NuevoPagoPage() {
     if (a?.pagador) setPagador(a.pagador)
   }
 
+  function onTarifaChange(tid: number) {
+    setTarifa(tid)
+    const t = tarifas.find(x => x.id === tid)
+    if (t && !tarifaAmountIsEditable(t)) setMensualidad(Number(t.precio))
+  }
+
   const extrasTotal = extras.reduce((s, e) => s + e.importe, 0)
   const total = mensualidad - descuento + extrasTotal
 
   const saveMut = useMutation({
     mutationFn: () => pagosApi.create({
       alumno: alumno as number, pagador: pagador as number, grupo: grupo as number,
+      tarifa: tarifa || null,
       periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
     }),
@@ -101,6 +122,24 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Tarifa</label>
+            <select value={tarifa} onChange={e => onTarifaChange(+e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Sin tarifa / manual</option>
+              {(["rangers_academy", "cami_and_co"] as const).map(marca => (
+                <optgroup key={marca} label={marca === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}>
+                  {tarifas.filter(t => t.marca === marca).map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.nombre_display}
+                      {t.horas_semanales ? ` — ${t.horas_semanales}h/sem` : ""}
+                      {tarifaAmountIsEditable(t) ? "" : ` — ${Number(t.precio).toFixed(2)}€`}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">Periodo *</label>
             <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -108,7 +147,8 @@ export default function NuevoPagoPage() {
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">Mensualidad (€)</label>
             <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)} min="0" step="0.01"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              disabled={!montoEditable}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-500" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">Descuento (€)</label>

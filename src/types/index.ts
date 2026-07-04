@@ -25,6 +25,21 @@ export interface Pago {
   extras: { concepto: string; importe: number }[]; total: number; metodo: string
   estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string
   num_doc: string; created_at: string
+  tarifa?: number | null; tarifa_nombre?: string | null
+}
+
+export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"
+export type TarifaTipoCobro = "por_hora" | "mensual" | "bono_familiar"
+export type TarifaMarca = "cami_and_co" | "rangers_academy"
+
+export interface Tarifa {
+  id: number
+  nombre: TarifaNombre; nombre_display: string
+  tipo_cobro: TarifaTipoCobro; tipo_cobro_display: string
+  marca: TarifaMarca; marca_display: string
+  precio: number
+  horas_semanales: 1 | 2 | 3 | null
+  created_at: string
 }
 
 export interface RegistroAsistencia {
