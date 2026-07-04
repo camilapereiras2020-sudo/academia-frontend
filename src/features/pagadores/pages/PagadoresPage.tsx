@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { createPortal } from "react-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagadoresApi } from "../api"
 import type { Pagador } from "@/types"
@@ -252,7 +253,7 @@ export default function PagadoresPage() {
       </div>
 
       {/* Create / Edit modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
@@ -365,7 +366,8 @@ export default function PagadoresPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {emailTarget && (
@@ -377,7 +379,7 @@ export default function PagadoresPage() {
       )}
 
       {/* Delete confirmation modal */}
-      {confirmDelete && (
+      {confirmDelete && createPortal(
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
             <h3 className="font-semibold text-slate-800 mb-1">Eliminar pagador</h3>
@@ -413,7 +415,8 @@ export default function PagadoresPage() {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
