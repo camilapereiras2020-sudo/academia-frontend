@@ -23,6 +23,10 @@ Frontend-specific view of the project timeline. See also: [academia-api DEVLOG](
 | 2026-07-02 | CRM nueva consulta form: only nombre padre/madre + nombre alumno required |
 | 2026-07-03 | CRM adult/self-pay support: checkbox, payer dropdown, conditional required field, Matricular flow, origen/objetivo taxonomy update |
 | 2026-07-03 | GruposPage search box; PagosPage manual invoice/receipt generation button |
+| 2026-07-03 | Class page: new /grupos/:id route with lesson log, homework, struggle tracker |
+| 2026-07-04 | Modal positioning re-fixed via React portal in AlumnosPage/PagadoresPage |
+| 2026-07-04 | Tarifa selector added to Nuevo Pago (auto-fill + lock pricing), grupo decoupled from pricing, horas field added |
+| 2026-07-04 | Brand (marca) filter toggle added to AlumnosPage and PagosPage |
 
 ---
 
@@ -151,5 +155,23 @@ Claude Code CLI installed locally — AI-assisted dev workflow now active for th
 | **PagosPage: add manual generate invoice/receipt button for pagos without a doc** | Any pago missing `num_doc` now shows a 🧾 button that calls `documentosApi.generar`, inferring `tipo` from `metodo` (transferencia/tarjeta → factura, otherwise recibo) — gives a manual fallback for payments that never got an invoice/receipt generated |
 
 **Why it matters:** Previously, marking a lead "Matriculado" only changed a status label — no actual student record was created, and every adult lead was forced through a "parent contact" field that didn't apply to them. Both gaps are closed as of this session.
+
+---
+
+## July 3–4, 2026 — Class Pages, Tarifa Pricing System, Brand Filter
+
+### Milestone: Per-Group Class Page, Real Pricing on Nuevo Pago, Brand Toggle
+
+| Commit | Detail |
+|--------|--------|
+| **Add class page: new /grupos/:id route with lesson log, homework, struggle tracker** | First per-record route in the app (every other page is list+modal). Shows a group's lesson log, homework tracker, and struggle-note history in one place |
+| **GrupoDetailPage: require fecha_asignada before saving a tarea** | Fixed a bug where a Tarea (homework item) could be saved with no assigned date |
+| **Fix modal positioning in AlumnosPage and PagadoresPage via portal** | The June 30 `fadeUp` fix addressed one cause of modal mispositioning, but these two pages' create/edit and delete-confirmation modals could still end up nested under an ancestor that re-establishes a containing block for `position: fixed`. Rendering them through a React portal to `document.body` sidesteps the whole class of bug rather than patching the specific ancestor again |
+| **Add tarifa selector to Nuevo Pago, auto-filling the amount** | New tarifa dropdown, grouped by brand (Rangers Academy / Cami & Co). Picking a Rangers Academy fixed-price tarifa (Clase Grupo or Bono Familia) auto-fills and locks the mensualidad field; Cami&Co and Clase Privada/Recuperada (no fixed price) leave it editable |
+| **Make grupo optional and decouple tarifa from grupo in Nuevo Pago** | Grupo is no longer required, and selecting one no longer overwrites the amount — only the tarifa selector drives pricing now, so a payment's tariff doesn't have to match whatever group the student happens to be in |
+| **Add horas field and harden the tarifa dropdown in Nuevo Pago** | New optional "Horas" input (decimal, e.g. `1.5`) wired to the existing `Pago.horas_trabajadas` backend field. Verified live with Playwright that all 13 seeded tarifa options render correctly grouped and selectable; hardened the dropdown to skip an empty brand group and show a loading placeholder while tarifas are still being fetched |
+| **Add brand (marca) filter toggle to AlumnosPage and PagosPage** | Rangers Academy / Cami & Co / Todas toggle on both pages, wired to the new `?marca=` query param on the corresponding list endpoints |
+
+**Why it matters:** Payments previously had no real pricing model — mensualidad was either free-typed or copied from a group's flat `tarifa` field. Nuevo Pago now has an actual rate card to select from, decoupled from which group a student is in, plus a way to log hours taught per payment and to slice both the student and payment lists by brand.
 
 ---
