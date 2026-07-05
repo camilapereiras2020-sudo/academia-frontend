@@ -6,6 +6,7 @@ import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { formatEur, formatMonth } from "@/lib/utils"
 import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
+import PagoDetailModal from "../PagoDetailModal"
 
 const METODOS = ["efectivo", "bizum", "transferencia", "domiciliacion"] as const
 const METODO_LABEL: Record<string, string> = {
@@ -47,6 +48,8 @@ export default function PagosPage() {
   const [form, setForm] = useState(emptyForm())
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  const [deleteError, setDeleteError] = useState("")
+  const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ["pagos", estadoFilter, periodoFilter, marcaFilter],
@@ -82,7 +85,8 @@ export default function PagosPage() {
 
   const deleteMut = useMutation({
     mutationFn: pagosApi.delete,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setConfirmDelete(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setConfirmDelete(null); setDeleteError("") },
+    onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar el pago."),
   })
 
   const generarMut = useMutation({
@@ -291,15 +295,22 @@ export default function PagosPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {pagos.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre}</td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre}</td>
+                <tr key={p.id} onClick={() => setSelectedPago(p)} className="hover:bg-slate-50 cursor-pointer">
+                  <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{formatEur(Number(p.total))}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
                   <td className="px-4 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
-                  <td className="px-4 py-3 whitespace-nowrap"><Badge estado={p.estado} /></td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Badge estado={p.estado} />
+                    {p.estado_carga === "pendiente_completar" && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 ml-1 whitespace-nowrap">
+                        ⚠ Incompleto
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="flex gap-1 justify-end">
                       {p.estado !== "pagado" && (
                         <button
@@ -341,9 +352,12 @@ export default function PagosPage() {
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
             <h3 className="font-semibold text-slate-800 mb-1">Eliminar pago</h3>
             <p className="text-sm text-slate-500 mb-4">Esta acción no se puede deshacer.</p>
+            {deleteError && (
+              <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{deleteError}</p>
+            )}
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setConfirmDelete(null)}
+                onClick={() => { setConfirmDelete(null); setDeleteError("") }}
                 className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200"
               >
                 Cancelar
@@ -358,6 +372,11 @@ export default function PagosPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Pago detail/edit view — opened by clicking a row */}
+      {selectedPago && (
+        <PagoDetailModal pago={selectedPago} onClose={() => setSelectedPago(null)} />
       )}
     </div>
   )

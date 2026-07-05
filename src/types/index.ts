@@ -24,13 +24,17 @@ export interface Alumno {
 
 export interface Pago {
   id: number; marca: Marca; marca_display?: string
-  pagador: number; pagador_nombre: string; alumno: number; alumno_nombre: string
+  pagador: number | null; pagador_nombre: string | null; alumno: number | null; alumno_nombre: string | null
   grupo: number | null; grupo_nombre: string | null; periodo: string; mensualidad: number; descuento: number
   extras: { concepto: string; importe: number }[]; total: number; metodo: string
   estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string
   num_doc: string; created_at: string
   tarifa?: number | null; tarifa_nombre?: string | null
   horas_trabajadas?: number
+  estado_carga: "completo" | "pendiente_completar"
+  numero_factura_reservado: string
+  concepto_original: string
+  concepto_libre: string
 }
 
 export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"
