@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
@@ -41,6 +42,7 @@ const emptyForm = () => ({
 
 export default function PagosPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [estadoFilter, setEstadoFilter] = useState("")
   const [periodoFilter, setPeriodoFilter] = useState("")
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
@@ -60,6 +62,12 @@ export default function PagosPage() {
     }).then(r => r.data),
   })
   const pagos: Pago[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
+
+  const { data: sugerencias } = useQuery({
+    queryKey: ["pagos-sugerencias"],
+    queryFn: () => pagosApi.sugerencias().then(r => r.data),
+  })
+  const pendientesCount = sugerencias?.length ?? 0
 
   const { data: alumnosRaw } = useQuery({ queryKey: ["alumnos"], queryFn: () => alumnosApi.list().then(r => r.data) })
   const alumnos: Alumno[] = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results ?? []
@@ -136,12 +144,22 @@ export default function PagosPage() {
           <h1 className="text-3xl font-bold text-slate-800">Pagos</h1>
           <p className="text-sm text-slate-500 mt-1">{pagos.length} registros</p>
         </div>
-        <button
-          onClick={showForm ? closeForm : openForm}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          {showForm ? "✕ Cancelar" : "+ Nuevo pago"}
-        </button>
+        <div className="flex gap-2">
+          {pendientesCount > 0 && (
+            <button
+              onClick={() => navigate("/pagos/pendientes")}
+              className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-200"
+            >
+              ⚠ Revisar {pendientesCount} pendiente{pendientesCount === 1 ? "" : "s"}
+            </button>
+          )}
+          <button
+            onClick={showForm ? closeForm : openForm}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            {showForm ? "✕ Cancelar" : "+ Nuevo pago"}
+          </button>
+        </div>
       </div>
 
       {/* Create form */}

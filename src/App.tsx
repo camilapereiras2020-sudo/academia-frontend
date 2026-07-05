@@ -11,6 +11,7 @@ import GrupoDetailPage from "@/features/grupos/pages/GrupoDetailPage"
 import AsistenciaPage from "@/features/asistencia/pages/AsistenciaPage"
 import PagosPage from "@/features/pagos/pages/PagosPage"
 import NuevoPagoPage from "@/features/pagos/pages/NuevoPagoPage"
+import PagosPendientesPage from "@/features/pagos/pages/PagosPendientesPage"
 import CumpleanosPage from "@/features/cumpleanos/pages/CumpleanosPage"
 import DocumentosPage from "@/features/documentos/pages/DocumentosPage"
 import ConfigPage from "@/features/config/pages/ConfigPage"
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/pagos" element={<PagosPage />} />
           <Route path="/pagos/nuevo" element={<NuevoPagoPage />} />
+          <Route path="/pagos/pendientes" element={<PagosPendientesPage />} />
           <Route path="/cumpleanos" element={<CumpleanosPage />} />
           <Route path="/documentos" element={<DocumentosPage />} />
           <Route path="/config" element={<ConfigPage />} />

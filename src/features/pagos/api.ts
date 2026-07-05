@@ -14,6 +14,15 @@ export const pagosApi = {
   update: (id: number, data: Partial<Pago>) => api.patch<Pago>(`/pagos/${id}/`, data),
   delete: (id: number) => api.delete(`/pagos/${id}/`),
   marcarPagado: (id: number) => api.post(`/pagos/${id}/marcar-pagado/`),
+  sugerencias: () => api.get<SugerenciaRow[]>("/pagos/sugerencias/"),
+}
+
+export interface Sugerencia { id: number; nombre: string; score: number }
+export interface SugerenciaRow {
+  pago: Pago
+  sugerencia_alumno: Sugerencia | null
+  sugerencia_pagador: Sugerencia | null
+  sugerencia_grupo: { id: number; nombre: string } | null
 }
 
 export const documentosApi = {
