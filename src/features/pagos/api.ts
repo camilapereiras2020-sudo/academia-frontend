@@ -10,7 +10,7 @@ export const pagosApi = {
     return api.get<Pago[]>(`/pagos/?${qs}`)
   },
   get: (id: number) => api.get<Pago>(`/pagos/${id}/`),
-  create: (data: Partial<Pago>) => api.post<Pago>("/pagos/", data),
+  create: (data: Partial<Pago> & { guardar_como_borrador?: boolean }) => api.post<Pago>("/pagos/", data),
   update: (id: number, data: Partial<Pago>) => api.patch<Pago>(`/pagos/${id}/`, data),
   delete: (id: number) => api.delete(`/pagos/${id}/`),
   marcarPagado: (id: number) => api.post(`/pagos/${id}/marcar-pagado/`),

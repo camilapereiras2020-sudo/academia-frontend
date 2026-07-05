@@ -106,11 +106,11 @@ export default function PagosPage() {
   })
 
   const createMut = useMutation({
-    mutationFn: () => {
+    mutationFn: (borrador: boolean) => {
       const importe = parseFloat(form.mensualidad) || 0
       return pagosApi.create({
-        alumno: form.alumno as number,
-        pagador: form.pagador as number,
+        alumno: form.alumno === "" ? null : form.alumno,
+        pagador: form.pagador === "" ? null : form.pagador,
         ...(form.grupo !== "" ? { grupo: form.grupo as number } : {}),
         periodo: form.periodo,
         mensualidad: importe,
@@ -120,11 +120,17 @@ export default function PagosPage() {
         metodo: form.metodo,
         notas: form.notas,
         estado: "pendiente",
+        ...(borrador ? { guardar_como_borrador: true } : {}),
       })
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); closeForm() },
+    onSuccess: (_res, borrador) => {
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+      qc.invalidateQueries({ queryKey: ["pagos-sugerencias"] })
+      closeForm()
+      if (borrador) navigate("/pagos/pendientes")
+    },
     onError: (err: any) =>
-      setFormError(err.response?.data?.detail ?? JSON.stringify(err.response?.data) ?? "Error al crear el pago."),
+      setFormError(err.response?.data?.detail ?? JSON.stringify(err.response?.data) ?? "Error al guardar el pago."),
   })
 
   function handleSubmit() {
@@ -133,7 +139,16 @@ export default function PagosPage() {
       return
     }
     setFormError("")
-    createMut.mutate()
+    createMut.mutate(false)
+  }
+
+  function handleSaveDraft() {
+    if (!form.periodo) {
+      setFormError("El periodo es obligatorio, incluso para un borrador.")
+      return
+    }
+    setFormError("")
+    createMut.mutate(true)
   }
 
   return (
@@ -244,6 +259,11 @@ export default function PagosPage() {
           <div className="flex justify-end gap-2 mt-4">
             <button onClick={closeForm} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
               Cancelar
+            </button>
+            <button onClick={handleSaveDraft} disabled={createMut.isPending}
+              title="Guarda lo que tengas hasta ahora sin alumno/pagador/grupo definitivos — no genera factura ni reserva número, aparece en Pagos pendientes"
+              className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 text-sm hover:bg-orange-200 disabled:opacity-50">
+              {createMut.isPending ? "Guardando..." : "Guardar como borrador"}
             </button>
             <button onClick={handleSubmit} disabled={createMut.isPending}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">

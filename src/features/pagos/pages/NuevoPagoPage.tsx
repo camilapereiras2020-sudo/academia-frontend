@@ -65,24 +65,38 @@ export default function NuevoPagoPage() {
   const total = mensualidad - descuento + extrasTotal
 
   const saveMut = useMutation({
-    mutationFn: () => pagosApi.create({
-      alumno: alumno as number, pagador: pagador as number, grupo: grupo || null,
+    mutationFn: (borrador: boolean) => pagosApi.create({
+      alumno: alumno === "" ? null : alumno,
+      pagador: pagador === "" ? null : pagador,
+      grupo: grupo || null,
       tarifa: tarifa || null,
       periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
       horas_trabajadas: horas === "" ? 0 : horas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
+      ...(borrador ? { guardar_como_borrador: true } : {}),
     }),
-    onSuccess: () => {
+    onSuccess: (_res, borrador) => {
       qc.invalidateQueries({ queryKey: ["pagos"] })
       qc.invalidateQueries({ queryKey: ["pagos-pendientes"] })
-      navigate("/pagos")
+      qc.invalidateQueries({ queryKey: ["pagos-sugerencias"] })
+      navigate(borrador ? "/pagos/pendientes" : "/pagos")
     },
-    onError: () => setError("Error al crear el pago. Verifica todos los campos."),
+    onError: () => setError("Error al guardar el pago. Verifica todos los campos."),
   })
 
   function handleSubmit() {
     if (!alumno || !pagador || !periodo) { setError("Completa todos los campos obligatorios"); return }
-    saveMut.mutate()
+    setError("")
+    saveMut.mutate(false)
+  }
+
+  function handleSaveDraft() {
+    // Same relaxation as a bulk-imported draft: alumno/pagador/grupo can
+    // stay blank, only periodo/metodo/total (already defaulted above) are
+    // needed to satisfy the backend's required fields.
+    if (!periodo) { setError("El periodo es obligatorio, incluso para un borrador."); return }
+    setError("")
+    saveMut.mutate(true)
   }
 
   return (
@@ -211,6 +225,11 @@ export default function NuevoPagoPage() {
 
         <div className="flex justify-end gap-2">
           <button onClick={() => navigate("/pagos")} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">Cancelar</button>
+          <button onClick={handleSaveDraft} disabled={saveMut.isPending}
+            title="Guarda lo que tengas hasta ahora sin alumno/pagador/grupo definitivos — no genera factura ni reserva número, aparece en Pagos pendientes"
+            className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 text-sm hover:bg-orange-200 disabled:opacity-50">
+            {saveMut.isPending ? "Guardando..." : "Guardar como borrador"}
+          </button>
           <button onClick={handleSubmit} disabled={saveMut.isPending}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
             {saveMut.isPending ? "Guardando..." : "Crear pago"}
