@@ -7,9 +7,15 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { formatEur } from "@/lib/utils"
-import type { Alumno, Pagador, Grupo } from "@/types"
+import type { Alumno, Pagador, Grupo, Marca } from "@/types"
+
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
 
 interface RowState {
+  marca: Marca | ""
   alumno: number | ""
   pagador: number | ""
   grupo: number | ""
@@ -17,6 +23,12 @@ interface RowState {
 
 function suggestedState(row: SugerenciaRow): RowState {
   return {
+    // marca isn't a "suggestion" from fuzzy matching — it's the pago's
+    // already-stored value (correct for CSV imports, possibly wrong for a
+    // manually-created draft that predates the required-marca fix). Shown
+    // pre-filled for review, not forced blank, since there's already a
+    // real value to show — but still changeable and still required.
+    marca: row.pago.marca,
     alumno: row.sugerencia_alumno?.id ?? "",
     pagador: row.sugerencia_pagador?.id ?? "",
     grupo: row.sugerencia_grupo?.id ?? "",
@@ -64,13 +76,14 @@ export default function PagosPendientesPage() {
     return { ...suggestedState(row), ...overrides[row.pago.id] }
   }
 
-  function setField(pagoId: number, field: keyof RowState, value: number | "") {
+  function setField<K extends keyof RowState>(pagoId: number, field: K, value: RowState[K]) {
     setOverrides(prev => ({ ...prev, [pagoId]: { ...prev[pagoId], [field]: value } }))
   }
 
   const saveMut = useMutation({
     mutationFn: ({ pagoId, state }: { pagoId: number; state: RowState }) =>
       pagosApi.update(pagoId, {
+        marca: state.marca as Marca,
         alumno: state.alumno as number,
         pagador: state.pagador as number,
         grupo: state.grupo === "" ? null : (state.grupo as number),
@@ -91,7 +104,7 @@ export default function PagosPendientesPage() {
   })
 
   function canSave(state: RowState) {
-    return state.alumno !== "" && state.pagador !== ""
+    return state.marca !== "" && state.alumno !== "" && state.pagador !== ""
   }
 
   const pending = rows.filter(r => !savedIds.has(r.pago.id))
@@ -162,6 +175,16 @@ export default function PagosPendientesPage() {
               {rowError[p.id] && (
                 <p className="text-red-600 text-xs bg-red-50 border border-red-200 p-2 rounded-lg mb-3">{rowError[p.id]}</p>
               )}
+
+              <div className="mb-3 max-w-xs">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+                <select disabled={saved} value={s.marca}
+                  onChange={e => setField(p.id, "marca", e.target.value as Marca)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100">
+                  <option value="">Seleccionar...</option>
+                  {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>

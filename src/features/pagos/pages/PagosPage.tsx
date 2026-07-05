@@ -30,7 +30,13 @@ function Badge({ estado }: { estado: string }) {
   )
 }
 
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
+
 const emptyForm = () => ({
+  marca: "" as Marca | "",
   alumno: "" as number | "",
   pagador: "" as number | "",
   grupo: "" as number | "",
@@ -109,6 +115,7 @@ export default function PagosPage() {
     mutationFn: (borrador: boolean) => {
       const importe = parseFloat(form.mensualidad) || 0
       return pagosApi.create({
+        marca: form.marca as Marca,
         alumno: form.alumno === "" ? null : form.alumno,
         pagador: form.pagador === "" ? null : form.pagador,
         ...(form.grupo !== "" ? { grupo: form.grupo as number } : {}),
@@ -134,6 +141,7 @@ export default function PagosPage() {
   })
 
   function handleSubmit() {
+    if (!form.marca) { setFormError("Elige la marca/emisor antes de guardar."); return }
     if (!form.alumno || !form.pagador || !form.periodo || !form.mensualidad) {
       setFormError("Alumno, pagador, periodo e importe son obligatorios.")
       return
@@ -143,6 +151,7 @@ export default function PagosPage() {
   }
 
   function handleSaveDraft() {
+    if (!form.marca) { setFormError("Elige la marca/emisor antes de guardar, incluso como borrador."); return }
     if (!form.periodo) {
       setFormError("El periodo es obligatorio, incluso para un borrador.")
       return
@@ -184,6 +193,17 @@ export default function PagosPage() {
           {formError && (
             <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{formError}</p>
           )}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+            <select
+              value={form.marca}
+              onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Seleccionar...</option>
+              {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Alumno *</label>

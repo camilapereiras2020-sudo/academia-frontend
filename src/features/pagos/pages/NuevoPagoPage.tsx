@@ -6,9 +6,13 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { tarifasApi } from "@/features/tarifas/api"
-import type { Tarifa } from "@/types"
+import type { Tarifa, Marca } from "@/types"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
 
 // Tarifas with no fixed price — amount stays manually editable when one of these is selected.
 function tarifaAmountIsEditable(t: Tarifa | undefined) {
@@ -33,6 +37,7 @@ export default function NuevoPagoPage() {
   const grupos = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
   const tarifas: Tarifa[] = Array.isArray(tarifasRaw) ? tarifasRaw : (tarifasRaw as any)?.results || []
 
+  const [marca, setMarca] = useState<Marca | "">("")
   const [alumno, setAlumno] = useState<number | "">("")
   const [pagador, setPagador] = useState<number | "">("")
   const [grupo, setGrupo] = useState<number | "">("")
@@ -66,6 +71,7 @@ export default function NuevoPagoPage() {
 
   const saveMut = useMutation({
     mutationFn: (borrador: boolean) => pagosApi.create({
+      marca: marca as Marca,
       alumno: alumno === "" ? null : alumno,
       pagador: pagador === "" ? null : pagador,
       grupo: grupo || null,
@@ -85,6 +91,7 @@ export default function NuevoPagoPage() {
   })
 
   function handleSubmit() {
+    if (!marca) { setError("Elige la marca/emisor antes de guardar."); return }
     if (!alumno || !pagador || !periodo) { setError("Completa todos los campos obligatorios"); return }
     setError("")
     saveMut.mutate(false)
@@ -92,8 +99,9 @@ export default function NuevoPagoPage() {
 
   function handleSaveDraft() {
     // Same relaxation as a bulk-imported draft: alumno/pagador/grupo can
-    // stay blank, only periodo/metodo/total (already defaulted above) are
-    // needed to satisfy the backend's required fields.
+    // stay blank, only periodo/metodo/total (already defaulted above) and
+    // marca (never defaulted — see PagoSerializer) are needed.
+    if (!marca) { setError("Elige la marca/emisor antes de guardar, incluso como borrador."); return }
     if (!periodo) { setError("El periodo es obligatorio, incluso para un borrador."); return }
     setError("")
     saveMut.mutate(true)
@@ -105,6 +113,15 @@ export default function NuevoPagoPage() {
 
       <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
         {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+          <select value={marca} onChange={e => setMarca(e.target.value as Marca)}
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Seleccionar...</option>
+            {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
