@@ -27,14 +27,21 @@ function age(fnac: string | null) {
 
 interface HorarioSlot { dia: number; ini: string; fin: string; grupoId: number }
 
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
+
 interface FormState {
   nombre: string; fnac: string; telefono: string; email: string; notas: string
+  marca: Marca | ""
   pagador: number | null; aviso_cumple_dias: number | null
   grupos: number[]; horarios: HorarioSlot[]
 }
 
 const emptyForm = (): FormState => ({
   nombre: "", fnac: "", telefono: "", email: "", notas: "",
+  marca: "",
   pagador: null, aviso_cumple_dias: null, grupos: [], horarios: [],
 })
 
@@ -76,6 +83,7 @@ export default function AlumnosPage() {
       const payload = {
         nombre: f.nombre, fnac: f.fnac || null, telefono: f.telefono,
         email: f.email, notas: f.notas, pagador: f.pagador,
+        marca: f.marca as Marca,
         aviso_cumple_dias: f.aviso_cumple_dias,
       }
       const res = editing
@@ -105,6 +113,7 @@ export default function AlumnosPage() {
     setForm({
       nombre: a.nombre, fnac: a.fnac ?? "", telefono: a.telefono ?? "",
       email: a.email ?? "", notas: a.notas ?? "",
+      marca: a.marca,
       pagador: a.pagador ?? null, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
       grupos: (a.grupos_detalle ?? []).map(g => g.grupo),
       horarios: (a.grupos_detalle ?? []).flatMap(g =>
@@ -142,6 +151,7 @@ export default function AlumnosPage() {
 
   function handleSubmit() {
     if (!form.nombre.trim()) { setFormError("El nombre es obligatorio."); return }
+    if (!form.marca) { setFormError("Elige la marca/emisor antes de guardar."); return }
     setFormError("")
     saveMut.mutate(form)
   }
@@ -319,6 +329,14 @@ export default function AlumnosPage() {
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre *</label>
                     <input type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+                    <select value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">Seleccionar...</option>
+                      {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha de nacimiento</label>
