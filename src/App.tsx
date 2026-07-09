@@ -22,6 +22,7 @@ import FlashcardGame from "@/features/games/pages/FlashcardGame"
 import MemoryMatch from "@/features/games/pages/MemoryMatch"
 import WordScramble from "@/features/games/pages/WordScramble"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
+import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 
 export default function App() {
   return (
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/pendientes" element={<PendientesPage />} />
           <Route path="/crm" element={<CRMPage />} />
+          <Route path="/whatsapp-respuestas" element={<WhatsAppReplyPage />} />
           <Route path="/juegos/vocab" element={<VocabGame />} />
           <Route path="/juegos/flashcards" element={<FlashcardGame />} />
           <Route path="/juegos/memoria" element={<MemoryMatch />} />
