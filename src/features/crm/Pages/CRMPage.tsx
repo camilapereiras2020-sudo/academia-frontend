@@ -152,6 +152,7 @@ export default function CRMPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<LeadForm>(emptyLeadForm())
   const [formError, setFormError] = useState("")
+  const [originalTelefono, setOriginalTelefono] = useState("")
 
   // matricular (convertir a alumno) modal
   const [matricularLead, setMatricularLead] = useState<Lead | null>(null)
@@ -261,7 +262,7 @@ export default function CRMPage() {
   // ── handlers ──────────────────────────────────────────────────────────────
 
   function openNew() {
-    setEditingId(null); setForm(emptyLeadForm()); setFormError(""); setShowModal(true)
+    setEditingId(null); setForm(emptyLeadForm()); setOriginalTelefono(""); setFormError(""); setShowModal(true)
   }
 
   function openEdit(lead: Lead) {
@@ -278,6 +279,7 @@ export default function CRMPage() {
       es_adulto: lead.es_adulto ?? false,
       pagador_es_alumno: lead.pagador_es_alumno ?? false,
     })
+    setOriginalTelefono(lead.telefono ?? "")
     setFormError(""); setShowModal(true)
   }
 
@@ -288,7 +290,7 @@ export default function CRMPage() {
       setFormError("Nombre del contacto y del alumno son obligatorios.")
       return
     }
-    if (form.telefono.trim() && !isValidSpanishPhone(form.telefono)) {
+    if (form.telefono.trim() && form.telefono !== originalTelefono && !isValidSpanishPhone(form.telefono)) {
       setFormError("El teléfono debe tener 9 dígitos y empezar por 6, 7 o 9.")
       return
     }
