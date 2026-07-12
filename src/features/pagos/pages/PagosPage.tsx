@@ -90,10 +90,7 @@ export default function PagosPage() {
   })
 
   const generarMut = useMutation({
-    mutationFn: (p: Pago) => {
-      const tipo = ["transferencia", "tarjeta"].includes(p.metodo) ? "factura" : "recibo"
-      return documentosApi.generar(p.id, tipo as "factura" | "recibo")
-    },
+    mutationFn: (p: Pago) => documentosApi.generar(p.id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos"] }),
   })
 

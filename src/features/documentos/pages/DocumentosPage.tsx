@@ -8,17 +8,23 @@ type Documento = {
   tipo: string
   num_doc: string
   created_at: string
+  estado: string
   pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number }
 }
 
 const TIPO_CLS: Record<string, string> = {
-  factura: "bg-blue-100 text-blue-800",
-  recibo:  "bg-purple-100 text-purple-800",
+  factura:          "bg-blue-100 text-blue-800",
+  recibo:           "bg-purple-100 text-purple-800",
+  recibo_efectivo:  "bg-amber-100 text-amber-800",
+}
+const TIPO_LABEL: Record<string, string> = {
+  factura: "Facturas", recibo: "Recibos", recibo_efectivo: "Recibos (efectivo)",
 }
 
 export default function DocumentosPage() {
   const qc = useQueryClient()
   const [tipoFilter, setTipoFilter] = useState("")
+  const [mostrarAnuladas, setMostrarAnuladas] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
 
@@ -27,7 +33,9 @@ export default function DocumentosPage() {
     queryFn: () => api.get("/documentos/").then(r => r.data),
   })
   const all: Documento[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
-  const docs = tipoFilter ? all.filter(d => d.tipo === tipoFilter) : all
+  const anuladasCount = all.filter(d => d.estado === "anulada").length
+  const visibles = mostrarAnuladas ? all : all.filter(d => d.estado !== "anulada")
+  const docs = tipoFilter ? visibles.filter(d => d.tipo === tipoFilter) : visibles
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => api.delete(`/documentos/${id}/`),
@@ -62,22 +70,30 @@ export default function DocumentosPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Documentos</h1>
-          <p className="text-sm text-slate-500 mt-1">{all.length} documentos generados</p>
+          <p className="text-sm text-slate-500 mt-1">{visibles.length} documentos generados</p>
         </div>
       </div>
 
       {/* Filter */}
-      <div className="flex gap-2 mb-5">
-        {["", "factura", "recibo"].map(v => (
+      <div className="flex gap-2 mb-5 flex-wrap items-center">
+        {["", "factura", "recibo", "recibo_efectivo"].map(v => (
           <button key={v} onClick={() => setTipoFilter(v)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               tipoFilter === v
                 ? "bg-slate-800 text-white border-slate-800"
                 : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
             }`}>
-            {v === "" ? "Todos" : v === "factura" ? "Facturas" : "Recibos"}
+            {v === "" ? "Todos" : TIPO_LABEL[v]}
           </button>
         ))}
+        <button onClick={() => setMostrarAnuladas(m => !m)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ml-auto ${
+            mostrarAnuladas
+              ? "bg-red-600 text-white border-red-600"
+              : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+          }`}>
+          {mostrarAnuladas ? "✓ Mostrando anuladas" : `Mostrar anuladas${anuladasCount ? ` (${anuladasCount})` : ""}`}
+        </button>
       </div>
 
       {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
@@ -87,27 +103,34 @@ export default function DocumentosPage() {
           <span className="text-5xl mb-3">📁</span>
           <p className="text-sm">
             {tipoFilter
-              ? `Sin ${tipoFilter}s generados.`
-              : "Sin documentos. Genera facturas o recibos desde Pagos."}
+              ? `Sin ${TIPO_LABEL[tipoFilter].toLowerCase()} generados.`
+              : mostrarAnuladas
+                ? "Sin documentos."
+                : "Sin documentos. Genera facturas o recibos desde Pagos."}
           </p>
         </div>
       )}
 
       <div className="space-y-2">
         {docs.map(d => (
-          <div key={d.id} className="bg-white rounded-xl border shadow-sm p-4 flex items-center justify-between flex-wrap gap-3">
+          <div key={d.id} className={`bg-white rounded-xl border shadow-sm p-4 flex items-center justify-between flex-wrap gap-3 ${d.estado === "anulada" ? "opacity-60" : ""}`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-base flex-shrink-0">
                 {d.tipo === "factura" ? "🧾" : "📄"}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-slate-800 font-mono text-sm">
+                  <span className={`font-semibold text-slate-800 font-mono text-sm ${d.estado === "anulada" ? "line-through" : ""}`}>
                     {d.num_doc || d.nombre}
                   </span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIPO_CLS[d.tipo] ?? "bg-slate-100 text-slate-600"}`}>
                     {d.tipo}
                   </span>
+                  {d.estado === "anulada" && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                      ANULADA
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5 truncate">
                   {d.pago_info

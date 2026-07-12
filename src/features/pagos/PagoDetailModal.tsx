@@ -111,10 +111,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   })
 
   const generarMut = useMutation({
-    mutationFn: () => {
-      const tipo = ["transferencia", "tarjeta"].includes(pago.metodo) ? "factura" : "recibo"
-      return documentosApi.generar(pago.id, tipo as "factura" | "recibo")
-    },
+    mutationFn: () => documentosApi.generar(pago.id),
     onSuccess: async () => {
       const fresh = await pagosApi.get(pago.id)
       setPago(fresh.data)
