@@ -32,7 +32,9 @@ export const documentosApi = {
     if (params?.tipo) qs.append("tipo", params.tipo)
     return api.get(`/documentos/?${qs}`)
   },
-  generar: (pago_id: number, tipo: "factura" | "recibo") =>
-    api.post("/documentos/generar/", { pago_id, tipo }),
+  // tipo is decided server-side from pago.metodo (factura/recibo/recibo_efectivo)
+  // — the client used to guess it and could get it wrong (e.g. bizum).
+  generar: (pago_id: number) =>
+    api.post("/documentos/generar/", { pago_id }),
   delete: (id: number) => api.delete(`/documentos/${id}/`),
 }
