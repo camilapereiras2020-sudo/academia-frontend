@@ -27,6 +27,9 @@ export default function DocumentosPage() {
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
+  const [confirmAnular, setConfirmAnular] = useState<Documento | null>(null)
+  const [motivoAnulacion, setMotivoAnulacion] = useState("")
+  const [actionError, setActionError] = useState("")
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ["documentos"],
@@ -37,9 +40,28 @@ export default function DocumentosPage() {
   const visibles = mostrarAnuladas ? all : all.filter(d => d.estado !== "anulada")
   const docs = tipoFilter ? visibles.filter(d => d.tipo === tipoFilter) : visibles
 
+  // Only a "borrador" (never actually issued — no Drive file) can be hard
+  // deleted; the backend rejects deleting anything else with a 409. Every
+  // real invoice/receipt must be voided instead, which keeps its num_doc
+  // and audit trail intact for tax purposes.
   const deleteMut = useMutation({
     mutationFn: (id: number) => api.delete(`/documentos/${id}/`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documentos"] }); setConfirmDelete(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documentos"] }); setConfirmDelete(null); setActionError("") },
+    onError: (err: any) =>
+      setActionError(err.response?.data?.error ?? "Error al eliminar el documento."),
+  })
+
+  const anularMut = useMutation({
+    mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
+      api.post(`/documentos/${id}/anular/`, { motivo_anulacion: motivo }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documentos"] })
+      setConfirmAnular(null)
+      setMotivoAnulacion("")
+      setActionError("")
+    },
+    onError: (err: any) =>
+      setActionError(err.response?.data?.error ?? "Error al anular el documento."),
   })
 
   async function handleDescargar(d: Documento) {
@@ -154,11 +176,20 @@ export default function DocumentosPage() {
                 className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50">
                 {downloadingId === d.id ? "..." : "📥 Descargar"}
               </button>
-              <button
-                onClick={() => setConfirmDelete(d)}
-                className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
-                ✕
-              </button>
+              {d.estado === "anulada" ? null : d.estado === "borrador" ? (
+                <button
+                  onClick={() => { setActionError(""); setConfirmDelete(d) }}
+                  className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
+                  ✕
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setActionError(""); setMotivoAnulacion(""); setConfirmAnular(d) }}
+                  title="Anular (mantiene el número en la secuencia, a efectos fiscales)"
+                  className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
+                  Anular
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -183,6 +214,38 @@ export default function DocumentosPage() {
                 {deleteMut.isPending ? "Eliminando..." : "Eliminar"}
               </button>
             </div>
+            {actionError && <p className="text-red-600 text-xs mt-3">{actionError}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Anular modal */}
+      {confirmAnular && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-slate-800 mb-1">Anular documento</h3>
+            <p className="text-sm text-slate-500 mb-1">
+              ¿Anular <strong>{confirmAnular.num_doc || confirmAnular.nombre}</strong>?
+            </p>
+            <p className="text-xs text-slate-400 mb-3">
+              El número queda reservado y el PDF se conserva marcado como ANULADA — no se elimina nada, para mantener la secuencia intacta a efectos fiscales.
+            </p>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Motivo (obligatorio)</label>
+            <textarea value={motivoAnulacion} onChange={e => setMotivoAnulacion(e.target.value)} rows={2}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmAnular(null)}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                Cancelar
+              </button>
+              <button
+                onClick={() => anularMut.mutate({ id: confirmAnular.id, motivo: motivoAnulacion.trim() })}
+                disabled={anularMut.isPending || !motivoAnulacion.trim()}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                {anularMut.isPending ? "Anulando..." : "Anular"}
+              </button>
+            </div>
+            {actionError && <p className="text-red-600 text-xs mt-3">{actionError}</p>}
           </div>
         </div>
       )}
