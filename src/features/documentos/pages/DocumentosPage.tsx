@@ -30,7 +30,7 @@ const TIPO_LABEL: Record<string, string> = {
 export default function DocumentosPage() {
   const qc = useQueryClient()
   const [tipoFilter, setTipoFilter] = useState("")
-  const [mostrarAnuladas, setMostrarAnuladas] = useState(false)
+  const [estadoTab, setEstadoTab] = useState<"activas" | "anuladas">("activas")
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
   const [confirmAnular, setConfirmAnular] = useState<Documento | null>(null)
@@ -42,8 +42,9 @@ export default function DocumentosPage() {
     queryFn: () => api.get("/documentos/").then(r => r.data),
   })
   const all: Documento[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
+  const activasCount = all.filter(d => d.estado !== "anulada").length
   const anuladasCount = all.filter(d => d.estado === "anulada").length
-  const visibles = mostrarAnuladas ? all : all.filter(d => d.estado !== "anulada")
+  const visibles = all.filter(d => (estadoTab === "anuladas" ? d.estado === "anulada" : d.estado !== "anulada"))
   const docs = tipoFilter ? visibles.filter(d => d.tipo === tipoFilter) : visibles
 
   // Only a "borrador" (never actually issued — no Drive file) can be hard
@@ -115,14 +116,21 @@ export default function DocumentosPage() {
             {v === "" ? "Todos" : TIPO_LABEL[v]}
           </button>
         ))}
-        <button onClick={() => setMostrarAnuladas(m => !m)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ml-auto ${
-            mostrarAnuladas
-              ? "bg-red-600 text-white border-red-600"
-              : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-          }`}>
-          {mostrarAnuladas ? "✓ Mostrando anuladas" : `Mostrar anuladas${anuladasCount ? ` (${anuladasCount})` : ""}`}
-        </button>
+        <div className="flex gap-2 ml-auto">
+          {([
+            ["activas", `Activas (${activasCount})`],
+            ["anuladas", `Anuladas (${anuladasCount})`],
+          ] as const).map(([value, label]) => (
+            <button key={value} onClick={() => setEstadoTab(value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                estadoTab === value
+                  ? value === "anuladas" ? "bg-red-600 text-white border-red-600" : "bg-slate-800 text-white border-slate-800"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
@@ -133,8 +141,8 @@ export default function DocumentosPage() {
           <p className="text-sm">
             {tipoFilter
               ? `Sin ${TIPO_LABEL[tipoFilter].toLowerCase()} generados.`
-              : mostrarAnuladas
-                ? "Sin documentos."
+              : estadoTab === "anuladas"
+                ? "Sin documentos anulados."
                 : "Sin documentos. Genera facturas o recibos desde Pagos."}
           </p>
         </div>
