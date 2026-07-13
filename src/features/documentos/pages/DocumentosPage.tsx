@@ -8,8 +8,14 @@ type Documento = {
   tipo: string
   num_doc: string
   created_at: string
+  emitida_at: string | null
   estado: string
-  pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number }
+  pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
+}
+
+function formatFecha(iso: string | null, opts?: Intl.DateTimeFormatOptions) {
+  if (!iso) return "—"
+  return new Date(iso).toLocaleString("es-ES", opts ?? { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
 const TIPO_CLS: Record<string, string> = {
@@ -160,12 +166,12 @@ export default function DocumentosPage() {
                     ? `${d.pago_info.alumno} · ${d.pago_info.pagador} · ${d.pago_info.periodo} · ${Number(d.pago_info.total).toFixed(2)} €`
                     : null
                   }
-                  {d.pago_info ? " · " : null}
-                  <span className="text-slate-400">
-                    {new Date(d.created_at).toLocaleString("es-ES", {
-                      day: "2-digit", month: "2-digit", year: "numeric",
-                      hour: "2-digit", minute: "2-digit"
-                    })}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  <span title="Cuándo pagó el cliente">Fecha de pago: {formatFecha(d.pago_info?.fecha ?? null)}</span>
+                  <span className="mx-1.5">·</span>
+                  <span title="Cuándo se emitió este documento/PDF">
+                    Fecha de emisión: {formatFecha(d.emitida_at, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </p>
               </div>

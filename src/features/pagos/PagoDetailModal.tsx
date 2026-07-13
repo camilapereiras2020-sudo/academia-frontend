@@ -14,6 +14,12 @@ interface Documento {
   nombre: string
   tipo: string
   num_doc: string
+  emitida_at: string | null
+}
+
+function formatFechaEmision(iso: string | null) {
+  if (!iso) return "—"
+  return new Date(iso).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
 }
 
 // Tarifas with no fixed price — amount stays manually editable when one of these is selected.
@@ -307,10 +313,15 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">{pago.num_doc}</span>
                   {docs.map(d => (
-                    <button key={d.id} onClick={() => handleDescargar(d)} disabled={downloadingId === d.id}
-                      className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50">
-                      {downloadingId === d.id ? "..." : "📥 Ver / Descargar (Ctrl+P para imprimir)"}
-                    </button>
+                    <span key={d.id} className="inline-flex items-center gap-2">
+                      <button onClick={() => handleDescargar(d)} disabled={downloadingId === d.id}
+                        className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50">
+                        {downloadingId === d.id ? "..." : "📥 Ver / Descargar (Ctrl+P para imprimir)"}
+                      </button>
+                      <span className="text-xs text-slate-400" title="Cuándo se emitió este documento/PDF">
+                        Fecha de emisión: {formatFechaEmision(d.emitida_at)}
+                      </span>
+                    </span>
                   ))}
                 </div>
               ) : (
