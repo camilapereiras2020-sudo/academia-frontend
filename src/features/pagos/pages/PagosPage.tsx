@@ -4,7 +4,7 @@ import { pagosApi, documentosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
-import { formatEur, formatMonth } from "@/lib/utils"
+import { formatEur, formatMonth, formatDate } from "@/lib/utils"
 import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
 import PagoDetailModal from "../PagoDetailModal"
 
@@ -283,7 +283,7 @@ export default function PagosPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b">
               <tr>
-                {["Alumno", "Pagador", "Periodo", "Importe", "Método", "Doc", "Estado", ""].map(h => (
+                {["Alumno", "Pagador", "Periodo", "Fecha de pago", "Importe", "Método", "Doc", "Estado", ""].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-500 font-semibold whitespace-nowrap">
                     {h}
                   </th>
@@ -296,6 +296,7 @@ export default function PagosPage() {
                   <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{formatEur(Number(p.total))}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
                   <td className="px-4 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
