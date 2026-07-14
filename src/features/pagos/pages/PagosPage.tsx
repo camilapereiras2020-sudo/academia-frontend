@@ -8,6 +8,7 @@ import { gruposApi } from "@/features/grupos/api"
 import { formatEur, formatMonth, formatDate } from "@/lib/utils"
 import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
 import PagoDetailModal from "../PagoDetailModal"
+import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 
 const METODOS = ["efectivo", "bizum", "transferencia", "domiciliacion"] as const
 const METODO_LABEL: Record<string, string> = {
@@ -68,6 +69,8 @@ export default function PagosPage() {
     }).then(r => r.data),
   })
   const pagos: Pago[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
+
+  useSetActiveBrand(selectedPago?.marca || (showForm && form.marca) || marcaFilter || null)
 
   const { data: sugerencias } = useQuery({
     queryKey: ["pagos-sugerencias"],

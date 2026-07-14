@@ -7,6 +7,7 @@ import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { tarifasApi } from "@/features/tarifas/api"
 import type { Tarifa, Marca } from "@/types"
+import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
 const MARCAS: { value: Marca; label: string }[] = [
@@ -38,6 +39,7 @@ export default function NuevoPagoPage() {
   const tarifas: Tarifa[] = Array.isArray(tarifasRaw) ? tarifasRaw : (tarifasRaw as any)?.results || []
 
   const [marca, setMarca] = useState<Marca | "">("")
+  useSetActiveBrand(marca || null)
   const [alumno, setAlumno] = useState<number | "">("")
   const [pagador, setPagador] = useState<number | "">("")
   const [grupo, setGrupo] = useState<number | "">("")

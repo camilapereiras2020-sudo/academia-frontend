@@ -7,6 +7,7 @@ import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import type { Alumno, Pagador, Grupo, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
+import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
@@ -62,6 +63,8 @@ export default function AlumnosPage() {
     queryFn: () => alumnosApi.list({ search: search || undefined, marca: marcaFilter || undefined }).then(r => r.data),
   })
   const alumnos: Alumno[] = Array.isArray(alumnosRaw) ? alumnosRaw : []
+
+  useSetActiveBrand((showModal && form.marca) || marcaFilter || null)
 
   useEffect(() => {
     const openId = searchParams.get("openId")
