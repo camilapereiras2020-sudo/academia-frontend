@@ -86,6 +86,49 @@ const etapaInfo = (v: string) => ETAPAS.find(e => e.value === v) ?? { label: v, 
 
 const isValidSpanishPhone = (v: string) => /^[679]\d{8}$/.test(v.replace(/\s/g, ""))
 
+function buildWhatsappContext(lead: Lead): string {
+  const lineas: string[] = []
+
+  if (!lead.es_adulto && lead.nombre_contacto) {
+    lineas.push(`Contacto: ${lead.nombre_contacto}.`)
+  }
+
+  if (lead.es_adulto) {
+    lineas.push(`Alumno adulto: ${lead.nombre_alumno}.`)
+  } else {
+    const detalleAlumno = [
+      lead.edad_alumno ? `${lead.edad_alumno} años` : null,
+      lead.curso_escolar || null,
+    ].filter(Boolean).join(", ")
+    lineas.push(`Alumno: ${lead.nombre_alumno}${detalleAlumno ? `, ${detalleAlumno}` : ""}.`)
+  }
+
+  if (lead.objetivo && lead.objetivo !== "general") {
+    lineas.push(`Objetivo: ${lead.objetivo_display}.`)
+  }
+
+  if (lead.origen_display) {
+    lineas.push(`Canal: ${lead.origen_display}.`)
+  }
+
+  if (lead.necesidades_especiales) {
+    lineas.push(`Necesidades especiales: ${lead.necesidades_especiales}.`)
+  }
+
+  if (lead.notas) {
+    lineas.push(`Notas de seguimiento: ${lead.notas.trim().replace(/[.!?]$/, "")}.`)
+  }
+
+  const ultima = lead.interacciones?.[0]
+  if (ultima) {
+    const tipoLabel = TIPOS_INTERACCION.find(t => t.value === ultima.tipo)?.label ?? ultima.tipo
+    const fecha = new Date(ultima.fecha).toLocaleDateString("es-ES")
+    lineas.push(`Última interacción (${tipoLabel}, ${fecha}): ${ultima.resumen.trim().replace(/[.!?]$/, "")}.`)
+  }
+
+  return lineas.join(" ")
+}
+
 // ── component ──────────────────────────────────────────────────────────────
 
 export default function CRMPage() {
@@ -109,6 +152,7 @@ export default function CRMPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<LeadForm>(emptyLeadForm())
   const [formError, setFormError] = useState("")
+  const [originalTelefono, setOriginalTelefono] = useState("")
 
   // matricular (convertir a alumno) modal
   const [matricularLead, setMatricularLead] = useState<Lead | null>(null)
@@ -218,7 +262,7 @@ export default function CRMPage() {
   // ── handlers ──────────────────────────────────────────────────────────────
 
   function openNew() {
-    setEditingId(null); setForm(emptyLeadForm()); setFormError(""); setShowModal(true)
+    setEditingId(null); setForm(emptyLeadForm()); setOriginalTelefono(""); setFormError(""); setShowModal(true)
   }
 
   function openEdit(lead: Lead) {
@@ -235,6 +279,7 @@ export default function CRMPage() {
       es_adulto: lead.es_adulto ?? false,
       pagador_es_alumno: lead.pagador_es_alumno ?? false,
     })
+    setOriginalTelefono(lead.telefono ?? "")
     setFormError(""); setShowModal(true)
   }
 
@@ -245,7 +290,7 @@ export default function CRMPage() {
       setFormError("Nombre del contacto y del alumno son obligatorios.")
       return
     }
-    if (form.telefono.trim() && !isValidSpanishPhone(form.telefono)) {
+    if (form.telefono.trim() && form.telefono !== originalTelefono && !isValidSpanishPhone(form.telefono)) {
       setFormError("El teléfono debe tener 9 dígitos y empezar por 6, 7 o 9.")
       return
     }
@@ -468,6 +513,15 @@ export default function CRMPage() {
                     <span className="text-slate-700 text-xs">{value as string}</span>
                   </div>
                 ))}
+              </div>
+
+              {/* WhatsApp reply generator */}
+              <div className="px-5 py-4 border-b">
+                <button
+                  onClick={() => navigate("/whatsapp-respuestas", { state: { context: buildWhatsappContext(detalle) } })}
+                  className="w-full px-3 py-1.5 border rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  💬 Generar respuesta WhatsApp
+                </button>
               </div>
 
               {/* Change stage */}

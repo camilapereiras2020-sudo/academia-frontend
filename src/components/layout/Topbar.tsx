@@ -15,6 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/cumpleanos': 'Cumpleaños',
   '/documentos': 'Documentos',
   '/crm': 'CRM',
+  '/whatsapp-respuestas': 'Respuestas WhatsApp',
   '/config': 'Configuración',
 }
 

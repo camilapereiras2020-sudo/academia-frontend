@@ -81,10 +81,11 @@ export default function DocumentosPage() {
       })
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
+      const cliente = d.pago_info?.alumno || d.pago_info?.pagador || ""
+      const filename = `${d.num_doc}${cliente ? " " + cliente : ""}.pdf`.replace(/[\\/:*?"<>|]/g, "")
       const a = document.createElement("a")
       a.href = url
-      a.target = "_blank"
-      a.rel = "noopener noreferrer"
+      a.download = filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)

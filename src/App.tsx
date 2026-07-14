@@ -11,6 +11,7 @@ import GrupoDetailPage from "@/features/grupos/pages/GrupoDetailPage"
 import AsistenciaPage from "@/features/asistencia/pages/AsistenciaPage"
 import PagosPage from "@/features/pagos/pages/PagosPage"
 import NuevoPagoPage from "@/features/pagos/pages/NuevoPagoPage"
+import PagosPendientesPage from "@/features/pagos/pages/PagosPendientesPage"
 import CumpleanosPage from "@/features/cumpleanos/pages/CumpleanosPage"
 import DocumentosPage from "@/features/documentos/pages/DocumentosPage"
 import ConfigPage from "@/features/config/pages/ConfigPage"
@@ -21,6 +22,7 @@ import FlashcardGame from "@/features/games/pages/FlashcardGame"
 import MemoryMatch from "@/features/games/pages/MemoryMatch"
 import WordScramble from "@/features/games/pages/WordScramble"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
+import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 
 export default function App() {
   return (
@@ -38,11 +40,13 @@ export default function App() {
           <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/pagos" element={<PagosPage />} />
           <Route path="/pagos/nuevo" element={<NuevoPagoPage />} />
+          <Route path="/pagos/pendientes" element={<PagosPendientesPage />} />
           <Route path="/cumpleanos" element={<CumpleanosPage />} />
           <Route path="/documentos" element={<DocumentosPage />} />
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/pendientes" element={<PendientesPage />} />
           <Route path="/crm" element={<CRMPage />} />
+          <Route path="/whatsapp-respuestas" element={<WhatsAppReplyPage />} />
           <Route path="/juegos/vocab" element={<VocabGame />} />
           <Route path="/juegos/flashcards" element={<FlashcardGame />} />
           <Route path="/juegos/memoria" element={<MemoryMatch />} />

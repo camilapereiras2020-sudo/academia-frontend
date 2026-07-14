@@ -6,9 +6,14 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { tarifasApi } from "@/features/tarifas/api"
-import type { Tarifa } from "@/types"
+import type { Tarifa, Marca } from "@/types"
+import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
 
 // Tarifas with no fixed price — amount stays manually editable when one of these is selected.
 function tarifaAmountIsEditable(t: Tarifa | undefined) {
@@ -33,6 +38,8 @@ export default function NuevoPagoPage() {
   const grupos = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
   const tarifas: Tarifa[] = Array.isArray(tarifasRaw) ? tarifasRaw : (tarifasRaw as any)?.results || []
 
+  const [marca, setMarca] = useState<Marca | "">("")
+  useSetActiveBrand(marca || null)
   const [alumno, setAlumno] = useState<number | "">("")
   const [pagador, setPagador] = useState<number | "">("")
   const [grupo, setGrupo] = useState<number | "">("")
@@ -65,24 +72,41 @@ export default function NuevoPagoPage() {
   const total = mensualidad - descuento + extrasTotal
 
   const saveMut = useMutation({
-    mutationFn: () => pagosApi.create({
-      alumno: alumno as number, pagador: pagador as number, grupo: grupo || null,
+    mutationFn: (borrador: boolean) => pagosApi.create({
+      marca: marca as Marca,
+      alumno: alumno === "" ? null : alumno,
+      pagador: pagador === "" ? null : pagador,
+      grupo: grupo || null,
       tarifa: tarifa || null,
       periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
       horas_trabajadas: horas === "" ? 0 : horas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
+      ...(borrador ? { guardar_como_borrador: true } : {}),
     }),
-    onSuccess: () => {
+    onSuccess: (_res, borrador) => {
       qc.invalidateQueries({ queryKey: ["pagos"] })
       qc.invalidateQueries({ queryKey: ["pagos-pendientes"] })
-      navigate("/pagos")
+      qc.invalidateQueries({ queryKey: ["pagos-sugerencias"] })
+      navigate(borrador ? "/pagos/pendientes" : "/pagos")
     },
-    onError: () => setError("Error al crear el pago. Verifica todos los campos."),
+    onError: () => setError("Error al guardar el pago. Verifica todos los campos."),
   })
 
   function handleSubmit() {
+    if (!marca) { setError("Elige la marca/emisor antes de guardar."); return }
     if (!alumno || !pagador || !periodo) { setError("Completa todos los campos obligatorios"); return }
-    saveMut.mutate()
+    setError("")
+    saveMut.mutate(false)
+  }
+
+  function handleSaveDraft() {
+    // Same relaxation as a bulk-imported draft: alumno/pagador/grupo can
+    // stay blank, only periodo/metodo/total (already defaulted above) and
+    // marca (never defaulted — see PagoSerializer) are needed.
+    if (!marca) { setError("Elige la marca/emisor antes de guardar, incluso como borrador."); return }
+    if (!periodo) { setError("El periodo es obligatorio, incluso para un borrador."); return }
+    setError("")
+    saveMut.mutate(true)
   }
 
   return (
@@ -91,6 +115,15 @@ export default function NuevoPagoPage() {
 
       <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
         {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+          <select value={marca} onChange={e => setMarca(e.target.value as Marca)}
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Seleccionar...</option>
+            {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -211,6 +244,11 @@ export default function NuevoPagoPage() {
 
         <div className="flex justify-end gap-2">
           <button onClick={() => navigate("/pagos")} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">Cancelar</button>
+          <button onClick={handleSaveDraft} disabled={saveMut.isPending}
+            title="Guarda lo que tengas hasta ahora sin alumno/pagador/grupo definitivos — no genera factura ni reserva número, aparece en Pagos pendientes"
+            className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 text-sm hover:bg-orange-200 disabled:opacity-50">
+            {saveMut.isPending ? "Guardando..." : "Guardar como borrador"}
+          </button>
           <button onClick={handleSubmit} disabled={saveMut.isPending}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
             {saveMut.isPending ? "Guardando..." : "Crear pago"}

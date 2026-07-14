@@ -1,11 +1,17 @@
 
 import { NavLink } from "react-router-dom"
+import { useBrandStore } from "@/store/brandStore"
 import {
   LayoutDashboard, GraduationCap, Users, FolderOpen,
   CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
-  FileText, UserSearch, Building2,
+  FileText, UserSearch, Building2, MessageCircle,
   Joystick, BookOpen, Grid3X3, Shuffle
 } from "lucide-react"
+
+const LOGO_SRC = {
+  cami_and_co: "/logos/camico-logo-navy-gold.png",
+  rangers_academy: "/logos/rangers-academy-logo.png",
+} as const
 
 const NAV_SECTIONS = [
   {
@@ -32,6 +38,7 @@ const NAV_SECTIONS = [
     label: "Crecimiento",
     items: [
       { to: "/crm", icon: UserSearch, label: "CRM" },
+      { to: "/whatsapp-respuestas", icon: MessageCircle, label: "Respuestas WhatsApp" },
       { to: "/juegos/vocab", icon: Joystick, label: "Vocab Game" },
       { to: "/juegos/flashcards", icon: BookOpen, label: "Flashcards" },
       { to: "/juegos/memoria", icon: Grid3X3, label: "Memory Match" },
@@ -42,6 +49,8 @@ const NAV_SECTIONS = [
 ]
 
 export default function Sidebar() {
+  const activeBrand = useBrandStore((s) => s.activeBrand)
+  const brand = activeBrand ?? "cami_and_co"
   return (
     <aside style={{
       width: '220px',
@@ -61,15 +70,22 @@ export default function Sidebar() {
         alignItems: 'center',
         gap: '0.5rem',
       }}>
-        <img
-          src="/image.png"
-          alt="Cami&Co"
-          style={{
-            width: '80px',
-            height: 'auto',
-            opacity: 0.9,
-          }}
-        />
+        <div style={{
+          background: brand === "rangers_academy" ? "#fff" : "transparent",
+          borderRadius: brand === "rangers_academy" ? "8px" : 0,
+          padding: brand === "rangers_academy" ? "0.5rem" : 0,
+        }}>
+          <img
+            src={LOGO_SRC[brand]}
+            alt={brand === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}
+            style={{
+              width: '80px',
+              height: 'auto',
+              opacity: brand === "rangers_academy" ? 1 : 0.9,
+              display: 'block',
+            }}
+          />
+        </div>
         <div style={{
           fontSize: '0.55rem',
           letterSpacing: '0.12em',

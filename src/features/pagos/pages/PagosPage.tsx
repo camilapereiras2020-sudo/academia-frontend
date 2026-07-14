@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
@@ -7,6 +8,7 @@ import { gruposApi } from "@/features/grupos/api"
 import { formatEur, formatMonth, formatDate } from "@/lib/utils"
 import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
 import PagoDetailModal from "../PagoDetailModal"
+import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 
 const METODOS = ["efectivo", "bizum", "transferencia", "domiciliacion"] as const
 const METODO_LABEL: Record<string, string> = {
@@ -29,7 +31,13 @@ function Badge({ estado }: { estado: string }) {
   )
 }
 
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
+
 const emptyForm = () => ({
+  marca: "" as Marca | "",
   alumno: "" as number | "",
   pagador: "" as number | "",
   grupo: "" as number | "",
@@ -41,6 +49,7 @@ const emptyForm = () => ({
 
 export default function PagosPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [estadoFilter, setEstadoFilter] = useState("")
   const [periodoFilter, setPeriodoFilter] = useState("")
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
@@ -60,6 +69,14 @@ export default function PagosPage() {
     }).then(r => r.data),
   })
   const pagos: Pago[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
+
+  useSetActiveBrand(selectedPago?.marca || (showForm && form.marca) || marcaFilter || null)
+
+  const { data: sugerencias } = useQuery({
+    queryKey: ["pagos-sugerencias"],
+    queryFn: () => pagosApi.sugerencias().then(r => r.data),
+  })
+  const pendientesCount = sugerencias?.length ?? 0
 
   const { data: alumnosRaw } = useQuery({ queryKey: ["alumnos"], queryFn: () => alumnosApi.list().then(r => r.data) })
   const alumnos: Alumno[] = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results ?? []
@@ -95,11 +112,12 @@ export default function PagosPage() {
   })
 
   const createMut = useMutation({
-    mutationFn: () => {
+    mutationFn: (borrador: boolean) => {
       const importe = parseFloat(form.mensualidad) || 0
       return pagosApi.create({
-        alumno: form.alumno as number,
-        pagador: form.pagador as number,
+        marca: form.marca as Marca,
+        alumno: form.alumno === "" ? null : form.alumno,
+        pagador: form.pagador === "" ? null : form.pagador,
         ...(form.grupo !== "" ? { grupo: form.grupo as number } : {}),
         periodo: form.periodo,
         mensualidad: importe,
@@ -109,20 +127,37 @@ export default function PagosPage() {
         metodo: form.metodo,
         notas: form.notas,
         estado: "pendiente",
+        ...(borrador ? { guardar_como_borrador: true } : {}),
       })
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); closeForm() },
+    onSuccess: (_res, borrador) => {
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+      qc.invalidateQueries({ queryKey: ["pagos-sugerencias"] })
+      closeForm()
+      if (borrador) navigate("/pagos/pendientes")
+    },
     onError: (err: any) =>
-      setFormError(err.response?.data?.detail ?? JSON.stringify(err.response?.data) ?? "Error al crear el pago."),
+      setFormError(err.response?.data?.detail ?? JSON.stringify(err.response?.data) ?? "Error al guardar el pago."),
   })
 
   function handleSubmit() {
+    if (!form.marca) { setFormError("Elige la marca/emisor antes de guardar."); return }
     if (!form.alumno || !form.pagador || !form.periodo || !form.mensualidad) {
       setFormError("Alumno, pagador, periodo e importe son obligatorios.")
       return
     }
     setFormError("")
-    createMut.mutate()
+    createMut.mutate(false)
+  }
+
+  function handleSaveDraft() {
+    if (!form.marca) { setFormError("Elige la marca/emisor antes de guardar, incluso como borrador."); return }
+    if (!form.periodo) {
+      setFormError("El periodo es obligatorio, incluso para un borrador.")
+      return
+    }
+    setFormError("")
+    createMut.mutate(true)
   }
 
   return (
@@ -133,12 +168,22 @@ export default function PagosPage() {
           <h1 className="text-3xl font-bold text-slate-800">Pagos</h1>
           <p className="text-sm text-slate-500 mt-1">{pagos.length} registros</p>
         </div>
-        <button
-          onClick={showForm ? closeForm : openForm}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          {showForm ? "✕ Cancelar" : "+ Nuevo pago"}
-        </button>
+        <div className="flex gap-2">
+          {pendientesCount > 0 && (
+            <button
+              onClick={() => navigate("/pagos/pendientes")}
+              className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-200"
+            >
+              ⚠ Revisar {pendientesCount} pendiente{pendientesCount === 1 ? "" : "s"}
+            </button>
+          )}
+          <button
+            onClick={showForm ? closeForm : openForm}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            {showForm ? "✕ Cancelar" : "+ Nuevo pago"}
+          </button>
+        </div>
       </div>
 
       {/* Create form */}
@@ -148,6 +193,17 @@ export default function PagosPage() {
           {formError && (
             <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{formError}</p>
           )}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+            <select
+              value={form.marca}
+              onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Seleccionar...</option>
+              {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Alumno *</label>
@@ -223,6 +279,11 @@ export default function PagosPage() {
           <div className="flex justify-end gap-2 mt-4">
             <button onClick={closeForm} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
               Cancelar
+            </button>
+            <button onClick={handleSaveDraft} disabled={createMut.isPending}
+              title="Guarda lo que tengas hasta ahora sin alumno/pagador/grupo definitivos — no genera factura ni reserva número, aparece en Pagos pendientes"
+              className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 text-sm hover:bg-orange-200 disabled:opacity-50">
+              {createMut.isPending ? "Guardando..." : "Guardar como borrador"}
             </button>
             <button onClick={handleSubmit} disabled={createMut.isPending}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
