@@ -2,6 +2,8 @@
 import { useTranslation } from "react-i18next"
 import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut } from "lucide-react"
+import { useAuthStore } from "@/store/authStore"
+import { queryClient } from "@/lib/queryClient"
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Panel principal',
@@ -31,8 +33,8 @@ export default function Topbar() {
   })
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
+    useAuthStore.getState().logout()
+    queryClient.clear()
     navigate('/login')
   }
 
