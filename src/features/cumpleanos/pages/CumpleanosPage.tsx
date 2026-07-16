@@ -2,6 +2,13 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 
+interface Cumpleanos {
+  id: number
+  nombre: string
+  fecha_nacimiento: string | null
+  dias_para_cumpleanos: number
+}
+
 const WINDOW_OPTS = [7, 14, 30, 60, 90]
 
 function urgencyClass(dias: number) {
@@ -24,10 +31,10 @@ export default function CumpleanosPage() {
     queryKey: ["cumpleanos", dias],
     queryFn: () => alumnosApi.cumpleanos(dias).then(r => r.data),
   })
-  const cumples: any[] = Array.isArray(data) ? data : []
+  const cumples: Cumpleanos[] = Array.isArray(data) ? data : []
 
-  const hoy = cumples.filter(c => c.dias === 0)
-  const proximos = cumples.filter(c => c.dias > 0)
+  const hoy = cumples.filter(c => c.dias_para_cumpleanos === 0)
+  const proximos = cumples.filter(c => c.dias_para_cumpleanos > 0)
 
   return (
     <div>
@@ -61,7 +68,7 @@ export default function CumpleanosPage() {
         <div className="mb-5">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-2">Hoy</p>
           <div className="space-y-2">
-            {hoy.map((c: any) => (
+            {hoy.map((c) => (
               <BirthdayCard key={c.id} c={c} />
             ))}
           </div>
@@ -75,7 +82,7 @@ export default function CumpleanosPage() {
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Próximos</p>
           )}
           <div className="space-y-2">
-            {proximos.map((c: any) => (
+            {proximos.map((c) => (
               <BirthdayCard key={c.id} c={c} />
             ))}
           </div>
@@ -85,18 +92,18 @@ export default function CumpleanosPage() {
   )
 }
 
-function BirthdayCard({ c }: { c: any }) {
-  const fnac = c.fnac ? new Date(c.fnac) : null
+function BirthdayCard({ c }: { c: Cumpleanos }) {
+  const fnac = c.fecha_nacimiento ? new Date(c.fecha_nacimiento) : null
   const formatted = fnac
     ? fnac.toLocaleDateString("es-ES", { day: "numeric", month: "long" })
     : ""
 
   const age = fnac
-    ? new Date().getFullYear() - fnac.getFullYear() + (c.dias === 0 ? 0 : 1)
+    ? new Date().getFullYear() - fnac.getFullYear() + (c.dias_para_cumpleanos === 0 ? 0 : 1)
     : null
 
   return (
-    <div className={`rounded-xl border-l-4 shadow-sm p-4 flex items-center gap-4 ${urgencyClass(c.dias)}`}>
+    <div className={`rounded-xl border-l-4 shadow-sm p-4 flex items-center gap-4 ${urgencyClass(c.dias_para_cumpleanos)}`}>
       <div className="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center text-xl flex-shrink-0">
         🎂
       </div>
@@ -108,7 +115,7 @@ function BirthdayCard({ c }: { c: any }) {
         </p>
       </div>
       <div className="flex-shrink-0">
-        {urgencyLabel(c.dias)}
+        {urgencyLabel(c.dias_para_cumpleanos)}
       </div>
     </div>
   )
