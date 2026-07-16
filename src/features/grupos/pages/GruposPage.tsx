@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { gruposApi } from "../api"
 import { DIAS, PALETTE } from "../palette"
 import type { Grupo } from "@/types"
+import { useAuthStore } from "@/store/authStore"
 
 const NIVELES = [
   "", "A1 - Principiantes", "A2 - Básico", "B1 - Intermedio",
@@ -22,6 +23,7 @@ const emptyForm = (nextColorIdx = 0): GrupoForm => ({
 })
 
 export default function GruposPage() {
+  const isReception = useAuthStore((s) => s.user?.role === "reception")
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
@@ -30,6 +32,7 @@ export default function GruposPage() {
   const [form, setForm] = useState<GrupoForm>(emptyForm())
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<Grupo | null>(null)
+  const [deleteError, setDeleteError] = useState("")
 
   const { data, isLoading } = useQuery({
     queryKey: ["grupos"],
@@ -49,7 +52,8 @@ export default function GruposPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => gruposApi.delete(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["grupos"] }); setConfirmDelete(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["grupos"] }); setConfirmDelete(null); setDeleteError("") },
+    onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar el grupo."),
   })
 
   function openNew() {
@@ -102,10 +106,12 @@ export default function GruposPage() {
           <h1 className="text-3xl font-bold text-slate-800">Grupos</h1>
           <p className="text-sm text-slate-500 mt-1">{all.length} grupos activos</p>
         </div>
-        <button onClick={openNew}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-          + Nuevo grupo
-        </button>
+        {!isReception && (
+          <button onClick={openNew}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+            + Nuevo grupo
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -168,16 +174,18 @@ export default function GruposPage() {
                     )}
 
                     {/* Action buttons */}
-                    <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => openEdit(g)}
-                        className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
-                        Editar
-                      </button>
-                      <button onClick={() => setConfirmDelete(g)}
-                        className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
-                        ✕
-                      </button>
-                    </div>
+                    {!isReception && (
+                      <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => openEdit(g)}
+                          className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
+                          Editar
+                        </button>
+                        <button onClick={() => setConfirmDelete(g)}
+                          className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -317,8 +325,9 @@ export default function GruposPage() {
             <p className="text-xs text-slate-400 mb-4">
               Los alumnos del grupo no se eliminarán, pero perderán la asignación.
             </p>
+            {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)}
+              <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
                 className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
                 Cancelar
               </button>

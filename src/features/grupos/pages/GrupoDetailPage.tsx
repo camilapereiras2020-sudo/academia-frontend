@@ -7,6 +7,7 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { tareasApi, notasDificultadApi } from "@/features/clases/api"
 import { DIAS, PALETTE } from "../palette"
 import type { Alumno, Sesion, Tarea, NotaDificultad } from "@/types"
+import { useAuthStore } from "@/store/authStore"
 
 const ESTADO_TAREA_LABELS: Record<string, string> = {
   pendiente: "Pendiente", completada: "Completada", parcial: "Parcial", no_entregada: "No entregada",
@@ -18,6 +19,7 @@ const ESTADO_TAREA_COLORS: Record<string, string> = {
 const ESTADO_TAREA_ORDER = ["pendiente", "completada", "parcial", "no_entregada"]
 
 export default function GrupoDetailPage() {
+  const isReception = useAuthStore((s) => s.user?.role === "reception")
   const { id } = useParams()
   const grupoId = Number(id)
   const navigate = useNavigate()
@@ -54,21 +56,21 @@ export default function GrupoDetailPage() {
   const { data: sesionesRaw } = useQuery({
     queryKey: ["sesiones", "grupo", grupoId],
     queryFn: () => asistenciaApi.list({ grupo: grupoId }).then(r => r.data),
-    enabled: !!grupoId,
+    enabled: !!grupoId && !isReception,
   })
   const sesiones: Sesion[] = Array.isArray(sesionesRaw) ? sesionesRaw : []
 
   const { data: tareasRaw } = useQuery({
     queryKey: ["tareas", "grupo", grupoId],
     queryFn: () => tareasApi.list({ grupo: grupoId }).then(r => r.data),
-    enabled: !!grupoId,
+    enabled: !!grupoId && !isReception,
   })
   const tareas: Tarea[] = Array.isArray(tareasRaw) ? tareasRaw : []
 
   const { data: notasRaw } = useQuery({
     queryKey: ["notas-dificultad", "grupo", grupoId],
     queryFn: () => notasDificultadApi.list({ grupo: grupoId }).then(r => r.data),
-    enabled: !!grupoId,
+    enabled: !!grupoId && !isReception,
   })
   const notas: NotaDificultad[] = Array.isArray(notasRaw) ? notasRaw : []
 
@@ -207,7 +209,8 @@ export default function GrupoDetailPage() {
         </div>
       </section>
 
-      {/* Lesson log */}
+      {/* Lesson log (asistencia) — out of reception's scope */}
+      {!isReception && (
       <section className="bg-white rounded-xl border shadow-sm p-5 mb-6">
         <h2 className="font-semibold text-slate-800 mb-3">Registro de clases</h2>
         {sesionError && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-2 rounded-lg mb-3">{sesionError}</p>}
@@ -242,8 +245,10 @@ export default function GrupoDetailPage() {
           ))}
         </div>
       </section>
+      )}
 
-      {/* Homework tracker */}
+      {/* Homework tracker — out of reception's scope */}
+      {!isReception && (
       <section className="bg-white rounded-xl border shadow-sm p-5 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-slate-800">Tareas</h2>
@@ -328,8 +333,10 @@ export default function GrupoDetailPage() {
           ))}
         </div>
       </section>
+      )}
 
-      {/* Struggle tracker */}
+      {/* Struggle tracker — out of reception's scope */}
+      {!isReception && (
       <section className="bg-white rounded-xl border shadow-sm p-5 mb-6">
         <h2 className="font-semibold text-slate-800 mb-3">Seguimiento de dificultades</h2>
         {notaError && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-2 rounded-lg mb-3">{notaError}</p>}
@@ -367,6 +374,7 @@ export default function GrupoDetailPage() {
           ))}
         </div>
       </section>
+      )}
 
       {/* Placeholders */}
       <section className="border-2 border-dashed rounded-xl p-5 mb-4 text-center text-slate-400">

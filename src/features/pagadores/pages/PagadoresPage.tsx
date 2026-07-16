@@ -59,6 +59,7 @@ export default function PagadoresPage() {
   const [formError, setFormError] = useState("")
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Pagador | null>(null)
+  const [deleteError, setDeleteError] = useState("")
   const [emailTarget, setEmailTarget] = useState<Pagador | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -85,7 +86,8 @@ export default function PagadoresPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => pagadoresApi.delete(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagadores"] }); setConfirmDelete(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagadores"] }); setConfirmDelete(null); setDeleteError("") },
+    onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar el pagador."),
   })
 
   function openNew() { setEditing(null); setForm(emptyForm()); setFormError(""); setShowModal(true) }
@@ -402,8 +404,9 @@ export default function PagadoresPage() {
                   ¿Eliminar a <strong>{confirmDelete.nombre}</strong>?
                 </p>
                 <p className="text-xs text-slate-400 mb-4">Esta acción no se puede deshacer.</p>
+                {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setConfirmDelete(null)}
+                  <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
                     className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
                     Cancelar
                   </button>

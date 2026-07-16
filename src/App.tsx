@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import ProtectedRoute from "@/router/ProtectedRoute"
+import RoleProtectedRoute from "@/router/RoleProtectedRoute"
+import { useAuthStore } from "@/store/authStore"
 import AppShell from "@/components/layout/AppShell"
 import LoginPage from "@/features/auth/pages/LoginPage"
 import RegisterPage from "@/features/auth/pages/RegisterPage"
@@ -24,37 +26,44 @@ import WordScramble from "@/features/games/pages/WordScramble"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 
+function DefaultRedirect() {
+  const role = useAuthStore((s) => s.user?.role)
+  return <Navigate to={role === "reception" ? "/alumnos" : "/dashboard"} replace />
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppShell />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/alumnos" element={<AlumnosPage />} />
-          <Route path="/pagadores" element={<PagadoresPage />} />
-          <Route path="/grupos" element={<GruposPage />} />
-          <Route path="/grupos/:id" element={<GrupoDetailPage />} />
-          <Route path="/asistencia" element={<AsistenciaPage />} />
-          <Route path="/pagos" element={<PagosPage />} />
-          <Route path="/pagos/nuevo" element={<NuevoPagoPage />} />
-          <Route path="/pagos/pendientes" element={<PagosPendientesPage />} />
-          <Route path="/cumpleanos" element={<CumpleanosPage />} />
-          <Route path="/documentos" element={<DocumentosPage />} />
-          <Route path="/config" element={<ConfigPage />} />
-          <Route path="/pendientes" element={<PendientesPage />} />
-          <Route path="/crm" element={<CRMPage />} />
-          <Route path="/whatsapp-respuestas" element={<WhatsAppReplyPage />} />
-          <Route path="/juegos/vocab" element={<VocabGame />} />
-          <Route path="/juegos/flashcards" element={<FlashcardGame />} />
-          <Route path="/juegos/memoria" element={<MemoryMatch />} />
-          <Route path="/juegos/scramble" element={<WordScramble />} />
-          <Route path="/empresas" element={<EmpresasPage />} />
+        <Route element={<RoleProtectedRoute />}>
+          <Route element={<AppShell />}>
+            <Route index element={<DefaultRedirect />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/alumnos" element={<AlumnosPage />} />
+            <Route path="/pagadores" element={<PagadoresPage />} />
+            <Route path="/grupos" element={<GruposPage />} />
+            <Route path="/grupos/:id" element={<GrupoDetailPage />} />
+            <Route path="/asistencia" element={<AsistenciaPage />} />
+            <Route path="/pagos" element={<PagosPage />} />
+            <Route path="/pagos/nuevo" element={<NuevoPagoPage />} />
+            <Route path="/pagos/pendientes" element={<PagosPendientesPage />} />
+            <Route path="/cumpleanos" element={<CumpleanosPage />} />
+            <Route path="/documentos" element={<DocumentosPage />} />
+            <Route path="/config" element={<ConfigPage />} />
+            <Route path="/pendientes" element={<PendientesPage />} />
+            <Route path="/crm" element={<CRMPage />} />
+            <Route path="/whatsapp-respuestas" element={<WhatsAppReplyPage />} />
+            <Route path="/juegos/vocab" element={<VocabGame />} />
+            <Route path="/juegos/flashcards" element={<FlashcardGame />} />
+            <Route path="/juegos/memoria" element={<MemoryMatch />} />
+            <Route path="/juegos/scramble" element={<WordScramble />} />
+            <Route path="/empresas" element={<EmpresasPage />} />
+          </Route>
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<DefaultRedirect />} />
     </Routes>
   )
 }

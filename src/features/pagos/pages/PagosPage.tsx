@@ -58,6 +58,7 @@ export default function PagosPage() {
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [deleteError, setDeleteError] = useState("")
+  const [actionError, setActionError] = useState("")
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
 
   const { data: raw, isLoading } = useQuery({
@@ -97,7 +98,8 @@ export default function PagosPage() {
 
   const marcarMut = useMutation({
     mutationFn: pagosApi.marcarPagado,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setActionError("") },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al marcar el pago como cobrado."),
   })
 
   const deleteMut = useMutation({
@@ -108,7 +110,8 @@ export default function PagosPage() {
 
   const generarMut = useMutation({
     mutationFn: (p: Pago) => documentosApi.generar(p.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setActionError("") },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al generar el documento."),
   })
 
   const createMut = useMutation({
@@ -328,6 +331,10 @@ export default function PagosPage() {
           ))}
         </div>
       </div>
+
+      {actionError && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{actionError}</p>
+      )}
 
       {/* List */}
       {isLoading && <p className="text-slate-400 text-sm py-4">Cargando...</p>}

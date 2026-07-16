@@ -58,6 +58,7 @@ export default function PagosPendientesPage() {
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set())
   const [rowError, setRowError] = useState<Record<number, string>>({})
   const [confirmBulk, setConfirmBulk] = useState(false)
+  const [bulkSummary, setBulkSummary] = useState("")
 
   const { data, isLoading } = useQuery({
     queryKey: ["pagos-sugerencias"],
@@ -116,8 +117,22 @@ export default function PagosPendientesPage() {
 
   async function handleBulkSaveHighConfidence() {
     setConfirmBulk(false)
+    setBulkSummary("")
+    let ok = 0
+    let failed = 0
     for (const row of highConfidenceReady) {
-      await saveMut.mutateAsync({ pagoId: row.pago.id, state: resolveRow(row) })
+      try {
+        // saveMut's own onError already records the per-row message (rowError);
+        // this catch exists only so one row's failure doesn't abort the rest
+        // of the batch — without it the loop stopped silently mid-way.
+        await saveMut.mutateAsync({ pagoId: row.pago.id, state: resolveRow(row) })
+        ok++
+      } catch {
+        failed++
+      }
+    }
+    if (failed > 0) {
+      setBulkSummary(`${ok} guardado(s), ${failed} con error — revisá las filas marcadas en rojo.`)
     }
   }
 
@@ -242,6 +257,10 @@ export default function PagosPendientesPage() {
           )
         })}
       </div>
+
+      {bulkSummary && (
+        <p className="text-amber-700 text-sm bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4">{bulkSummary}</p>
+      )}
 
       {confirmBulk && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">

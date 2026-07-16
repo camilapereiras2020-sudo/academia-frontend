@@ -1,6 +1,8 @@
 
 import { NavLink } from "react-router-dom"
 import { useBrandStore } from "@/store/brandStore"
+import { useAuthStore } from "@/store/authStore"
+import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, Users, FolderOpen,
   CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
@@ -51,6 +53,10 @@ const NAV_SECTIONS = [
 export default function Sidebar() {
   const activeBrand = useBrandStore((s) => s.activeBrand)
   const brand = activeBrand ?? "cami_and_co"
+  const role = useAuthStore((s) => s.user?.role)
+  const navSections = NAV_SECTIONS
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(role, item.to)) }))
+    .filter((section) => section.items.length > 0)
   return (
     <aside style={{
       width: '220px',
@@ -99,7 +105,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '1rem 0.75rem', overflowY: 'auto' }}>
-        {NAV_SECTIONS.map((section) => (
+        {navSections.map((section) => (
           <div key={section.label} style={{ marginBottom: '1.5rem' }}>
             <div style={{
               fontSize: '0.6rem',

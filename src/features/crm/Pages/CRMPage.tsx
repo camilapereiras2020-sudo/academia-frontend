@@ -142,6 +142,8 @@ export default function CRMPage() {
   // detail panel
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [confirmDeletePanel, setConfirmDeletePanel] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
+  const [actionError, setActionError] = useState("")
 
   // interaction log form (inside panel)
   const [iForm, setIForm] = useState({ tipo: "llamada", resumen: "", proxima_accion: "" })
@@ -217,7 +219,9 @@ export default function CRMPage() {
       qc.invalidateQueries({ queryKey: ["crm-dashboard"] })
       setSelectedId(null)
       setConfirmDeletePanel(false)
+      setDeleteError("")
     },
+    onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar el lead."),
   })
 
   const cambiarEtapaMut = useMutation({
@@ -227,7 +231,9 @@ export default function CRMPage() {
       qc.invalidateQueries({ queryKey: ["leads"] })
       qc.invalidateQueries({ queryKey: ["crm-dashboard"] })
       qc.invalidateQueries({ queryKey: ["lead", vars.id] })
+      setActionError("")
     },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al cambiar la etapa del lead."),
   })
 
   const interaccionMut = useMutation({
@@ -358,6 +364,10 @@ export default function CRMPage() {
             + Nueva consulta
           </button>
         </div>
+
+        {actionError && (
+          <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{actionError}</p>
+        )}
 
         {/* Stat cards */}
         {dashboard && (
@@ -596,8 +606,9 @@ export default function CRMPage() {
                 ) : (
                   <div className="border border-red-200 rounded-lg p-3 bg-red-50">
                     <p className="text-xs text-red-700 mb-2 font-medium">¿Eliminar este lead? No se puede deshacer.</p>
+                    {deleteError && <p className="text-xs text-red-700 mb-2">{deleteError}</p>}
                     <div className="flex gap-2">
-                      <button onClick={() => setConfirmDeletePanel(false)}
+                      <button onClick={() => { setConfirmDeletePanel(false); setDeleteError("") }}
                         className="flex-1 px-2 py-1.5 border rounded-lg text-xs text-slate-600 bg-white hover:bg-slate-50">
                         Cancelar
                       </button>

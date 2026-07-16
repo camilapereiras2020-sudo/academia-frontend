@@ -44,6 +44,9 @@ export default function EmpresasPage() {
   const [confirmDelete, setConfirmDelete]   = useState(false)
   const [form, setForm]                     = useState(emptyEmpresa)
   const [contactoForm, setContactoForm]     = useState(emptyContacto)
+  const [empresaError, setEmpresaError]     = useState("")
+  const [contactoError, setContactoError]   = useState("")
+  const [deleteError, setDeleteError]       = useState("")
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ["empresas"],
@@ -66,17 +69,20 @@ export default function EmpresasPage() {
 
   const crearEmpresaMut = useMutation({
     mutationFn: (data: typeof emptyEmpresa) => api.post("/empresas/", data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setShowModal(false); setForm(emptyEmpresa) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setShowModal(false); setForm(emptyEmpresa); setEmpresaError("") },
+    onError: (err: any) => setEmpresaError(err.response?.data?.error ?? "Error al crear la empresa."),
   })
 
   const crearContactoMut = useMutation({
     mutationFn: (data: any) => api.post("/contactos-empresa/", data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresa", selected?.id] }); setShowContactoModal(false); setContactoForm(emptyContacto) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresa", selected?.id] }); setShowContactoModal(false); setContactoForm(emptyContacto); setContactoError("") },
+    onError: (err: any) => setContactoError(err.response?.data?.error ?? "Error al crear el contacto."),
   })
 
   const eliminarEmpresaMut = useMutation({
     mutationFn: (id: number) => api.delete(`/empresas/${id}/`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setSelected(null); setConfirmDelete(false) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["empresas"] }); setSelected(null); setConfirmDelete(false); setDeleteError("") },
+    onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar la empresa."),
   })
 
   const inputCls = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -215,8 +221,9 @@ export default function EmpresasPage() {
             ) : (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-sm text-red-700 mb-2">¿Eliminar <strong>{empresaDetalle.nombre}</strong>? No se puede deshacer.</p>
+                {deleteError && <p className="text-xs text-red-700 mb-2">{deleteError}</p>}
                 <div className="flex gap-2">
-                  <button onClick={() => setConfirmDelete(false)} className="flex-1 text-sm py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
+                  <button onClick={() => { setConfirmDelete(false); setDeleteError("") }} className="flex-1 text-sm py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
                     Cancelar
                   </button>
                   <button
@@ -270,8 +277,9 @@ export default function EmpresasPage() {
                 <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
               </div>
             </div>
+            {empresaError && <p className="text-red-600 text-xs mt-3 flex-shrink-0">{empresaError}</p>}
             <div className="flex gap-2 mt-4 flex-shrink-0">
-              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+              <button onClick={() => { setShowModal(false); setEmpresaError("") }} className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
                 Cancelar
               </button>
               <button
@@ -315,8 +323,9 @@ export default function EmpresasPage() {
                 <textarea value={contactoForm.notas} onChange={e => setContactoForm(p => ({ ...p, notas: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
               </div>
             </div>
+            {contactoError && <p className="text-red-600 text-xs mt-3">{contactoError}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setShowContactoModal(false)} className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+              <button onClick={() => { setShowContactoModal(false); setContactoError("") }} className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
                 Cancelar
               </button>
               <button
