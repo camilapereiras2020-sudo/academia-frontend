@@ -58,6 +58,7 @@ export default function AlumnosPage() {
   const [form, setForm] = useState<FormState>(emptyForm())
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<Alumno | null>(null)
+  const [deleteError, setDeleteError] = useState("")
   const [emailTarget, setEmailTarget] = useState<Alumno | null>(null)
 
   const { data: alumnosRaw, isLoading } = useQuery({
@@ -106,7 +107,8 @@ export default function AlumnosPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => alumnosApi.delete(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["alumnos"] }); setConfirmDelete(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["alumnos"] }); setConfirmDelete(null); setDeleteError("") },
+    onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar el alumno."),
   })
 
   function openNew() {
@@ -489,8 +491,9 @@ export default function AlumnosPage() {
               ¿Eliminar a <strong>{confirmDelete.nombre}</strong>?
             </p>
             <p className="text-xs text-slate-400 mb-4">Esta acción no se puede deshacer.</p>
+            {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)}
+              <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
                 className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
                 Cancelar
               </button>

@@ -14,6 +14,7 @@ export default function AsistenciaPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10))
   const [showForm, setShowForm] = useState(false)
   const [registros, setRegistros] = useState<{ alumno: number; estado: string; nota: string }[]>([])
+  const [saveError, setSaveError] = useState("")
 
   const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
   const grupos: Grupo[] = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
@@ -45,7 +46,9 @@ export default function AsistenciaPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sesiones"] })
       setShowForm(false)
+      setSaveError("")
     },
+    onError: (err: any) => setSaveError(err.response?.data?.error ?? "Error al guardar la asistencia."),
   })
 
   function toggleEstado(idx: number) {
@@ -104,8 +107,9 @@ export default function AsistenciaPage() {
               )
             })}
           </div>
+          {saveError && <p className="text-red-600 text-xs mt-3">{saveError}</p>}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm">Cancelar</button>
+            <button onClick={() => { setShowForm(false); setSaveError("") }} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm">Cancelar</button>
             <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
               {saveMut.isPending ? "Guardando..." : "Guardar asistencia"}
