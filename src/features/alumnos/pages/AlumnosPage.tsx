@@ -8,6 +8,7 @@ import { gruposApi } from "@/features/grupos/api"
 import type { Alumno, Pagador, Grupo, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
+import { useAuthStore } from "@/store/authStore"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
@@ -47,6 +48,7 @@ const emptyForm = (): FormState => ({
 })
 
 export default function AlumnosPage() {
+  const isReception = useAuthStore((s) => s.user?.role === "reception")
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
@@ -177,10 +179,12 @@ export default function AlumnosPage() {
           <h1 className="text-3xl font-bold text-slate-800">Alumnos</h1>
           <p className="text-sm text-slate-500 mt-1">{alumnos.length} alumnos registrados</p>
         </div>
-        <button onClick={openNew}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-          + Nuevo alumno
-        </button>
+        {!isReception && (
+          <button onClick={openNew}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+            + Nuevo alumno
+          </button>
+        )}
       </div>
 
       {/* Search + brand filter */}
@@ -298,10 +302,12 @@ export default function AlumnosPage() {
                   className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
                   Editar
                 </button>
-                <button onClick={() => setConfirmDelete(a)}
-                  className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
-                  ✕
-                </button>
+                {!isReception && (
+                  <button onClick={() => setConfirmDelete(a)}
+                    className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
           )
@@ -333,26 +339,32 @@ export default function AlumnosPage() {
                     <input type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
-                    <select value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Seleccionar...</option>
-                      {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha de nacimiento</label>
-                    <input type="date" value={form.fnac} onChange={e => setForm(f => ({ ...f, fnac: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Aviso cumpleaños (días antes)</label>
-                    <input type="number" min="0" placeholder="14"
-                      value={form.aviso_cumple_dias ?? ""}
-                      onChange={e => setForm(f => ({ ...f, aviso_cumple_dias: e.target.value ? +e.target.value : null }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
+                  {!isReception && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+                      <select value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar...</option>
+                        {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {!isReception && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha de nacimiento</label>
+                      <input type="date" value={form.fnac} onChange={e => setForm(f => ({ ...f, fnac: e.target.value }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  )}
+                  {!isReception && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Aviso cumpleaños (días antes)</label>
+                      <input type="number" min="0" placeholder="14"
+                        value={form.aviso_cumple_dias ?? ""}
+                        onChange={e => setForm(f => ({ ...f, aviso_cumple_dias: e.target.value ? +e.target.value : null }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
                     <input type="tel" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
@@ -363,79 +375,85 @@ export default function AlumnosPage() {
                     <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
-                    <textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-                  </div>
+                  {!isReception && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                      <textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                    </div>
+                  )}
                 </div>
               </section>
 
               {/* Pagador */}
-              <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Pagador</p>
-                {!pagadores.length
-                  ? <p className="text-xs text-amber-600">No hay pagadores. Crea uno en la sección Pagadores.</p>
-                  : (
-                    <select value={form.pagador ?? ""} onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : null }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Sin pagador asignado</option>
-                      {pagadores.map(p => (
-                        <option key={p.id} value={p.id}>{p.nombre}{p.metodo ? ` · ${p.metodo}` : ""}</option>
-                      ))}
-                    </select>
-                  )}
-              </section>
+              {!isReception && (
+                <section>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Pagador</p>
+                  {!pagadores.length
+                    ? <p className="text-xs text-amber-600">No hay pagadores. Crea uno en la sección Pagadores.</p>
+                    : (
+                      <select value={form.pagador ?? ""} onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : null }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Sin pagador asignado</option>
+                        {pagadores.map(p => (
+                          <option key={p.id} value={p.id}>{p.nombre}{p.metodo ? ` · ${p.metodo}` : ""}</option>
+                        ))}
+                      </select>
+                    )}
+                </section>
+              )}
 
               {/* Grupos y horarios */}
-              <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Grupos y horarios</p>
-                {!grupos.length
-                  ? <p className="text-xs text-amber-600">No hay grupos. Crea uno en la sección Grupos primero.</p>
-                  : (
-                    <div className="space-y-2">
-                      {grupos.map(g => {
-                        const selected = form.grupos.includes(g.id)
-                        const slots = form.horarios.filter(h => h.grupoId === g.id)
-                        return (
-                          <div key={g.id} className={`border rounded-lg p-3 transition-colors ${selected ? "border-blue-300 bg-blue-50" : "border-slate-200"}`}>
-                            <label className="flex items-center gap-2 cursor-pointer select-none">
-                              <input type="checkbox" checked={selected} onChange={() => toggleGrupo(g.id)}
-                                className="accent-blue-600 w-4 h-4" />
-                              <span className="font-medium text-sm text-slate-800">{g.nombre}</span>
-                              {g.nivel && <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{g.nivel}</span>}
-                              {g.tarifa > 0 && <span className="text-xs text-slate-500 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
-                            </label>
-                            {selected && (
-                              <div className="mt-3 pl-6 space-y-2">
-                                {slots.map((h, slotIdx) => {
-                                  const realIdx = form.horarios.indexOf(h)
-                                  return (
-                                    <div key={slotIdx} className="flex items-center gap-2 flex-wrap">
-                                      <select value={h.dia} onChange={e => updateHorario(realIdx, "dia", +e.target.value)}
-                                        className="border rounded-lg px-2 py-1 text-xs focus:outline-none">
-                                        {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                                      </select>
-                                      <input type="time" value={h.ini} onChange={e => updateHorario(realIdx, "ini", e.target.value)}
-                                        className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
-                                      <span className="text-xs text-slate-400">→</span>
-                                      <input type="time" value={h.fin} onChange={e => updateHorario(realIdx, "fin", e.target.value)}
-                                        className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
-                                      <button onClick={() => setForm(f => ({ ...f, horarios: f.horarios.filter((_, i) => i !== realIdx) }))}
-                                        className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                                    </div>
-                                  )
-                                })}
-                                <button onClick={() => addHorario(g.id)}
-                                  className="text-xs text-blue-600 hover:text-blue-800">+ Añadir día</button>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-              </section>
+              {!isReception && (
+                <section>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Grupos y horarios</p>
+                  {!grupos.length
+                    ? <p className="text-xs text-amber-600">No hay grupos. Crea uno en la sección Grupos primero.</p>
+                    : (
+                      <div className="space-y-2">
+                        {grupos.map(g => {
+                          const selected = form.grupos.includes(g.id)
+                          const slots = form.horarios.filter(h => h.grupoId === g.id)
+                          return (
+                            <div key={g.id} className={`border rounded-lg p-3 transition-colors ${selected ? "border-blue-300 bg-blue-50" : "border-slate-200"}`}>
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" checked={selected} onChange={() => toggleGrupo(g.id)}
+                                  className="accent-blue-600 w-4 h-4" />
+                                <span className="font-medium text-sm text-slate-800">{g.nombre}</span>
+                                {g.nivel && <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{g.nivel}</span>}
+                                {g.tarifa > 0 && <span className="text-xs text-slate-500 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
+                              </label>
+                              {selected && (
+                                <div className="mt-3 pl-6 space-y-2">
+                                  {slots.map((h, slotIdx) => {
+                                    const realIdx = form.horarios.indexOf(h)
+                                    return (
+                                      <div key={slotIdx} className="flex items-center gap-2 flex-wrap">
+                                        <select value={h.dia} onChange={e => updateHorario(realIdx, "dia", +e.target.value)}
+                                          className="border rounded-lg px-2 py-1 text-xs focus:outline-none">
+                                          {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                                        </select>
+                                        <input type="time" value={h.ini} onChange={e => updateHorario(realIdx, "ini", e.target.value)}
+                                          className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
+                                        <span className="text-xs text-slate-400">→</span>
+                                        <input type="time" value={h.fin} onChange={e => updateHorario(realIdx, "fin", e.target.value)}
+                                          className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
+                                        <button onClick={() => setForm(f => ({ ...f, horarios: f.horarios.filter((_, i) => i !== realIdx) }))}
+                                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                                      </div>
+                                    )
+                                  })}
+                                  <button onClick={() => addHorario(g.id)}
+                                    className="text-xs text-blue-600 hover:text-blue-800">+ Añadir día</button>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                </section>
+              )}
             </div>
 
             {/* Modal footer */}

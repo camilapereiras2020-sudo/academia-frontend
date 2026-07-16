@@ -1,10 +1,15 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import type { Marca } from "@/types"
+
+export type Role = "owner" | "co_manager" | "reception"
 
 interface User {
   id: number
   email: string
   username: string
+  role: Role
+  marca_asignada: Marca | null
   academia_nombre: string
   academia_nif: string
   academia_dir: string
