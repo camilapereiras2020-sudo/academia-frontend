@@ -130,12 +130,16 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
 
   async function handleDescargar(d: Documento) {
     setDownloadingId(d.id)
+    setError("")
     try {
       const token = localStorage.getItem("access_token")
       const base = import.meta.env.VITE_API_URL ?? "/api/v1"
       const res = await fetch(`${base}/documentos/${d.id}/descargar/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
+      if (!res.ok) {
+        throw new Error(`No se pudo descargar el documento (código ${res.status}).`)
+      }
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -146,6 +150,8 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
       a.click()
       document.body.removeChild(a)
       setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al descargar el documento.")
     } finally {
       setDownloadingId(null)
     }

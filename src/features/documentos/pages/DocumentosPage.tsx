@@ -32,6 +32,7 @@ export default function DocumentosPage() {
   const [tipoFilter, setTipoFilter] = useState("")
   const [estadoTab, setEstadoTab] = useState<"activas" | "anuladas">("activas")
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [downloadError, setDownloadError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
   const [confirmAnular, setConfirmAnular] = useState<Documento | null>(null)
   const [motivoAnulacion, setMotivoAnulacion] = useState("")
@@ -73,12 +74,16 @@ export default function DocumentosPage() {
 
   async function handleDescargar(d: Documento) {
     setDownloadingId(d.id)
+    setDownloadError("")
     try {
       const token = localStorage.getItem("access_token")
       const base = import.meta.env.VITE_API_URL ?? "/api/v1"
       const res = await fetch(`${base}/documentos/${d.id}/descargar/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
+      if (!res.ok) {
+        throw new Error(`No se pudo descargar el documento (código ${res.status}).`)
+      }
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const cliente = d.pago_info?.alumno || d.pago_info?.pagador || ""
@@ -90,6 +95,8 @@ export default function DocumentosPage() {
       a.click()
       document.body.removeChild(a)
       setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : "Error al descargar el documento.")
     } finally {
       setDownloadingId(null)
     }
@@ -103,6 +110,10 @@ export default function DocumentosPage() {
           <p className="text-sm text-slate-500 mt-1">{visibles.length} documentos generados</p>
         </div>
       </div>
+
+      {downloadError && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{downloadError}</p>
+      )}
 
       {/* Filter */}
       <div className="flex gap-2 mb-5 flex-wrap items-center">
