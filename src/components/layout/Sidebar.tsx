@@ -69,12 +69,12 @@ export default function Sidebar() {
     }}>
       {/* Logo */}
       <div style={{
-        padding: '1.25rem 1.5rem',
+        padding: '1.75rem 1.25rem',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '0.5rem',
+        gap: '0.75rem',
       }}>
         <div style={{
           background: brand === "rangers_academy" ? "#fff" : "transparent",
@@ -85,7 +85,7 @@ export default function Sidebar() {
             src={LOGO_SRC[brand]}
             alt={brand === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}
             style={{
-              width: '80px',
+              width: '140px',
               height: 'auto',
               opacity: brand === "rangers_academy" ? 1 : 0.9,
               display: 'block',
