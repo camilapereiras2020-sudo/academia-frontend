@@ -25,6 +25,7 @@ import MemoryMatch from "@/features/games/pages/MemoryMatch"
 import WordScramble from "@/features/games/pages/WordScramble"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
+import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
 
 function DefaultRedirect() {
   const role = useAuthStore((s) => s.user?.role)
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/juegos/memoria" element={<MemoryMatch />} />
             <Route path="/juegos/scramble" element={<WordScramble />} />
             <Route path="/empresas" element={<EmpresasPage />} />
+            <Route path="/facturacion" element={<FacturacionPage />} />
           </Route>
         </Route>
       </Route>
