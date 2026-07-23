@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
+import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import { gruposApi } from "@/features/grupos/api"
 import type { Alumno, Pagador, Grupo, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
@@ -393,17 +394,7 @@ export default function AlumnosPage() {
               {!isReception && (
                 <section>
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Pagador</p>
-                  {!pagadores.length
-                    ? <p className="text-xs text-amber-600">No hay pagadores. Crea uno en la sección Pagadores.</p>
-                    : (
-                      <select value={form.pagador ?? ""} onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : null }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Sin pagador asignado</option>
-                        {pagadores.map(p => (
-                          <option key={p.id} value={p.id}>{p.nombre}{p.metodo ? ` · ${p.metodo}` : ""}</option>
-                        ))}
-                      </select>
-                    )}
+                  <PagadorCombobox value={form.pagador} onChange={pagador => setForm(f => ({ ...f, pagador }))} />
                 </section>
               )}
 
