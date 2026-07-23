@@ -247,6 +247,25 @@ body::before {
   animation: fadeUp 0.35s ease forwards;
 }
 
+/* Combobox dropdown option (PagadorCombobox gold theme) */
+.combobox-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.combobox-option:hover {
+  background: var(--surface-hover);
+}
+.combobox-option:disabled {
+  cursor: default;
+}
+
 /* Responsive 2-column grid (ficha del alumno "Datos generales", etc.) */
 .grid-2col {
   display: grid;

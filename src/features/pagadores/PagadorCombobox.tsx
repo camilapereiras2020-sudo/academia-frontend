@@ -6,9 +6,13 @@ import type { Pagador } from "@/types"
 interface Props {
   value: number | null
   onChange: (pagadorId: number | null) => void
+  /** "tailwind" matches AlumnosPage's raw-Tailwind modal (default). "gold" matches the
+   * .card/.input gold-dark system used by AlumnoDetailPage/DashboardPage. */
+  theme?: "tailwind" | "gold"
 }
 
-export default function PagadorCombobox({ value, onChange }: Props) {
+export default function PagadorCombobox({ value, onChange, theme = "tailwind" }: Props) {
+  const gold = theme === "gold"
   const qc = useQueryClient()
   const [query, setQuery] = useState("")
   const [open, setOpen] = useState(false)
@@ -54,30 +58,38 @@ export default function PagadorCombobox({ value, onChange }: Props) {
           onFocus={() => { setQuery(selected?.nombre ?? ""); setOpen(true) }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Buscar o crear pagador..."
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={gold ? "input" : "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"}
         />
         {selected && (
-          <button type="button" onClick={clearSelection} className="text-slate-400 hover:text-slate-600 text-sm flex-shrink-0">
+          <button type="button" onClick={clearSelection}
+            className={gold ? "btn-ghost" : "text-slate-400 hover:text-slate-600 text-sm flex-shrink-0"}
+            style={gold ? { padding: "0.25rem 0.5rem", flexShrink: 0 } : undefined}>
             ✕
           </button>
         )}
       </div>
 
       {open && (
-        <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+        <div
+          className={gold ? "card" : "absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-56 overflow-y-auto"}
+          style={gold ? { position: "absolute", zIndex: 10, marginTop: "0.25rem", width: "100%", maxHeight: "14rem", overflowY: "auto" } : undefined}
+        >
           {matches.map(p => (
             <button
               key={p.id}
               type="button"
               onMouseDown={e => e.preventDefault()}
               onClick={() => selectPagador(p)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-slate-700"
+              className={gold ? "combobox-option" : "w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-slate-700"}
             >
               {p.nombre}{p.metodo ? ` · ${p.metodo}` : ""}
             </button>
           ))}
           {!matches.length && (
-            <p className="px-3 py-2 text-xs text-slate-400">Sin pagadores registrados.</p>
+            <p className={gold ? undefined : "px-3 py-2 text-xs text-slate-400"}
+              style={gold ? { padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--text-dim)" } : undefined}>
+              Sin pagadores registrados.
+            </p>
           )}
           {q && !exactMatch && (
             <button
@@ -85,7 +97,8 @@ export default function PagadorCombobox({ value, onChange }: Props) {
               onMouseDown={e => e.preventDefault()}
               disabled={createMut.isPending}
               onClick={() => createMut.mutate(query.trim())}
-              className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t disabled:opacity-50"
+              className={gold ? "combobox-option" : "w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t disabled:opacity-50"}
+              style={gold ? { color: "var(--gold)", borderTop: "1px solid var(--border-subtle)", opacity: createMut.isPending ? 0.5 : 1 } : undefined}
             >
               {createMut.isPending ? "Creando..." : `+ Crear pagador "${query.trim()}"`}
             </button>

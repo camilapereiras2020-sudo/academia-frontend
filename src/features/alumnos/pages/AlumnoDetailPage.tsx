@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { resumenApi, fechasImportantesApi, notasAlumnoApi, datoSaludApi, consentimientosApi } from "../ficha_api"
 import { pagadoresApi } from "@/features/pagadores/api"
+import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import EmailModal from "@/components/shared/EmailModal"
 import WhatsappReplyModal from "../components/WhatsappReplyModal"
 import { useAuthStore } from "@/store/authStore"
@@ -253,11 +254,7 @@ export default function AlumnoDetailPage() {
         ) : (
           <p style={{ fontSize: "0.875rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>Sin pagador vinculado.</p>
         )}
-        <select className="input" value={alumno.pagador ?? ""}
-          onChange={e => pagadorMut.mutate(e.target.value ? Number(e.target.value) : null)}>
-          <option value="">Sin pagador asignado</option>
-          {pagadores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-        </select>
+        <PagadorCombobox theme="gold" value={alumno.pagador} onChange={pagadorId => pagadorMut.mutate(pagadorId)} />
       </section>
 
       {/* Pagos */}
