@@ -16,6 +16,10 @@
   --dark-4: #EAE6DF;
   --border: rgba(176, 141, 87, 0.25);
   --border-subtle: rgba(0,0,0,0.07);
+  --sage: #6b7a5e;
+  --sage-muted: rgba(107, 122, 94, 0.14);
+  --terracotta: #b5654a;
+  --terracotta-muted: rgba(181, 101, 74, 0.14);
   --text: #1A1714;
   --text-muted: rgba(26, 23, 20, 0.6);
   --text-dim: rgba(26, 23, 20, 0.35);
@@ -241,6 +245,16 @@ body::before {
 }
 .fade-up {
   animation: fadeUp 0.35s ease forwards;
+}
+
+/* Responsive 2-column grid (ficha del alumno "Datos generales", etc.) */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 640px) {
+  .grid-2col { grid-template-columns: 1fr; }
 }
 
 /* Modal */

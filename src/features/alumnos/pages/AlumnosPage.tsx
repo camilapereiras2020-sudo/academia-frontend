@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
@@ -49,6 +49,7 @@ const emptyForm = (): FormState => ({
 
 export default function AlumnosPage() {
   const isReception = useAuthStore((s) => s.user?.role === "reception")
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
@@ -228,7 +229,8 @@ export default function AlumnosPage() {
           const pagObj_ = pagadorObj(a.pagador)
           const gruposDetalle = a.grupos_detalle ?? []
           return (
-            <div key={a.id} className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4">
+            <div key={a.id} onClick={() => navigate(`/alumnos/${a.id}`)}
+              className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4 cursor-pointer hover:border-blue-300 transition-colors">
               {/* Avatar */}
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${color}`}>
                 {initials(a.nombre)}
@@ -248,12 +250,12 @@ export default function AlumnosPage() {
 
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                   {a.telefono && (
-                    <a href={`tel:${a.telefono}`} className="text-xs text-slate-500 hover:text-blue-600">
+                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-500 hover:text-blue-600">
                       📞 {a.telefono}
                     </a>
                   )}
                   {a.email && (
-                    <a href={`mailto:${a.email}`} className="text-xs text-slate-500 hover:text-blue-600">
+                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-500 hover:text-blue-600">
                       ✉ {a.email}
                     </a>
                   )}
@@ -285,7 +287,7 @@ export default function AlumnosPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-1.5 flex-shrink-0">
+              <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
                 {pagObj_?.telefono && (
                   <a
                     href={waUrl(pagObj_.telefono, pagObj_.nombre, a.nombre)}

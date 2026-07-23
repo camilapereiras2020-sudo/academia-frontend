@@ -10,6 +10,13 @@ export const alumnosApi = {
     return api.get<Alumno[]>(`/alumnos/?${qs}`)
   },
   get: (id: number) => api.get<Alumno>(`/alumnos/${id}/`),
+  subirFoto: (id: number, file: File) => {
+    const formData = new FormData()
+    formData.append("foto", file)
+    return api.post<Alumno>(`/alumnos/${id}/foto/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+  },
   create: (data: Partial<Alumno>) => api.post<Alumno>("/alumnos/", data),
   update: (id: number, data: Partial<Alumno>) => api.patch<Alumno>(`/alumnos/${id}/`, data),
   delete: (id: number) => api.delete(`/alumnos/${id}/`),

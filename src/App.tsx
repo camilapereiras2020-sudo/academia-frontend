@@ -7,6 +7,7 @@ import LoginPage from "@/features/auth/pages/LoginPage"
 import RegisterPage from "@/features/auth/pages/RegisterPage"
 import DashboardPage from "@/features/dashboard/pages/DashboardPage"
 import AlumnosPage from "@/features/alumnos/pages/AlumnosPage"
+import AlumnoDetailPage from "@/features/alumnos/pages/AlumnoDetailPage"
 import PagadoresPage from "@/features/pagadores/pages/PagadoresPage"
 import GruposPage from "@/features/grupos/pages/GruposPage"
 import GrupoDetailPage from "@/features/grupos/pages/GrupoDetailPage"
@@ -43,6 +44,7 @@ export default function App() {
             <Route index element={<DefaultRedirect />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/alumnos" element={<AlumnosPage />} />
+            <Route path="/alumnos/:id" element={<AlumnoDetailPage />} />
             <Route path="/pagadores" element={<PagadoresPage />} />
             <Route path="/grupos" element={<GruposPage />} />
             <Route path="/grupos/:id" element={<GrupoDetailPage />} />
