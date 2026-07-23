@@ -7,7 +7,7 @@ import {
   LayoutDashboard, GraduationCap, Users, FolderOpen,
   CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
   FileText, UserSearch, Building2, MessageCircle,
-  Joystick, BookOpen, Grid3X3, Shuffle
+  Joystick, BookOpen, Grid3X3, Shuffle, Receipt
 } from "lucide-react"
 
 const LOGO_SRC = {
@@ -34,6 +34,7 @@ const NAV_SECTIONS = [
       { to: "/pagos", icon: ClipboardList, label: "Pagos" },
       { to: "/pendientes", icon: Clock, label: "Pendientes" },
       { to: "/documentos", icon: FileText, label: "Documentos" },
+      { to: "/facturacion", icon: Receipt, label: "Facturación" },
     ]
   },
   {

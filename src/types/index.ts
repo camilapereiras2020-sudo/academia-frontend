@@ -15,11 +15,54 @@ export interface AlumnoGrupo {
 
 export type Marca = "cami_and_co" | "rangers_academy"
 
+export type NivelObjetivo = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+export type ExamenObjetivo = "KET" | "PET" | "FCE" | "CAE" | "CPE" | "ninguno"
+
 export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
-  fnac: string | null; telefono: string; email: string
+  fnac: string | null; telefono: string; email: string; dni: string; nivel: string
   notas: string; aviso_cumple_dias: number | null; pagador: number | null
   grupos_detalle: AlumnoGrupo[]; created_at: string
+  foto_url: string
+  nivel_objetivo: NivelObjetivo | ""
+  examen_objetivo: ExamenObjetivo | ""
+  colegio_origen: string
+  idioma_nativo: string
+  contacto_emergencia_nombre: string
+  contacto_emergencia_telefono: string
+}
+
+export type TipoFechaImportante = "examen" | "revision_nivel" | "inicio_curso" | "fin_curso" | "otro"
+
+export interface FechaImportante {
+  id: number; alumno: number; fecha: string
+  tipo: TipoFechaImportante; tipo_display: string; descripcion: string
+}
+
+export type TipoNotaAlumno = "progreso" | "reunion" | "general"
+
+export interface NotaAlumno {
+  id: number; alumno: number; autor: number | null; autor_nombre: string
+  fecha: string; contenido: string; tipo: TipoNotaAlumno; tipo_display: string
+}
+
+export interface DatoSalud {
+  id: number; alumno: number
+  alergias: string; condiciones_medicas: string; medicacion: string
+}
+
+export type TipoConsentimiento = "autorizacion_imagen" | "proteccion_datos" | "matricula"
+
+export interface ConsentimientoAlumno {
+  id: number; alumno: number
+  tipo: TipoConsentimiento; tipo_display: string
+  firmado: boolean; fecha_firma: string | null; documento_url: string
+}
+
+export interface AlumnoResumen {
+  pagos: Pago[]
+  fechas_importantes: FechaImportante[]
+  notas: NotaAlumno[]
 }
 
 export interface Pago {

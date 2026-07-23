@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { createPortal } from "react-dom"
 
 interface Props {
   to: string            // display name or email shown in header
@@ -26,60 +27,59 @@ export default function EmailModal({ to, onSend, onClose }: Props) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+  return createPortal(
+    <div className="modal-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
+      <div className="modal" style={{ maxWidth: "32rem", padding: 0 }}>
+        <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h2 className="text-base font-semibold text-slate-800">Enviar email</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Para: {to}</p>
+            <h2 style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Enviar email</h2>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Para: {to}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+          <button onClick={onClose} className="btn-ghost" style={{ padding: "0.25rem 0.6rem", fontSize: "1rem" }}>✕</button>
         </div>
 
         {done ? (
-          <div className="px-6 py-10 text-center">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="text-sm font-medium text-slate-700">Email enviado correctamente.</p>
-            <button onClick={onClose} className="mt-4 px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-700 hover:bg-slate-200">
+          <div style={{ padding: "2.5rem 1.5rem", textAlign: "center" }}>
+            <div style={{ fontSize: "2.25rem", marginBottom: "0.75rem" }}>✅</div>
+            <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)" }}>Email enviado correctamente.</p>
+            <button onClick={onClose} className="btn-ghost" style={{ marginTop: "1rem" }}>
               Cerrar
             </button>
           </div>
         ) : (
-          <div className="p-6 space-y-4">
+          <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             {error && (
-              <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{error}</p>
+              <p style={{ fontSize: "0.875rem", color: "#b5654a", background: "var(--terracotta-muted)", border: "1px solid var(--border-subtle)", padding: "0.75rem", borderRadius: "var(--radius-sm)" }}>{error}</p>
             )}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Asunto</label>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.35rem" }}>Asunto</label>
               <input
                 type="text" value={asunto} onChange={e => setAsunto(e.target.value)}
                 placeholder="Ej: Recordatorio de pago — Junio 2026"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Mensaje</label>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.35rem" }}>Mensaje</label>
               <textarea
                 rows={6} value={cuerpo} onChange={e => setCuerpo(e.target.value)}
                 placeholder="Escribe tu mensaje aquí..."
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="input" style={{ resize: "none" }}
               />
             </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <button onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", paddingTop: "0.25rem" }}>
+              <button onClick={onClose} className="btn-ghost">
                 Cancelar
               </button>
-              <button onClick={handleSend} disabled={sending}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+              <button onClick={handleSend} disabled={sending} className="btn-primary" style={{ opacity: sending ? 0.5 : 1 }}>
                 {sending ? "Enviando..." : "Enviar ✉"}
               </button>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

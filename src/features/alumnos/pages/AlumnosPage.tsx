@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
+import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import { gruposApi } from "@/features/grupos/api"
 import type { Alumno, Pagador, Grupo, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
@@ -49,6 +50,7 @@ const emptyForm = (): FormState => ({
 
 export default function AlumnosPage() {
   const isReception = useAuthStore((s) => s.user?.role === "reception")
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
@@ -77,6 +79,11 @@ export default function AlumnosPage() {
     setSearchParams(params => { params.delete("openId"); return params }, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alumnos, searchParams])
+
+  const soloIncompletos = searchParams.get("incompletos") === "1"
+  const alumnosFiltrados = soloIncompletos
+    ? alumnos.filter(a => !a.telefono || !a.email)
+    : alumnos
 
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(pagadoresRaw) ? pagadoresRaw : []
@@ -179,7 +186,7 @@ export default function AlumnosPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Alumnos</h1>
-          <p className="text-sm text-slate-500 mt-1">{alumnos.length} alumnos registrados</p>
+          <p className="text-sm text-slate-500 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
@@ -210,25 +217,40 @@ export default function AlumnosPage() {
         </div>
       </div>
 
+      {soloIncompletos && (
+        <div className="flex items-center gap-2 mb-4 text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-lg px-3 py-2">
+          <span>Mostrando solo alumnos con teléfono o email incompleto.</span>
+          <button
+            onClick={() => setSearchParams(params => { params.delete("incompletos"); return params }, { replace: true })}
+            className="underline hover:no-underline"
+          >
+            Quitar filtro
+          </button>
+        </div>
+      )}
+
       {/* States */}
       {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
-      {!isLoading && !alumnos.length && (
+      {!isLoading && !alumnosFiltrados.length && (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400">
           <span className="text-5xl mb-3">🎓</span>
-          <p className="text-sm">{search ? "Sin resultados para esa búsqueda." : "Sin alumnos. Crea el primero."}</p>
+          <p className="text-sm">
+            {soloIncompletos ? "Ningún alumno con datos incompletos." : search ? "Sin resultados para esa búsqueda." : "Sin alumnos. Crea el primero."}
+          </p>
         </div>
       )}
 
       {/* Cards */}
       <div className="space-y-3">
-        {alumnos.map(a => {
+        {alumnosFiltrados.map(a => {
           const color = AVATAR_COLORS[a.id % AVATAR_COLORS.length]
           const yearsOld = age(a.fnac)
           const pag = pagadorNombre(a.pagador)
           const pagObj_ = pagadorObj(a.pagador)
           const gruposDetalle = a.grupos_detalle ?? []
           return (
-            <div key={a.id} className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4">
+            <div key={a.id} onClick={() => navigate(`/alumnos/${a.id}`)}
+              className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4 cursor-pointer hover:border-blue-300 transition-colors">
               {/* Avatar */}
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${color}`}>
                 {initials(a.nombre)}
@@ -248,12 +270,12 @@ export default function AlumnosPage() {
 
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                   {a.telefono && (
-                    <a href={`tel:${a.telefono}`} className="text-xs text-slate-500 hover:text-blue-600">
+                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-500 hover:text-blue-600">
                       📞 {a.telefono}
                     </a>
                   )}
                   {a.email && (
-                    <a href={`mailto:${a.email}`} className="text-xs text-slate-500 hover:text-blue-600">
+                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-500 hover:text-blue-600">
                       ✉ {a.email}
                     </a>
                   )}
@@ -285,7 +307,7 @@ export default function AlumnosPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-1.5 flex-shrink-0">
+              <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
                 {pagObj_?.telefono && (
                   <a
                     href={waUrl(pagObj_.telefono, pagObj_.nombre, a.nombre)}
@@ -391,17 +413,7 @@ export default function AlumnosPage() {
               {!isReception && (
                 <section>
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Pagador</p>
-                  {!pagadores.length
-                    ? <p className="text-xs text-amber-600">No hay pagadores. Crea uno en la sección Pagadores.</p>
-                    : (
-                      <select value={form.pagador ?? ""} onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : null }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Sin pagador asignado</option>
-                        {pagadores.map(p => (
-                          <option key={p.id} value={p.id}>{p.nombre}{p.metodo ? ` · ${p.metodo}` : ""}</option>
-                        ))}
-                      </select>
-                    )}
+                  <PagadorCombobox value={form.pagador} onChange={pagador => setForm(f => ({ ...f, pagador }))} />
                 </section>
               )}
 

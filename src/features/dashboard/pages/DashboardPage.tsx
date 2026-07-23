@@ -4,6 +4,8 @@ import { pagosApi } from "@/features/pagos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { gruposApi } from "@/features/grupos/api"
 import { formatEur, formatMonth } from "@/lib/utils"
+import { useAuthStore } from "@/store/authStore"
+import ReceptionSummary from "../components/ReceptionSummary"
 import type { Pago } from "@/types"
 
 const ESTADO_CLS: Record<string, string> = {
@@ -31,6 +33,11 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  const isReception = useAuthStore((s) => s.user?.role === "reception")
+  return isReception ? <ReceptionSummary /> : <OwnerDashboard />
+}
+
+function OwnerDashboard() {
   const qc = useQueryClient()
   const mesAct = new Date().toISOString().slice(0, 7)
 
