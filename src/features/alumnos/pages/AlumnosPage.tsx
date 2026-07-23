@@ -80,6 +80,11 @@ export default function AlumnosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alumnos, searchParams])
 
+  const soloIncompletos = searchParams.get("incompletos") === "1"
+  const alumnosFiltrados = soloIncompletos
+    ? alumnos.filter(a => !a.telefono || !a.email)
+    : alumnos
+
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(pagadoresRaw) ? pagadoresRaw : []
 
@@ -181,7 +186,7 @@ export default function AlumnosPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Alumnos</h1>
-          <p className="text-sm text-slate-500 mt-1">{alumnos.length} alumnos registrados</p>
+          <p className="text-sm text-slate-500 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
@@ -212,18 +217,32 @@ export default function AlumnosPage() {
         </div>
       </div>
 
+      {soloIncompletos && (
+        <div className="flex items-center gap-2 mb-4 text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-lg px-3 py-2">
+          <span>Mostrando solo alumnos con teléfono o email incompleto.</span>
+          <button
+            onClick={() => setSearchParams(params => { params.delete("incompletos"); return params }, { replace: true })}
+            className="underline hover:no-underline"
+          >
+            Quitar filtro
+          </button>
+        </div>
+      )}
+
       {/* States */}
       {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
-      {!isLoading && !alumnos.length && (
+      {!isLoading && !alumnosFiltrados.length && (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400">
           <span className="text-5xl mb-3">🎓</span>
-          <p className="text-sm">{search ? "Sin resultados para esa búsqueda." : "Sin alumnos. Crea el primero."}</p>
+          <p className="text-sm">
+            {soloIncompletos ? "Ningún alumno con datos incompletos." : search ? "Sin resultados para esa búsqueda." : "Sin alumnos. Crea el primero."}
+          </p>
         </div>
       )}
 
       {/* Cards */}
       <div className="space-y-3">
-        {alumnos.map(a => {
+        {alumnosFiltrados.map(a => {
           const color = AVATAR_COLORS[a.id % AVATAR_COLORS.length]
           const yearsOld = age(a.fnac)
           const pag = pagadorNombre(a.pagador)

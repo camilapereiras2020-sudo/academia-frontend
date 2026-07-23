@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import ProtectedRoute from "@/router/ProtectedRoute"
 import RoleProtectedRoute from "@/router/RoleProtectedRoute"
-import { useAuthStore } from "@/store/authStore"
 import AppShell from "@/components/layout/AppShell"
 import LoginPage from "@/features/auth/pages/LoginPage"
 import RegisterPage from "@/features/auth/pages/RegisterPage"
@@ -29,8 +28,7 @@ import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
 
 function DefaultRedirect() {
-  const role = useAuthStore((s) => s.user?.role)
-  return <Navigate to={role === "reception" ? "/alumnos" : "/dashboard"} replace />
+  return <Navigate to="/dashboard" replace />
 }
 
 export default function App() {

@@ -6,7 +6,7 @@ export const ALL_ROLES: Role[] = ["owner", "co_manager", "reception"]
 // (blocks direct URL access) and Sidebar (hides the nav item). Routes not
 // listed here (e.g. /grupos/:id) are open to every authenticated role.
 export const PAGE_ROLES: Record<string, Role[]> = {
-  "/dashboard": ["owner", "co_manager"],
+  "/dashboard": ALL_ROLES,
   "/alumnos": ALL_ROLES,
   "/pagadores": ["owner", "co_manager"],
   "/grupos": ALL_ROLES,
