@@ -25,7 +25,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/juegos/memoria": ALL_ROLES,
   "/juegos/scramble": ALL_ROLES,
   "/empresas": ["owner", "co_manager"],
-  "/facturacion": ["reception"],
+  "/facturacion": ["reception", "co_manager"],
 }
 
 export function canAccess(role: Role | undefined, path: string): boolean {
