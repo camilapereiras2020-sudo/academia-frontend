@@ -55,6 +55,7 @@ type Lead = {
   etapa: string; etapa_display: string; proximo_seguimiento?: string
   alumno?: number | null
   alerta: boolean; horas_sin_mover: number
+  last_contacted_at?: string | null; dias_sin_contacto: number; seguimiento_vencido: boolean
   interacciones: { id: number; tipo: string; fecha: string; resumen: string; proxima_accion: string }[]
   created_at: string; updated_at: string
 }
@@ -85,6 +86,26 @@ const emptyLeadForm = (): LeadForm => ({
 const etapaInfo = (v: string) => ETAPAS.find(e => e.value === v) ?? { label: v, color: "bg-slate-100 text-slate-600" }
 
 const isValidSpanishPhone = (v: string) => /^[679]\d{8}$/.test(v.replace(/\s/g, ""))
+
+// Leads in these stages are done (won or lost) — no point flagging them as
+// "going cold", they're not being worked anymore.
+const ETAPAS_TERMINALES = ["matriculado", "archivado", "frio"]
+
+// Graduated replacement for the old binary ">24h sin mover" badge. Based on
+// dias_sin_contacto (days since the last logged Interaccion, or since
+// creation if none was ever logged) rather than the old updated_at-based
+// signal, which reset on any unrelated edit.
+function stalenessBadge(lead: Lead): { label: string; className: string } | null {
+  if (ETAPAS_TERMINALES.includes(lead.etapa)) return null
+  const dias = lead.dias_sin_contacto
+  if (dias <= 2) return null
+  if (dias <= 5) return { label: `⏳ ${dias}d sin contacto`, className: "bg-yellow-100 text-yellow-700" }
+  return { label: `⚠ ${dias}d sin contacto`, className: "bg-red-100 text-red-700" }
+}
+
+function isSeguimientoVencido(lead: Lead): boolean {
+  return lead.seguimiento_vencido && !ETAPAS_TERMINALES.includes(lead.etapa)
+}
 
 function buildWhatsappContext(lead: Lead): string {
   const lineas: string[] = []
@@ -421,12 +442,21 @@ export default function CRMPage() {
         <div className="space-y-2">
           {leads.map(lead => {
             const ei = etapaInfo(lead.etapa)
+            const badge = stalenessBadge(lead)
+            const vencido = isSeguimientoVencido(lead)
+            const borderClass = vencido
+              ? "border-l-4 border-l-red-400"
+              : badge?.className.includes("red")
+              ? "border-l-4 border-l-red-400"
+              : badge
+              ? "border-l-4 border-l-yellow-400"
+              : ""
             return (
               <div key={lead.id}
                 onClick={() => selectLead(lead.id)}
                 className={`bg-white rounded-xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow ${
                   selectedId === lead.id ? "border-slate-400 ring-1 ring-slate-300" : ""
-                } ${lead.alerta ? "border-l-4 border-l-amber-400" : ""}`}>
+                } ${borderClass}`}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -434,9 +464,14 @@ export default function CRMPage() {
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ei.color}`}>
                         {ei.label}
                       </span>
-                      {lead.alerta && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                          ⚠ +24h sin mover
+                      {badge && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                      )}
+                      {vencido && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                          📅 Seguimiento vencido
                         </span>
                       )}
                     </div>

@@ -19,10 +19,6 @@ import DocumentosPage from "@/features/documentos/pages/DocumentosPage"
 import ConfigPage from "@/features/config/pages/ConfigPage"
 import PendientesPage from "@/features/pendientes/pages/PendientesPage"
 import CRMPage from "@/features/crm/Pages/CRMPage"
-import VocabGame from "@/features/games/pages/VocabGame"
-import FlashcardGame from "@/features/games/pages/FlashcardGame"
-import MemoryMatch from "@/features/games/pages/MemoryMatch"
-import WordScramble from "@/features/games/pages/WordScramble"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
@@ -56,10 +52,6 @@ export default function App() {
             <Route path="/pendientes" element={<PendientesPage />} />
             <Route path="/crm" element={<CRMPage />} />
             <Route path="/whatsapp-respuestas" element={<WhatsAppReplyPage />} />
-            <Route path="/juegos/vocab" element={<VocabGame />} />
-            <Route path="/juegos/flashcards" element={<FlashcardGame />} />
-            <Route path="/juegos/memoria" element={<MemoryMatch />} />
-            <Route path="/juegos/scramble" element={<WordScramble />} />
             <Route path="/empresas" element={<EmpresasPage />} />
             <Route path="/facturacion" element={<FacturacionPage />} />
           </Route>

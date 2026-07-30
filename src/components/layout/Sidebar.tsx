@@ -7,7 +7,7 @@ import {
   LayoutDashboard, GraduationCap, Users, FolderOpen,
   CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
   FileText, UserSearch, Building2, MessageCircle,
-  Joystick, BookOpen, Grid3X3, Shuffle, Receipt
+  Receipt
 } from "lucide-react"
 
 const LOGO_SRC = {
@@ -42,10 +42,6 @@ const NAV_SECTIONS = [
     items: [
       { to: "/crm", icon: UserSearch, label: "CRM" },
       { to: "/whatsapp-respuestas", icon: MessageCircle, label: "Respuestas WhatsApp" },
-      { to: "/juegos/vocab", icon: Joystick, label: "Vocab Game" },
-      { to: "/juegos/flashcards", icon: BookOpen, label: "Flashcards" },
-      { to: "/juegos/memoria", icon: Grid3X3, label: "Memory Match" },
-      { to: "/juegos/scramble", icon: Shuffle, label: "Word Scramble" },
       { to: "/empresas", icon: Building2, label: "Empresas" },
     ]
   },

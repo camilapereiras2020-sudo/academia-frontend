@@ -20,10 +20,6 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/pendientes": ["owner", "co_manager"],
   "/crm": ["owner", "co_manager"],
   "/whatsapp-respuestas": ALL_ROLES,
-  "/juegos/vocab": ALL_ROLES,
-  "/juegos/flashcards": ALL_ROLES,
-  "/juegos/memoria": ALL_ROLES,
-  "/juegos/scramble": ALL_ROLES,
   "/empresas": ["owner", "co_manager"],
   "/facturacion": ["reception", "co_manager"],
 }
