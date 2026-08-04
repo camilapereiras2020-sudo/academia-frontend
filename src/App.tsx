@@ -22,6 +22,7 @@ import CRMPage from "@/features/crm/Pages/CRMPage"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
+import RangersHomePage from "@/features/rangers/pages/RangersHomePage"
 
 function DefaultRedirect() {
   return <Navigate to="/dashboard" replace />
@@ -30,6 +31,10 @@ function DefaultRedirect() {
 export default function App() {
   return (
     <Routes>
+      {/* Public marketing homepage. "/" is already taken by the authenticated
+          app's DefaultRedirect (index route -> /dashboard), so the new public
+          site lives at /rangers instead of overwriting that behavior. */}
+      <Route path="/rangers" element={<RangersHomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>

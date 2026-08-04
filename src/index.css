@@ -1,32 +1,51 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Oswald:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --gold: #B08D57;
-  --gold-light: #C9A96E;
-  --gold-dim: #8a6d3f;
-  --gold-muted: rgba(176, 141, 87, 0.12);
-  --dark: #FAF8F5;
+  /* Rangers Academy palette: dark forest green, sage, cream, tan/khaki, brass gold */
+  --gold: #B8892B;
+  --gold-light: #D4A94A;
+  --gold-dim: #8C6A22;
+  --gold-muted: rgba(184, 137, 43, 0.14);
+  --dark: #F5F1E4;
   --dark-2: #FFFFFF;
-  --dark-3: #F3F0EB;
-  --dark-4: #EAE6DF;
-  --border: rgba(176, 141, 87, 0.25);
-  --border-subtle: rgba(0,0,0,0.07);
-  --sage: #6b7a5e;
-  --sage-muted: rgba(107, 122, 94, 0.14);
-  --terracotta: #b5654a;
-  --terracotta-muted: rgba(181, 101, 74, 0.14);
-  --text: #1A1714;
-  --text-muted: rgba(26, 23, 20, 0.6);
-  --text-dim: rgba(26, 23, 20, 0.35);
-  --surface: rgba(0,0,0,0.02);
-  --surface-hover: rgba(0,0,0,0.04);
+  --dark-3: #EFE9D8;
+  --dark-4: #E4DCC4;
+  --border: rgba(184, 137, 43, 0.3);
+  --border-subtle: rgba(22, 48, 42, 0.1);
+  --sage: #6E8060;
+  --sage-muted: rgba(110, 128, 96, 0.14);
+  --terracotta: #A9772F;
+  --terracotta-muted: rgba(169, 119, 47, 0.14);
+  --text: #1B2A22;
+  --text-muted: rgba(27, 42, 34, 0.62);
+  --text-dim: rgba(27, 42, 34, 0.38);
+  --surface: rgba(22, 48, 42, 0.03);
+  --surface-hover: rgba(22, 48, 42, 0.06);
   --radius: 12px;
   --radius-sm: 8px;
+
+  /* Rangers full-palette scale, for direct use (Tailwind: forest / sage / cream / khaki / brass) */
+  --forest-950: #0F241D;
+  --forest-900: #16302A;
+  --forest-800: #1E4536;
+  --forest-700: #27594A;
+  --khaki: #C9B896;
+  --khaki-light: #E4DCC4;
+  --cream: #F5F1E4;
+
+  /* Sidebar / chrome (dark forest, distinct from the cream content area) */
+  --sidebar-bg: #16302A;
+  --sidebar-border: rgba(245, 241, 228, 0.08);
+  --sidebar-text: rgba(245, 241, 228, 0.68);
+  --sidebar-text-dim: rgba(245, 241, 228, 0.4);
+  --sidebar-text-active: #D4A94A;
+  --sidebar-active-bg: rgba(212, 169, 74, 0.14);
+  --sidebar-hover-bg: rgba(245, 241, 228, 0.06);
 }
 
 * {
@@ -63,6 +82,11 @@ body::before {
 /* Typography */
 .font-display {
   font-family: 'Cormorant Garamond', serif;
+}
+.font-poster {
+  font-family: 'Oswald', 'DM Sans', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 /* Gold accent line */
