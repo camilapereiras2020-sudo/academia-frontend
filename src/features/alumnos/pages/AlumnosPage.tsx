@@ -38,14 +38,14 @@ const MARCAS: { value: Marca; label: string }[] = [
 interface FormState {
   nombre: string; fnac: string; telefono: string; email: string; notas: string
   marca: Marca | ""
-  pagador: number | null; aviso_cumple_dias: number | null
+  pagador: number | null; es_adulto: boolean; aviso_cumple_dias: number | null
   grupos: number[]; horarios: HorarioSlot[]
 }
 
 const emptyForm = (): FormState => ({
   nombre: "", fnac: "", telefono: "", email: "", notas: "",
   marca: "",
-  pagador: null, aviso_cumple_dias: null, grupos: [], horarios: [],
+  pagador: null, es_adulto: false, aviso_cumple_dias: null, grupos: [], horarios: [],
 })
 
 export default function AlumnosPage() {
@@ -93,9 +93,19 @@ export default function AlumnosPage() {
 
   const saveMut = useMutation({
     mutationFn: async (f: FormState) => {
+      let pagadorId = f.pagador
+      if (f.es_adulto && !pagadorId) {
+        // Alumno pays for themself and no Pagador is linked yet — auto-create
+        // one from the alumno's own contact data instead of making the user
+        // pick/create one via the combobox.
+        const pagRes = await pagadoresApi.create({
+          nombre: f.nombre, telefono: f.telefono, email: f.email,
+        })
+        pagadorId = pagRes.data.id
+      }
       const payload = {
         nombre: f.nombre, fnac: f.fnac || null, telefono: f.telefono,
-        email: f.email, notas: f.notas, pagador: f.pagador,
+        email: f.email, notas: f.notas, pagador: pagadorId, es_adulto: f.es_adulto,
         marca: f.marca as Marca,
         aviso_cumple_dias: f.aviso_cumple_dias,
       }
@@ -108,7 +118,11 @@ export default function AlumnosPage() {
       }
       return res
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["alumnos"] }); closeModal() },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      qc.invalidateQueries({ queryKey: ["pagadores"] })
+      closeModal()
+    },
     onError: () => setFormError("Error al guardar el alumno."),
   })
 
@@ -128,7 +142,7 @@ export default function AlumnosPage() {
       nombre: a.nombre, fnac: a.fnac ?? "", telefono: a.telefono ?? "",
       email: a.email ?? "", notas: a.notas ?? "",
       marca: a.marca,
-      pagador: a.pagador ?? null, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
+      pagador: a.pagador ?? null, es_adulto: a.es_adulto ?? false, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
       grupos: (a.grupos_detalle ?? []).map(g => g.grupo),
       horarios: (a.grupos_detalle ?? []).flatMap(g =>
         g.horarios.map(h => ({ ...h, grupoId: g.grupo }))
@@ -413,7 +427,24 @@ export default function AlumnosPage() {
               {!isReception && (
                 <section>
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Pagador</p>
-                  <PagadorCombobox value={form.pagador} onChange={pagador => setForm(f => ({ ...f, pagador }))} />
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input type="checkbox" checked={form.es_adulto}
+                        onChange={e => {
+                          const checked = e.target.checked
+                          setForm(f => ({ ...f, es_adulto: checked, pagador: null }))
+                        }}
+                        className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-blue-500" />
+                      El alumno es adulto / paga el mismo
+                    </label>
+                    {form.es_adulto ? (
+                      <p className="text-xs text-slate-500">
+                        Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
+                      </p>
+                    ) : (
+                      <PagadorCombobox value={form.pagador} onChange={pagador => setForm(f => ({ ...f, pagador }))} />
+                    )}
+                  </div>
                 </section>
               )}
 

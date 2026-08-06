@@ -8,7 +8,6 @@ import { queryClient } from "@/lib/queryClient"
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Panel principal',
   '/alumnos': 'Alumnos',
-  '/pagadores': 'Pagadores',
   '/grupos': 'Grupos',
   '/asistencia': 'Asistencia',
   '/pagos': 'Pagos',

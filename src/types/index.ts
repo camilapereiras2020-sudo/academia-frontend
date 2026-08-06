@@ -22,6 +22,7 @@ export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
   fnac: string | null; telefono: string; email: string; dni: string; nivel: string
   notas: string; aviso_cumple_dias: number | null; pagador: number | null
+  es_adulto: boolean
   grupos_detalle: AlumnoGrupo[]; created_at: string
   foto_url: string
   nivel_objetivo: NivelObjetivo | ""
