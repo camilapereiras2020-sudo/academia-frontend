@@ -4,7 +4,7 @@ import { useBrandStore } from "@/store/brandStore"
 import { useAuthStore } from "@/store/authStore"
 import { canAccess } from "@/lib/roles"
 import {
-  LayoutDashboard, GraduationCap, Users, FolderOpen,
+  LayoutDashboard, GraduationCap, FolderOpen,
   CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
   FileText, UserSearch, Building2, MessageCircle,
   Receipt
@@ -21,7 +21,6 @@ const NAV_SECTIONS = [
     items: [
       { to: "/dashboard", icon: LayoutDashboard, label: "Panel" },
       { to: "/alumnos", icon: GraduationCap, label: "Alumnos" },
-      { to: "/pagadores", icon: Users, label: "Pagadores" },
       { to: "/grupos", icon: FolderOpen, label: "Grupos" },
       { to: "/asistencia", icon: CheckSquare, label: "Asistencia" },
       { to: "/cumpleanos", icon: Cake, label: "Cumpleaños" },
