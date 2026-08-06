@@ -186,11 +186,11 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
           {/* Read-only identification header — this is how you tell apart same-month/same-amount imported rows */}
           <div className="bg-slate-50 border rounded-lg p-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <div>
-              <span className="text-slate-400">Fecha de pago: </span>
+              <span className="text-slate-600">Fecha de pago: </span>
               <span className="font-medium text-slate-700">{pago.fecha ?? "—"}</span>
             </div>
             <div className="flex-1 min-w-[220px]">
-              <span className="text-slate-400">Concepto original: </span>
+              <span className="text-slate-600">Concepto original: </span>
               <span className="font-medium text-slate-700">{pago.concepto_original || "—"}</span>
             </div>
           </div>
@@ -199,7 +199,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Alumno *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Alumno *</label>
               <select value={alumno} onChange={e => onAlumnoChange(e.target.value ? +e.target.value : "")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Seleccionar...</option>
@@ -207,7 +207,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Pagador *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Pagador *</label>
               <select value={pagador} onChange={e => setPagador(e.target.value ? +e.target.value : "")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Seleccionar...</option>
@@ -215,7 +215,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Grupo</label>
               <select value={grupo} onChange={e => setGrupo(e.target.value ? +e.target.value : "")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Sin grupo</option>
@@ -223,7 +223,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Tarifa</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Tarifa</label>
               <select value={tarifa} onChange={e => onTarifaChange(e.target.value ? +e.target.value : "")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Sin tarifa / manual</option>
@@ -243,29 +243,29 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Periodo *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Periodo *</label>
               <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Horas</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Horas</label>
               <input type="number" value={horas} onChange={e => setHoras(e.target.value === "" ? "" : +e.target.value)}
                 min="0" step="0.1" placeholder="Ej: 1.5"
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Importe (€)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Importe (€)</label>
               <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)}
                 min="0" step="0.01" disabled={!montoEditable}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-500" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Descuento (€)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Descuento (€)</label>
               <input type="number" value={descuento} onChange={e => setDescuento(+e.target.value)} min="0" step="0.01"
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Método</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Método</label>
               <select value={metodo} onChange={e => setMetodo(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
@@ -275,7 +275,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-slate-500">Extras</label>
+              <label className="text-xs font-semibold text-slate-700">Extras</label>
               <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="text-xs text-blue-600 hover:text-blue-800">
                 + Añadir extra
               </button>
@@ -294,20 +294,20 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Concepto libre (línea de la factura)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Concepto libre (línea de la factura)</label>
             <input type="text" value={conceptoLibre} onChange={e => setConceptoLibre(e.target.value)}
               placeholder="Deja en blanco para usar la descripción automática"
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
             <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
           </div>
 
           <div className="bg-slate-50 rounded-lg p-4 text-right">
-            <p className="text-sm text-slate-500">Importe: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
+            <p className="text-sm text-slate-700">Importe: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
             <p className="text-2xl font-bold text-slate-800 mt-1">Total: {total.toFixed(2)} €</p>
           </div>
 
@@ -324,7 +324,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                         className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50">
                         {downloadingId === d.id ? "..." : "📥 Ver / Descargar (Ctrl+P para imprimir)"}
                       </button>
-                      <span className="text-xs text-slate-400" title="Cuándo se emitió este documento/PDF">
+                      <span className="text-xs text-slate-600" title="Cuándo se emitió este documento/PDF">
                         Fecha de emisión: {formatFechaEmision(d.emitida_at)}
                       </span>
                     </span>
@@ -343,7 +343,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                   </button>
                 </div>
               )}
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-600 mt-2">
                 El envío por email al pagador ocurre automáticamente al generar — no hay un botón de reenvío manual todavía.
               </p>
             </div>

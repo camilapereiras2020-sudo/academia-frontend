@@ -58,7 +58,7 @@ export default function WhatsAppReplyPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Respuestas WhatsApp</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 mt-1">
             Generá un borrador de respuesta con el tono de Rangers Academy.
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function WhatsAppReplyPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-xl border shadow-sm p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Mensaje recibido
             </label>
             <textarea
@@ -79,7 +79,7 @@ export default function WhatsAppReplyPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">
               Situación
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -101,7 +101,7 @@ export default function WhatsAppReplyPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Contexto adicional (opcional)
             </label>
             <textarea
@@ -125,7 +125,7 @@ export default function WhatsAppReplyPage() {
         </div>
 
         <div className="bg-white rounded-xl border shadow-sm p-6">
-          <label className="block text-xs font-semibold text-slate-500 mb-1">
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
             Respuesta sugerida
           </label>
           <textarea

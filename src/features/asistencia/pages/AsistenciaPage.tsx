@@ -67,7 +67,7 @@ export default function AsistenciaPage() {
 
       <div className="flex gap-3 mb-6 flex-wrap items-end">
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Grupo</label>
           <select value={grupoId} onChange={e => { setGrupoId(+e.target.value); setShowForm(false) }}
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Seleccionar grupo...</option>
@@ -75,7 +75,7 @@ export default function AsistenciaPage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha</label>
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
@@ -89,7 +89,7 @@ export default function AsistenciaPage() {
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
           <h2 className="font-semibold text-slate-800 mb-4">Pasar lista — {fecha}</h2>
-          {!grupoAlumnos.length && <p className="text-slate-400 text-sm">No hay alumnos en este grupo.</p>}
+          {!grupoAlumnos.length && <p className="text-slate-600 text-sm">No hay alumnos en este grupo.</p>}
           <div className="space-y-2">
             {registros.map((r, idx) => {
               const alumno = allAlumnos.find(a => a.id === r.alumno)
@@ -123,7 +123,7 @@ export default function AsistenciaPage() {
           <div className="px-6 py-4 border-b">
             <h2 className="font-semibold text-slate-800">Historial — {grupos.find(g => g.id === grupoId)?.nombre}</h2>
           </div>
-          {!sesiones.length && <p className="p-6 text-slate-400 text-sm">Sin sesiones este mes.</p>}
+          {!sesiones.length && <p className="p-6 text-slate-600 text-sm">Sin sesiones este mes.</p>}
           {sesiones.map(s => (
             <div key={s.id} className="border-b last:border-b-0 px-6 py-3">
               <p className="text-sm font-semibold text-slate-700">{s.fecha} {s.hora && `— ${s.hora}`}</p>

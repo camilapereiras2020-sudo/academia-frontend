@@ -33,7 +33,7 @@ export default function ConfigPage() {
 
   const field = (key: keyof typeof form, label: string, placeholder = "") => (
     <div key={key}>
-      <label className="block text-xs font-semibold text-slate-500 mb-1">{label}</label>
+      <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
       <input
         type="text"
         value={form[key]}
@@ -55,13 +55,13 @@ export default function ConfigPage() {
         </div>
         <div>
           <p className="font-semibold text-slate-800 text-sm">{user?.email}</p>
-          <p className="text-xs text-slate-500">Cuenta de academia</p>
+          <p className="text-xs text-slate-700">Cuenta de academia</p>
         </div>
       </div>
 
       {/* Academy settings */}
       <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Datos de la academia</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Datos de la academia</p>
 
         {field("academia_nombre", "Nombre de la academia", "Mi Academia de Inglés")}
         {field("academia_nif",    "NIF / CIF",             "B12345678")}
@@ -69,12 +69,12 @@ export default function ConfigPage() {
         {field("academia_tel",    "Teléfono",              "912 345 678")}
 
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Email (no editable)</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Email (no editable)</label>
           <input
             type="text"
             value={user?.email ?? ""}
             disabled
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-400 cursor-not-allowed"
+            className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-600 cursor-not-allowed"
           />
         </div>
 
@@ -97,7 +97,7 @@ export default function ConfigPage() {
       {/* Danger zone */}
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-red-100 p-6">
         <p className="text-xs font-bold uppercase tracking-widest text-red-400 mb-3">Zona de peligro</p>
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-slate-700 mb-4">
           Para cerrar sesión o eliminar la cuenta, contacta con el administrador.
         </p>
         <button

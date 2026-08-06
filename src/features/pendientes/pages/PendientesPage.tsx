@@ -45,7 +45,7 @@ export default function PendientesPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Pagos pendientes</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 mt-1">
             {todos.length} pago{todos.length !== 1 ? "s" : ""} por cobrar
             {todos.length > 0 && <span className="font-semibold text-red-600 ml-1">— {formatEur(total)}</span>}
           </p>
@@ -64,7 +64,7 @@ export default function PendientesPage() {
       {/* Summary by period */}
       {todos.length > 0 && (
         <div className="bg-white rounded-xl border shadow-sm p-4 mb-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Resumen por periodo</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Resumen por periodo</p>
           <div className="flex flex-wrap gap-3">
             {Array.from(new Set(todos.map(p => p.periodo))).sort().map(periodo => {
               const slice = todos.filter(p => p.periodo === periodo)
@@ -72,7 +72,7 @@ export default function PendientesPage() {
               return (
                 <div key={periodo} className="bg-slate-50 rounded-lg px-3 py-2 text-sm">
                   <span className="font-medium text-slate-700">{formatMonth(periodo)}</span>
-                  <span className="text-slate-500 ml-2">{slice.length} pagos · {formatEur(sum)}</span>
+                  <span className="text-slate-700 ml-2">{slice.length} pagos · {formatEur(sum)}</span>
                 </div>
               )
             })}
@@ -86,12 +86,12 @@ export default function PendientesPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-slate-800">{p.alumno_nombre}</span>
-                <span className="text-xs text-slate-400">→ {p.pagador_nombre}</span>
+                <span className="text-xs text-slate-600">→ {p.pagador_nombre}</span>
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_CLS[p.estado]}`}>
                   {p.estado}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-700 mt-0.5">
                 {p.grupo_nombre && <span>{p.grupo_nombre} · </span>}
                 {formatMonth(p.periodo)}
                 {p.metodo && <span className="ml-1 capitalize">· {p.metodo}</span>}

@@ -117,7 +117,7 @@ export default function NuevoPagoPage() {
         {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
 
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Marca / Emisor *</label>
           <select value={marca} onChange={e => setMarca(e.target.value as Marca)}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Seleccionar...</option>
@@ -127,7 +127,7 @@ export default function NuevoPagoPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Alumno *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Alumno *</label>
             <select value={alumno} onChange={e => onAlumnoChange(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Seleccionar...</option>
@@ -135,7 +135,7 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Pagador *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Pagador *</label>
             <select value={pagador} onChange={e => setPagador(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Seleccionar...</option>
@@ -143,7 +143,7 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Grupo</label>
             <select value={grupo} onChange={e => setGrupo(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Sin grupo</option>
@@ -151,7 +151,7 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Tarifa</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Tarifa</label>
             <select value={tarifa} onChange={e => onTarifaChange(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Sin tarifa / manual</option>
@@ -174,36 +174,36 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Horas</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Horas</label>
             <input type="number" value={horas} onChange={e => setHoras(e.target.value === "" ? "" : +e.target.value)} min="0" step="0.1"
               placeholder="Ej: 1.5"
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Periodo *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Periodo *</label>
             <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Mensualidad (€)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Mensualidad (€)</label>
             <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)} min="0" step="0.01"
               disabled={!montoEditable}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Descuento (€)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Descuento (€)</label>
             <input type="number" value={descuento} onChange={e => setDescuento(+e.target.value)} min="0" step="0.01"
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Metodo de pago</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Metodo de pago</label>
             <select value={metodo} onChange={e => setMetodo(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Estado</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Estado</label>
             <select value={estado} onChange={e => setEstado(e.target.value as "pagado" | "pendiente" | "parcial")}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="pendiente">Pendiente</option>
@@ -215,7 +215,7 @@ export default function NuevoPagoPage() {
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-semibold text-slate-500">Extras</label>
+            <label className="text-xs font-semibold text-slate-700">Extras</label>
             <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="text-xs text-blue-600 hover:text-blue-800">+ Anadir extra</button>
           </div>
           {extras.map((ex, i) => (
@@ -232,13 +232,13 @@ export default function NuevoPagoPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
           <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
         </div>
 
         <div className="bg-slate-50 rounded-lg p-4 text-right">
-          <p className="text-sm text-slate-500">Mensualidad: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
+          <p className="text-sm text-slate-700">Mensualidad: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
           <p className="text-2xl font-bold text-slate-800 mt-1">Total: {total.toFixed(2)} €</p>
         </div>
 

@@ -72,7 +72,7 @@ export default function FacturacionPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-slate-800">Facturación</h1>
-        <p className="text-sm text-slate-500 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
+        <p className="text-sm text-slate-700 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
       </div>
 
       {downloadError && (
@@ -94,7 +94,7 @@ export default function FacturacionPage() {
       {!!pendientes.length && (
         <div className="bg-white rounded-xl shadow-sm border overflow-x-auto mb-6">
           <div className="px-4 py-3 border-b bg-slate-50">
-            <span className="text-xs uppercase tracking-wide text-slate-500 font-semibold">
+            <span className="text-xs uppercase tracking-wide text-slate-700 font-semibold">
               Pendientes de facturar ({pendientes.length})
             </span>
           </div>
@@ -102,7 +102,7 @@ export default function FacturacionPage() {
             <thead className="bg-slate-50 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Marca", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-500 font-semibold whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-700 font-semibold whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -113,8 +113,8 @@ export default function FacturacionPage() {
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{p.marca_display ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{p.marca_display ?? "—"}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => generarMut.mutate(p)}
@@ -134,7 +134,7 @@ export default function FacturacionPage() {
       {!!listos.length && (
         <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
           <div className="px-4 py-3 border-b bg-slate-50">
-            <span className="text-xs uppercase tracking-wide text-slate-500 font-semibold">
+            <span className="text-xs uppercase tracking-wide text-slate-700 font-semibold">
               Ya facturados ({listos.length})
             </span>
           </div>
@@ -142,7 +142,7 @@ export default function FacturacionPage() {
             <thead className="bg-slate-50 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Doc", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-500 font-semibold whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-700 font-semibold whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -155,8 +155,8 @@ export default function FacturacionPage() {
                   <tr key={p.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{doc.num_doc}</td>
+                    <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">{doc.num_doc}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleDescargar(doc)}

@@ -141,7 +141,7 @@ export default function PagosPendientesPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Pagos pendientes de completar</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 mt-1">
             {pending.length} pago(s) importado(s) sin alumno/pagador asignado — se sugieren coincidencias a partir del concepto original de Bizum.
           </p>
         </div>
@@ -178,11 +178,11 @@ export default function PagosPendientesPage() {
             <div key={p.id} className={`bg-white rounded-xl border shadow-sm p-4 ${saved ? "opacity-50" : ""}`}>
               {/* Identification header — read-only, this is how you tell rows apart */}
               <div className="bg-slate-50 border rounded-lg p-2.5 mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                <div><span className="text-slate-400">Fecha:</span> <span className="font-medium">{p.fecha}</span></div>
-                <div><span className="text-slate-400">Importe:</span> <span className="font-semibold">{formatEur(Number(p.total))}</span></div>
-                <div><span className="text-slate-400">Nº reservado:</span> <span className="font-mono text-xs">{p.numero_factura_reservado}</span></div>
+                <div><span className="text-slate-600">Fecha:</span> <span className="font-medium">{p.fecha}</span></div>
+                <div><span className="text-slate-600">Importe:</span> <span className="font-semibold">{formatEur(Number(p.total))}</span></div>
+                <div><span className="text-slate-600">Nº reservado:</span> <span className="font-mono text-xs">{p.numero_factura_reservado}</span></div>
                 <div className="flex-1 min-w-[200px]">
-                  <span className="text-slate-400">Concepto original:</span>{" "}
+                  <span className="text-slate-600">Concepto original:</span>{" "}
                   <span className="font-medium">{p.concepto_original || "—"}</span>
                 </div>
               </div>
@@ -192,7 +192,7 @@ export default function PagosPendientesPage() {
               )}
 
               <div className="mb-3 max-w-xs">
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Marca / Emisor *</label>
                 <select disabled={saved} value={s.marca}
                   onChange={e => setField(p.id, "marca", e.target.value as Marca)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100">
@@ -203,7 +203,7 @@ export default function PagosPendientesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-1">
                     Alumno *
                     {row.sugerencia_alumno && <ScoreBadge score={row.sugerencia_alumno.score} />}
                   </label>
@@ -215,7 +215,7 @@ export default function PagosPendientesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-1">
                     Pagador *
                     {row.sugerencia_pagador && <ScoreBadge score={row.sugerencia_pagador.score} />}
                   </label>
@@ -227,7 +227,7 @@ export default function PagosPendientesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-1">
                     Grupo
                     {row.sugerencia_grupo && <ScoreBadge score={row.sugerencia_alumno?.score ?? 0} />}
                   </label>
@@ -266,7 +266,7 @@ export default function PagosPendientesPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4">
             <h3 className="font-semibold text-slate-800 mb-1">Confirmar {highConfidenceReady.length} pagos</h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-700 mb-4">
               Se asignará alumno/pagador/grupo y se generará la factura o recibo automáticamente para cada uno
               (usando su número ya reservado), igual que si los guardaras uno por uno. Solo incluye filas con
               sugerencia de alumno y pagador con confianza ≥80%. Esta acción no se puede deshacer.

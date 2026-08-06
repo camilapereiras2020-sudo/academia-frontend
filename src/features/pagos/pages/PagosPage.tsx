@@ -169,7 +169,7 @@ export default function PagosPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Pagos</h1>
-          <p className="text-sm text-slate-500 mt-1">{pagos.length} registros</p>
+          <p className="text-sm text-slate-700 mt-1">{pagos.length} registros</p>
         </div>
         <div className="flex gap-2">
           {pendientesCount > 0 && (
@@ -197,7 +197,7 @@ export default function PagosPage() {
             <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{formError}</p>
           )}
           <div className="mb-4">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Marca / Emisor *</label>
             <select
               value={form.marca}
               onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
@@ -209,7 +209,7 @@ export default function PagosPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Alumno *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Alumno *</label>
               <select
                 value={form.alumno}
                 onChange={e => onAlumnoChange(e.target.value ? +e.target.value : "")}
@@ -220,7 +220,7 @@ export default function PagosPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Pagador *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Pagador *</label>
               <select
                 value={form.pagador}
                 onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : "" }))}
@@ -231,7 +231,7 @@ export default function PagosPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Importe (€) *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Importe (€) *</label>
               <input
                 type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.mensualidad}
@@ -240,7 +240,7 @@ export default function PagosPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Método</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Método</label>
               <select
                 value={form.metodo}
                 onChange={e => setForm(f => ({ ...f, metodo: e.target.value }))}
@@ -250,7 +250,7 @@ export default function PagosPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Periodo *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Periodo *</label>
               <input
                 type="month"
                 value={form.periodo}
@@ -259,7 +259,7 @@ export default function PagosPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Grupo</label>
               <select
                 value={form.grupo}
                 onChange={e => setForm(f => ({ ...f, grupo: e.target.value ? +e.target.value : "" }))}
@@ -271,7 +271,7 @@ export default function PagosPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
             <textarea
               rows={2} placeholder="Observaciones..."
               value={form.notas}
@@ -352,7 +352,7 @@ export default function PagosPage() {
             <thead className="bg-slate-50 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Fecha de pago", "Importe", "Método", "Doc", "Estado", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-500 font-semibold whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-700 font-semibold whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -363,11 +363,11 @@ export default function PagosPage() {
                 <tr key={p.id} onClick={() => setSelectedPago(p)} className="hover:bg-slate-50 cursor-pointer">
                   <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
+                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{formatEur(Number(p.total))}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
-                  <td className="px-4 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
+                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
+                  <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge estado={p.estado} />
                     {p.estado_carga === "pendiente_completar" && (
@@ -417,7 +417,7 @@ export default function PagosPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
             <h3 className="font-semibold text-slate-800 mb-1">Eliminar pago</h3>
-            <p className="text-sm text-slate-500 mb-4">Esta acción no se puede deshacer.</p>
+            <p className="text-sm text-slate-700 mb-4">Esta acción no se puede deshacer.</p>
             {deleteError && (
               <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{deleteError}</p>
             )}

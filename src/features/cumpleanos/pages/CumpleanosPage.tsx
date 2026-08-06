@@ -21,7 +21,7 @@ function urgencyLabel(dias: number) {
   if (dias === 0) return <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">¡Hoy!</span>
   if (dias === 1) return <span className="text-xs font-semibold text-orange-600">Mañana</span>
   if (dias <= 7) return <span className="text-xs font-semibold text-orange-500">en {dias} días</span>
-  return <span className="text-xs text-slate-500">en {dias} días</span>
+  return <span className="text-xs text-slate-700">en {dias} días</span>
 }
 
 export default function CumpleanosPage() {
@@ -41,12 +41,12 @@ export default function CumpleanosPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Cumpleaños</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 mt-1">
             {cumples.length} cumpleaños en los próximos {dias} días
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-500">Ventana:</label>
+          <label className="text-xs font-semibold text-slate-700">Ventana:</label>
           <select value={dias} onChange={e => setDias(+e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             {WINDOW_OPTS.map(d => <option key={d} value={d}>{d} días</option>)}
@@ -79,7 +79,7 @@ export default function CumpleanosPage() {
       {proximos.length > 0 && (
         <div>
           {hoy.length > 0 && (
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Próximos</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2">Próximos</p>
           )}
           <div className="space-y-2">
             {proximos.map((c) => (
@@ -109,7 +109,7 @@ function BirthdayCard({ c }: { c: Cumpleanos }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-slate-800">{c.nombre}</p>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-700 mt-0.5">
           {formatted}
           {age !== null && <span className="ml-1">· cumple {age} años</span>}
         </p>

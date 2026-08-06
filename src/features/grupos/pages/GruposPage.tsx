@@ -104,7 +104,7 @@ export default function GruposPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Grupos</h1>
-          <p className="text-sm text-slate-500 mt-1">{all.length} grupos activos</p>
+          <p className="text-sm text-slate-700 mt-1">{all.length} grupos activos</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
@@ -151,8 +151,8 @@ export default function GruposPage() {
                         {g.nivel}
                       </span>
                     )}
-                    <span className="text-xs text-slate-500">👥 {g.alumnos_count} alumnos</span>
-                    {g.aula && <span className="text-xs text-slate-500">📍 {g.aula}</span>}
+                    <span className="text-xs text-slate-700">👥 {g.alumnos_count} alumnos</span>
+                    {g.aula && <span className="text-xs text-slate-700">📍 {g.aula}</span>}
                     {g.tarifa > 0 && (
                       <span className="text-xs font-semibold text-slate-600">
                         {Number(g.tarifa).toFixed(2)} €/mes
@@ -212,7 +212,7 @@ export default function GruposPage() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre *</label>
                 <input type="text" value={form.nombre} placeholder="Ej: B1 Martes tarde"
                   onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -220,26 +220,26 @@ export default function GruposPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nivel</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nivel</label>
                   <select value={form.nivel} onChange={e => setForm(f => ({ ...f, nivel: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     {NIVELES.map(n => <option key={n} value={n}>{n || "— Sin nivel —"}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tarifa mensual (€)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tarifa mensual (€)</label>
                   <input type="number" value={form.tarifa} min="0" step="0.01"
                     onChange={e => setForm(f => ({ ...f, tarifa: +e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Aula</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Aula</label>
                   <input type="text" value={form.aula} placeholder="Aula 1, Online…"
                     onChange={e => setForm(f => ({ ...f, aula: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Color</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Color</label>
                   <div className="flex gap-2 flex-wrap mt-1">
                     {PALETTE.map((c, i) => (
                       <button key={i} onClick={() => setForm(f => ({ ...f, color_idx: i }))}
@@ -258,13 +258,13 @@ export default function GruposPage() {
               {/* Schedule */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-semibold text-slate-500">Horario base</label>
+                  <label className="text-xs font-semibold text-slate-700">Horario base</label>
                   <button onClick={addHorario} className="text-xs text-blue-600 hover:text-blue-800">
                     + Añadir franja
                   </button>
                 </div>
                 {!form.horarios.length && (
-                  <p className="text-xs text-slate-400 italic">Sin franjas. Pulsa + Añadir franja.</p>
+                  <p className="text-xs text-slate-600 italic">Sin franjas. Pulsa + Añadir franja.</p>
                 )}
                 <div className="space-y-2">
                   {form.horarios.map((h, idx) => (
@@ -319,10 +319,10 @@ export default function GruposPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
             <h3 className="font-semibold text-slate-800 mb-1">Eliminar grupo</h3>
-            <p className="text-sm text-slate-500 mb-1">
+            <p className="text-sm text-slate-700 mb-1">
               ¿Eliminar <strong>{confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-slate-600 mb-4">
               Los alumnos del grupo no se eliminarán, pero perderán la asignación.
             </p>
             {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}

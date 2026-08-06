@@ -200,7 +200,7 @@ export default function AlumnosPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Alumnos</h1>
-          <p className="text-sm text-slate-500 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
+          <p className="text-sm text-slate-700 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
@@ -275,31 +275,31 @@ export default function AlumnosPage() {
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="font-semibold text-slate-800">{a.nombre}</span>
                   {yearsOld !== null && (
-                    <span className="text-xs text-slate-400">{yearsOld} años</span>
+                    <span className="text-xs text-slate-600">{yearsOld} años</span>
                   )}
                   {a.fnac && (
-                    <span className="text-xs text-slate-400">{new Date(a.fnac).toLocaleDateString("es-ES")}</span>
+                    <span className="text-xs text-slate-600">{new Date(a.fnac).toLocaleDateString("es-ES")}</span>
                   )}
                 </div>
 
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                   {a.telefono && (
-                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-500 hover:text-blue-600">
+                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-700 hover:text-blue-600">
                       📞 {a.telefono}
                     </a>
                   )}
                   {a.email && (
-                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-500 hover:text-blue-600">
+                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-700 hover:text-blue-600">
                       ✉ {a.email}
                     </a>
                   )}
                   {pag && (
-                    <span className="text-xs text-slate-500">💳 {pag}</span>
+                    <span className="text-xs text-slate-700">💳 {pag}</span>
                   )}
                 </div>
 
                 {a.notas && (
-                  <p className="text-xs text-slate-400 mt-1 italic truncate max-w-md">{a.notas}</p>
+                  <p className="text-xs text-slate-600 mt-1 italic truncate max-w-md">{a.notas}</p>
                 )}
 
                 {/* Group badges */}
@@ -315,7 +315,7 @@ export default function AlumnosPage() {
                     </span>
                   ))}
                   {!gruposDetalle.length && (
-                    <span className="text-xs text-slate-400 italic">Sin grupo asignado</span>
+                    <span className="text-xs text-slate-600 italic">Sin grupo asignado</span>
                   )}
                 </div>
               </div>
@@ -370,16 +370,16 @@ export default function AlumnosPage() {
 
               {/* Datos personales */}
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Datos personales</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Datos personales</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre *</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre *</label>
                     <input type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Marca / Emisor *</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Marca / Emisor *</label>
                       <select value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar...</option>
@@ -389,14 +389,14 @@ export default function AlumnosPage() {
                   )}
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha de nacimiento</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha de nacimiento</label>
                       <input type="date" value={form.fnac} onChange={e => setForm(f => ({ ...f, fnac: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   )}
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Aviso cumpleaños (días antes)</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Aviso cumpleaños (días antes)</label>
                       <input type="number" min="0" placeholder="14"
                         value={form.aviso_cumple_dias ?? ""}
                         onChange={e => setForm(f => ({ ...f, aviso_cumple_dias: e.target.value ? +e.target.value : null }))}
@@ -404,18 +404,18 @@ export default function AlumnosPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
                     <input type="tel" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Email</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
                     <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   {!isReception && (
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
                       <textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
                     </div>
@@ -426,7 +426,7 @@ export default function AlumnosPage() {
               {/* Pagador */}
               {!isReception && (
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Pagador</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Pagador</p>
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                       <input type="checkbox" checked={form.es_adulto}
@@ -438,7 +438,7 @@ export default function AlumnosPage() {
                       El alumno es adulto / paga el mismo
                     </label>
                     {form.es_adulto ? (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-700">
                         Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
                       </p>
                     ) : (
@@ -451,7 +451,7 @@ export default function AlumnosPage() {
               {/* Grupos y horarios */}
               {!isReception && (
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Grupos y horarios</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Grupos y horarios</p>
                   {!grupos.length
                     ? <p className="text-xs text-amber-600">No hay grupos. Crea uno en la sección Grupos primero.</p>
                     : (
@@ -466,7 +466,7 @@ export default function AlumnosPage() {
                                   className="accent-blue-600 w-4 h-4" />
                                 <span className="font-medium text-sm text-slate-800">{g.nombre}</span>
                                 {g.nivel && <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{g.nivel}</span>}
-                                {g.tarifa > 0 && <span className="text-xs text-slate-500 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
+                                {g.tarifa > 0 && <span className="text-xs text-slate-700 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
                               </label>
                               {selected && (
                                 <div className="mt-3 pl-6 space-y-2">
@@ -530,10 +530,10 @@ export default function AlumnosPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
             <h3 className="font-semibold text-slate-800 mb-1">Eliminar alumno</h3>
-            <p className="text-sm text-slate-500 mb-1">
+            <p className="text-sm text-slate-700 mb-1">
               ¿Eliminar a <strong>{confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-slate-400 mb-4">Esta acción no se puede deshacer.</p>
+            <p className="text-xs text-slate-600 mb-4">Esta acción no se puede deshacer.</p>
             {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}

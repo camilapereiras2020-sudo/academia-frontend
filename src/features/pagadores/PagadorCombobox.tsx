@@ -62,7 +62,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
         />
         {selected && (
           <button type="button" onClick={clearSelection}
-            className={gold ? "btn-ghost" : "text-slate-400 hover:text-slate-600 text-sm flex-shrink-0"}
+            className={gold ? "btn-ghost" : "text-slate-600 hover:text-slate-600 text-sm flex-shrink-0"}
             style={gold ? { padding: "0.25rem 0.5rem", flexShrink: 0 } : undefined}>
             ✕
           </button>
@@ -86,7 +86,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
             </button>
           ))}
           {!matches.length && (
-            <p className={gold ? undefined : "px-3 py-2 text-xs text-slate-400"}
+            <p className={gold ? undefined : "px-3 py-2 text-xs text-slate-600"}
               style={gold ? { padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--text-dim)" } : undefined}>
               Sin pagadores registrados.
             </p>

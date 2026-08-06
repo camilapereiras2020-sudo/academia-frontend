@@ -94,7 +94,7 @@ export default function EmpresasPage() {
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Empresas</h1>
-            <p className="text-sm text-slate-500 mt-1">{empresas.length} empresas registradas</p>
+            <p className="text-sm text-slate-700 mt-1">{empresas.length} empresas registradas</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -124,7 +124,7 @@ export default function EmpresasPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-slate-800">{emp.nombre}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-700 mt-0.5">
                     {emp.cif && `${emp.cif} · `}
                     {emp.num_alumnos} alumno{emp.num_alumnos !== 1 ? "s" : ""} · {emp.num_contactos} contacto{emp.num_contactos !== 1 ? "s" : ""}
                   </p>
@@ -150,7 +150,7 @@ export default function EmpresasPage() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-800">{empresaDetalle.nombre}</h2>
-                {empresaDetalle.cif && <p className="text-xs text-slate-500">CIF: {empresaDetalle.cif}</p>}
+                {empresaDetalle.cif && <p className="text-xs text-slate-700">CIF: {empresaDetalle.cif}</p>}
               </div>
               <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
             </div>
@@ -158,19 +158,19 @@ export default function EmpresasPage() {
             <div className="h-px bg-slate-100 mb-4" />
 
             <div className="space-y-1.5 text-sm mb-4">
-              {empresaDetalle.email     && <p><span className="text-slate-400">Email: </span><span className="text-slate-700">{empresaDetalle.email}</span></p>}
-              {empresaDetalle.telefono  && <p><span className="text-slate-400">Tel: </span><span className="text-slate-700">{empresaDetalle.telefono}</span></p>}
-              {empresaDetalle.direccion && <p><span className="text-slate-400">Dir: </span><span className="text-slate-700">{empresaDetalle.direccion}</span></p>}
+              {empresaDetalle.email     && <p><span className="text-slate-600">Email: </span><span className="text-slate-700">{empresaDetalle.email}</span></p>}
+              {empresaDetalle.telefono  && <p><span className="text-slate-600">Tel: </span><span className="text-slate-700">{empresaDetalle.telefono}</span></p>}
+              {empresaDetalle.direccion && <p><span className="text-slate-600">Dir: </span><span className="text-slate-700">{empresaDetalle.direccion}</span></p>}
               {empresaDetalle.facturacion && (
-                <p><span className="text-slate-400">Facturación: </span><span className="text-slate-700">{FACTURACION_OPTS.find(f => f.value === empresaDetalle.facturacion)?.label}</span></p>
+                <p><span className="text-slate-600">Facturación: </span><span className="text-slate-700">{FACTURACION_OPTS.find(f => f.value === empresaDetalle.facturacion)?.label}</span></p>
               )}
-              {empresaDetalle.notas && <p><span className="text-slate-400">Notas: </span><span className="text-slate-700">{empresaDetalle.notas}</span></p>}
+              {empresaDetalle.notas && <p><span className="text-slate-600">Notas: </span><span className="text-slate-700">{empresaDetalle.notas}</span></p>}
             </div>
 
             {/* Contactos */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Contactos</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Contactos</p>
                 <button
                   onClick={() => setShowContactoModal(true)}
                   className="text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -178,16 +178,16 @@ export default function EmpresasPage() {
                 </button>
               </div>
               {(!empresaDetalle.contactos || empresaDetalle.contactos.length === 0) && (
-                <p className="text-xs text-slate-400">Sin contactos</p>
+                <p className="text-xs text-slate-600">Sin contactos</p>
               )}
               <div className="space-y-1.5">
                 {empresaDetalle.contactos?.map(c => (
                   <div key={c.id} className="bg-slate-50 rounded-lg p-2.5">
                     <p className="text-sm font-medium text-slate-800">{c.nombre || "Sin nombre"}</p>
-                    {c.cargo    && <p className="text-xs text-slate-500">{c.cargo}</p>}
-                    {c.telefono && <p className="text-xs text-slate-500">{c.telefono}</p>}
-                    {c.email    && <p className="text-xs text-slate-500">{c.email}</p>}
-                    {c.notas    && <p className="text-xs text-slate-400 mt-1">{c.notas}</p>}
+                    {c.cargo    && <p className="text-xs text-slate-700">{c.cargo}</p>}
+                    {c.telefono && <p className="text-xs text-slate-700">{c.telefono}</p>}
+                    {c.email    && <p className="text-xs text-slate-700">{c.email}</p>}
+                    {c.notas    && <p className="text-xs text-slate-600 mt-1">{c.notas}</p>}
                   </div>
                 ))}
               </div>
@@ -195,17 +195,17 @@ export default function EmpresasPage() {
 
             {/* Alumnos */}
             <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2">
                 Alumnos ({alumnosEmpresa.length})
               </p>
-              {alumnosEmpresa.length === 0 && <p className="text-xs text-slate-400">Sin alumnos asignados</p>}
+              {alumnosEmpresa.length === 0 && <p className="text-xs text-slate-600">Sin alumnos asignados</p>}
               <div className="divide-y divide-slate-100">
                 {alumnosEmpresa.map((a: any) => (
                   <div key={a.id} className="flex items-center justify-between py-1.5">
                     <span className="text-sm text-slate-700">{a.nombre}</span>
                     <div className="flex gap-1">
                       {a.es_fundae && <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">FUNDAE</span>}
-                      {a.nivel     && <span className="text-xs text-slate-400">{a.nivel}</span>}
+                      {a.nivel     && <span className="text-xs text-slate-600">{a.nivel}</span>}
                     </div>
                   </div>
                 ))}
@@ -247,7 +247,7 @@ export default function EmpresasPage() {
               <h2 className="text-lg font-semibold text-slate-800">Nueva empresa</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
             </div>
-            <p className="text-xs text-slate-400 mb-4 flex-shrink-0">Solo el nombre es obligatorio.</p>
+            <p className="text-xs text-slate-600 mb-4 flex-shrink-0">Solo el nombre es obligatorio.</p>
             <div className="overflow-y-auto flex-1 space-y-3 pr-1">
               {([
                 { key: "nombre",    label: "Nombre *",   placeholder: "Empresa S.L." },
@@ -257,7 +257,7 @@ export default function EmpresasPage() {
                 { key: "direccion", label: "Dirección",  placeholder: "C/ Mayor 1, Pontevedra" },
               ] as const).map(f => (
                 <div key={f.key}>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{f.label}</label>
                   <input
                     value={form[f.key]}
                     onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
@@ -267,13 +267,13 @@ export default function EmpresasPage() {
                 </div>
               ))}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Facturación</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Facturación</label>
                 <select value={form.facturacion} onChange={e => setForm(p => ({ ...p, facturacion: e.target.value }))} className={inputCls}>
                   {FACTURACION_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
                 <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function EmpresasPage() {
                 { key: "telefono", label: "Teléfono", placeholder: "666 123 456" },
               ] as const).map(f => (
                 <div key={f.key}>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{f.label}</label>
                   <input
                     value={contactoForm[f.key]}
                     onChange={e => setContactoForm(p => ({ ...p, [f.key]: e.target.value }))}
@@ -319,7 +319,7 @@ export default function EmpresasPage() {
                 </div>
               ))}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
                 <textarea value={contactoForm.notas} onChange={e => setContactoForm(p => ({ ...p, notas: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
               </div>
             </div>

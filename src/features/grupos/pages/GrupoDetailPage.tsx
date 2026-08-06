@@ -145,7 +145,7 @@ export default function GrupoDetailPage() {
   }
 
   if (loadingGrupo) return <p className="text-slate-400 text-sm">Cargando...</p>
-  if (!grupo) return <p className="text-slate-400 text-sm">Grupo no encontrado.</p>
+  if (!grupo) return <p className="text-slate-600 text-sm">Grupo no encontrado.</p>
 
   const c = PALETTE[grupo.color_idx % PALETTE.length]
   const horarios = grupo.horarios ?? []
@@ -153,7 +153,7 @@ export default function GrupoDetailPage() {
   return (
     <div className="max-w-3xl">
       {/* Header */}
-      <button onClick={() => navigate("/grupos")} className="text-sm text-slate-500 hover:text-slate-700 mb-3">
+      <button onClick={() => navigate("/grupos")} className="text-sm text-slate-700 hover:text-slate-700 mb-3">
         ← Volver a grupos
       </button>
       <div className="bg-white rounded-xl border shadow-sm overflow-hidden mb-6">
@@ -169,7 +169,7 @@ export default function GrupoDetailPage() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-3 flex-wrap mt-2 text-sm text-slate-500">
+            <div className="flex items-center gap-3 flex-wrap mt-2 text-sm text-slate-700">
               <span>👥 {grupo.alumnos_count} alumnos</span>
               {grupo.aula && <span>📍 {grupo.aula}</span>}
               {grupo.tarifa > 0 && <span className="font-semibold text-slate-600">{Number(grupo.tarifa).toFixed(2)} €/mes</span>}
@@ -198,7 +198,7 @@ export default function GrupoDetailPage() {
       {/* Roster */}
       <section className="bg-white rounded-xl border shadow-sm p-5 mb-6">
         <h2 className="font-semibold text-slate-800 mb-3">Alumnos</h2>
-        {!roster.length && <p className="text-slate-400 text-sm">Sin alumnos asignados.</p>}
+        {!roster.length && <p className="text-slate-600 text-sm">Sin alumnos asignados.</p>}
         <div className="flex flex-wrap gap-2">
           {roster.map(a => (
             <Link key={a.id} to={`/alumnos?openId=${a.id}`}
@@ -216,12 +216,12 @@ export default function GrupoDetailPage() {
         {sesionError && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-2 rounded-lg mb-3">{sesionError}</p>}
         <div className="flex gap-2 flex-wrap items-end mb-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha</label>
             <input type="date" value={sesionFecha} onChange={e => setSesionFecha(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Qué se cubrió</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Qué se cubrió</label>
             <input type="text" value={sesionContenido} placeholder="Present perfect, unidad 4…"
               onChange={e => setSesionContenido(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -231,7 +231,7 @@ export default function GrupoDetailPage() {
             {sesionMut.isPending ? "Guardando..." : "Añadir"}
           </button>
         </div>
-        {!sesiones.length && <p className="text-slate-400 text-sm">Sin clases registradas.</p>}
+        {!sesiones.length && <p className="text-slate-600 text-sm">Sin clases registradas.</p>}
         <div className="space-y-2">
           {sesiones.map(s => (
             <div key={s.id} className="border rounded-lg px-4 py-2.5">
@@ -239,7 +239,7 @@ export default function GrupoDetailPage() {
               {s.contenido ? (
                 <p className="text-sm text-slate-600 mt-0.5">{s.contenido}</p>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Sin contenido registrado.</p>
+                <p className="text-xs text-slate-600 italic mt-0.5">Sin contenido registrado.</p>
               )}
             </div>
           ))}
@@ -262,32 +262,32 @@ export default function GrupoDetailPage() {
             {tareaError && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-2 rounded-lg mb-3">{tareaError}</p>}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Título *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Título *</label>
                 <input type="text" value={tareaForm.titulo}
                   onChange={e => setTareaForm(f => ({ ...f, titulo: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Descripción</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Descripción</label>
                 <textarea rows={2} value={tareaForm.descripcion}
                   onChange={e => setTareaForm(f => ({ ...f, descripcion: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha asignada</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha asignada</label>
                 <input type="date" value={tareaForm.fecha_asignada}
                   onChange={e => setTareaForm(f => ({ ...f, fecha_asignada: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha entrega *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha entrega *</label>
                 <input type="date" value={tareaForm.fecha_entrega}
                   onChange={e => setTareaForm(f => ({ ...f, fecha_entrega: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
-            {!roster.length && <p className="text-slate-400 text-sm mb-3">Sin alumnos en este grupo.</p>}
+            {!roster.length && <p className="text-slate-600 text-sm mb-3">Sin alumnos en este grupo.</p>}
             <div className="space-y-2 mb-4">
               {tareaCompletados.map((tc, idx) => {
                 const alumno = roster.find(a => a.id === tc.alumno)
@@ -313,13 +313,13 @@ export default function GrupoDetailPage() {
           </div>
         )}
 
-        {!tareas.length && <p className="text-slate-400 text-sm">Sin tareas asignadas.</p>}
+        {!tareas.length && <p className="text-slate-600 text-sm">Sin tareas asignadas.</p>}
         <div className="space-y-2">
           {tareas.map(t => (
             <div key={t.id} className="border rounded-lg px-4 py-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="text-sm font-semibold text-slate-700">{t.titulo}</p>
-                <span className="text-xs text-slate-500">Entrega: {t.fecha_entrega}</span>
+                <span className="text-xs text-slate-700">Entrega: {t.fecha_entrega}</span>
               </div>
               {t.descripcion && <p className="text-sm text-slate-600 mt-0.5">{t.descripcion}</p>}
               <div className="flex flex-wrap gap-2 mt-2">
@@ -361,13 +361,13 @@ export default function GrupoDetailPage() {
           </button>
         </div>
 
-        {!notas.length && <p className="text-slate-400 text-sm">Sin dificultades registradas.</p>}
+        {!notas.length && <p className="text-slate-600 text-sm">Sin dificultades registradas.</p>}
         <div className="space-y-2">
           {notas.map(n => (
             <div key={n.id} className="bg-slate-50 rounded-lg p-3">
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-sm font-semibold text-slate-700">{n.alumno_nombre} — {n.tema}</span>
-                <span className="text-xs text-slate-400">{n.fecha}</span>
+                <span className="text-xs text-slate-600">{n.fecha}</span>
               </div>
               <p className="text-sm text-slate-600">{n.nota}</p>
             </div>
@@ -377,11 +377,11 @@ export default function GrupoDetailPage() {
       )}
 
       {/* Placeholders */}
-      <section className="border-2 border-dashed rounded-xl p-5 mb-4 text-center text-slate-400">
+      <section className="border-2 border-dashed rounded-xl p-5 mb-4 text-center text-slate-600">
         <p className="text-sm font-semibold">Materiales</p>
         <p className="text-xs mt-1">Próximamente: sube archivos y materiales de clase.</p>
       </section>
-      <section className="border-2 border-dashed rounded-xl p-5 mb-6 text-center text-slate-400">
+      <section className="border-2 border-dashed rounded-xl p-5 mb-6 text-center text-slate-600">
         <p className="text-sm font-semibold">Programa / Syllabus</p>
         <p className="text-xs mt-1">Próximamente: seguimiento del programa del curso.</p>
       </section>

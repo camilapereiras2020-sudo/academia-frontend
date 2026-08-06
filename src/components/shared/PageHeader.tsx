@@ -12,7 +12,7 @@ export default function PageHeader({ title, subtitle, action }: Props) {
     <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
       <div>
         <h1 className="text-3xl font-bold text-slate-800">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-slate-700 mt-1">{subtitle}</p>}
       </div>
       {action && (
         action.href

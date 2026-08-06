@@ -29,12 +29,12 @@ export default function LoginPage() {
         {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded-lg">{error}</p>}
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Email</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Contrasena</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1">Contrasena</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === "Enter" && mutation.mutate()}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -43,7 +43,7 @@ export default function LoginPage() {
             className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
             {mutation.isPending ? "Iniciando sesion..." : "Iniciar sesion"}
           </button>
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-slate-700">
             No tienes cuenta? <Link to="/register" className="text-blue-600 underline">Crear cuenta</Link>
           </p>
         </div>

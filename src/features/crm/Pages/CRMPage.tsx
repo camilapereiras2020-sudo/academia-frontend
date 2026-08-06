@@ -378,7 +378,7 @@ export default function CRMPage() {
         <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">CRM</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Gestión de consultas y leads</p>
+            <p className="text-sm text-slate-700 mt-0.5">Gestión de consultas y leads</p>
           </div>
           <button onClick={openNew}
             className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700">
@@ -400,7 +400,7 @@ export default function CRMPage() {
               { label: "Matriculados este mes",value: dashboard.matriculados_mes, color: "text-green-600",  bg: "bg-green-50" },
             ].map(c => (
               <div key={c.label} className={`${c.bg} rounded-xl p-4`}>
-                <p className="text-xs text-slate-500 mb-1">{c.label}</p>
+                <p className="text-xs text-slate-700 mb-1">{c.label}</p>
                 <p className={`text-3xl font-bold ${c.color}`}>{c.value}</p>
               </div>
             ))}
@@ -475,7 +475,7 @@ export default function CRMPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    <p className="text-xs text-slate-700 mt-0.5 truncate">
                       {lead.nombre_contacto}
                       {lead.telefono && ` · ${lead.telefono}`}
                       {lead.objetivo && ` · ${OBJETIVOS.find(o => o.value === lead.objetivo)?.label ?? lead.objetivo}`}
@@ -516,7 +516,7 @@ export default function CRMPage() {
               <div className="px-5 py-4 border-b flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="font-bold text-slate-800 text-base leading-tight">{detalle.nombre_alumno}</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">{detalle.nombre_contacto}</p>
+                  <p className="text-xs text-slate-700 mt-0.5">{detalle.nombre_contacto}</p>
                   <span className={`inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-full ${etapaInfo(detalle.etapa).color}`}>
                     {etapaInfo(detalle.etapa).label}
                   </span>
@@ -571,7 +571,7 @@ export default function CRMPage() {
 
               {/* Change stage */}
               <div className="px-5 py-4 border-b">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Cambiar etapa</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2">Cambiar etapa</p>
                 <div className="flex flex-wrap gap-1.5">
                   {ETAPAS.filter(e => e.value !== detalle.etapa).map(e => (
                     <button key={e.value}
@@ -586,7 +586,7 @@ export default function CRMPage() {
 
               {/* Log interaction */}
               <div className="px-5 py-4 border-b">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Registrar interacción</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2">Registrar interacción</p>
                 {iError && <p className="text-xs text-red-600 mb-2">{iError}</p>}
                 <div className="space-y-2">
                   <select value={iForm.tipo} onChange={e => setIForm(f => ({ ...f, tipo: e.target.value }))}
@@ -609,7 +609,7 @@ export default function CRMPage() {
               {/* Interaction history */}
               {(detalle.interacciones ?? []).length > 0 && (
                 <div className="px-5 py-4 border-b">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Historial</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2">Historial</p>
                   <div className="space-y-2">
                     {detalle.interacciones.map(i => (
                       <div key={i.id} className="bg-slate-50 rounded-lg p-2.5">
@@ -617,7 +617,7 @@ export default function CRMPage() {
                           <span className="text-xs font-semibold text-slate-700">
                             {TIPOS_INTERACCION.find(t => t.value === i.tipo)?.label ?? i.tipo}
                           </span>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-600">
                             {new Date(i.fecha).toLocaleDateString("es-ES")}
                           </span>
                         </div>
@@ -680,10 +680,10 @@ export default function CRMPage() {
               )}
 
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Obligatorio</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Obligatorio</p>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       {form.es_adulto ? "Nombre contacto (opcional)" : "Nombre padre/madre *"}
                     </label>
                     <input value={form.nombre_contacto} placeholder="Ana García"
@@ -691,7 +691,7 @@ export default function CRMPage() {
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre del alumno *</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre del alumno *</label>
                     <input value={form.nombre_alumno} placeholder="Carlos García"
                       onChange={e => setForm(p => ({ ...p, nombre_alumno: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -709,7 +709,7 @@ export default function CRMPage() {
                   </div>
                   {form.es_adulto && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Pagador</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Pagador</label>
                       <select
                         value={form.pagador_es_alumno ? "mismo" : "otro"}
                         onChange={e => setForm(p => ({ ...p, pagador_es_alumno: e.target.value === "mismo" }))}
@@ -723,18 +723,18 @@ export default function CRMPage() {
               </section>
 
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Opcional</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Opcional</p>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Objetivo</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Objetivo</label>
                       <select value={form.objetivo} onChange={e => setForm(p => ({ ...p, objetivo: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         {OBJETIVOS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Origen</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Origen</label>
                       <select value={form.origen} onChange={e => setForm(p => ({ ...p, origen: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         {ORIGENES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -742,7 +742,7 @@ export default function CRMPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
                     <input value={form.telefono} placeholder="666 123 456"
                       onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))}
                       className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
@@ -756,13 +756,13 @@ export default function CRMPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Edad alumno</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Edad alumno</label>
                       <input type="number" placeholder="12" value={form.edad_alumno}
                         onChange={e => setForm(p => ({ ...p, edad_alumno: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Curso escolar</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Curso escolar</label>
                       <input placeholder="1º ESO" value={form.curso_escolar}
                         onChange={e => setForm(p => ({ ...p, curso_escolar: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -776,20 +776,20 @@ export default function CRMPage() {
                     { key: "necesidades_especiales", label: "Necesidades especiales", placeholder: "TDAH, dislexia…" },
                   ].map(f => (
                     <div key={f.key}>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">{f.label}</label>
                       <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
                         onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   ))}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Próximo seguimiento</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Próximo seguimiento</label>
                     <input type="date" value={form.proximo_seguimiento}
                       onChange={e => setForm(p => ({ ...p, proximo_seguimiento: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
                     <textarea rows={3} placeholder="Cualquier detalle relevante…" value={form.notas}
                       onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
@@ -833,7 +833,7 @@ export default function CRMPage() {
                 </p>
               )}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Grupo</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Grupo</label>
                 <select value={mForm.grupo_id} onChange={e => onGrupoChange(e.target.value)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Selecciona un grupo…</option>
@@ -843,13 +843,13 @@ export default function CRMPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Mensualidad (€)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Mensualidad (€)</label>
                 <input type="number" value={mForm.mensualidad}
                   onChange={e => setMForm(f => ({ ...f, mensualidad: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha de inicio</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha de inicio</label>
                 <input type="date" value={mForm.fecha_inicio}
                   onChange={e => setMForm(f => ({ ...f, fecha_inicio: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
