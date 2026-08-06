@@ -94,7 +94,10 @@ export default function AlumnosPage() {
   const saveMut = useMutation({
     mutationFn: async (f: FormState) => {
       let pagadorId = f.pagador
-      if (f.es_adulto && !pagadorId) {
+      // Strict null/undefined check (not a plain falsy check) — a Pagador id
+      // is never 0, but this guards against ever treating a would-be-falsy-
+      // but-set id as "no pagador linked" and skipping the auto-create below.
+      if (f.es_adulto && pagadorId == null) {
         // Alumno pays for themself and no Pagador is linked yet — auto-create
         // one from the alumno's own contact data instead of making the user
         // pick/create one via the combobox.
