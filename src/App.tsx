@@ -22,6 +22,7 @@ import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
 import RangersHomepage from "@/pages/RangersHomepage"
+import StationDesk from "@/pages/StationDesk"
 
 function DefaultRedirect() {
   return <Navigate to="/dashboard" replace />
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/rangers-preview" element={<RangersHomepage />} />
+      <Route path="/station-desk-preview" element={<StationDesk />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleProtectedRoute />}>
           <Route element={<AppShell />}>
