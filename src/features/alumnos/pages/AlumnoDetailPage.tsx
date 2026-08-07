@@ -1,18 +1,39 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { resumenApi, fechasImportantesApi, notasAlumnoApi, datoSaludApi, consentimientosApi } from "../ficha_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
+import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
 import EmailModal from "@/components/shared/EmailModal"
 import WhatsappReplyModal from "../components/WhatsappReplyModal"
 import { useAuthStore } from "@/store/authStore"
+import { api } from "@/lib/axios"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
 import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo } from "@/types"
 
 const NIVELES: NivelObjetivo[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
 const EXAMENES: ExamenObjetivo[] = ["KET", "PET", "FCE", "CAE", "CPE", "ninguno"]
+
+type Documento = {
+  id: number
+  nombre: string
+  tipo: string
+  num_doc: string
+  emitida_at: string | null
+  estado: string
+  pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
+}
+const DOC_TIPO_LABEL: Record<string, string> = {
+  factura: "Factura", recibo: "Recibo", recibo_efectivo: "Recibo (efectivo)",
+}
+function formatDocFecha(iso: string | null) {
+  if (!iso) return "—"
+  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })
+}
+
+const emptyPagadorDraft = (): PagadorDraft => ({ telefono: "", email: "", direccion: "", nif: "" })
 
 const TIPO_FECHA_LABELS: Record<TipoFechaImportante, string> = {
   examen: "Examen", revision_nivel: "Revisión de nivel",
@@ -60,6 +81,9 @@ export default function AlumnoDetailPage() {
   const [saludForm, setSaludForm] = useState({ alergias: "", condiciones_medicas: "", medicacion: "" })
   const [saludEditing, setSaludEditing] = useState(false)
   const [periodoFilter, setPeriodoFilter] = useState("")
+  const [generalEditing, setGeneralEditing] = useState(false)
+  const [generalForm, setGeneralForm] = useState({ nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false })
+  const [pagadorDraft, setPagadorDraft] = useState<PagadorDraft>(emptyPagadorDraft())
 
   const { data: alumno, isLoading: loadingAlumno } = useQuery({
     queryKey: ["alumno", alumnoId],
@@ -89,9 +113,40 @@ export default function AlumnoDetailPage() {
     enabled: !!alumnoId && canSeeSalud,
   })
 
+  const { data: documentosRaw } = useQuery({
+    queryKey: ["documentos", "alumno", alumnoId],
+    queryFn: () => api.get<Documento[]>(`/documentos/?alumno=${alumnoId}`).then(r => r.data),
+    enabled: !!alumnoId,
+  })
+  const documentos: Documento[] = Array.isArray(documentosRaw) ? documentosRaw : []
+
+  const pagador = pagadores.find(p => p.id === alumno?.pagador) ?? null
+
+  // Keep the payer sub-section's editable fields in sync with whichever
+  // Pagador is currently linked (switching via the combobox, or the alumno
+  // query refetching after a save) — same "resync on selection change" idea
+  // as AlumnosPage's selectPagador, just event-driven instead of onChange-driven
+  // since this page loads the linked pagador from a query rather than local state.
+  useEffect(() => {
+    setPagadorDraft(pagador
+      ? { telefono: pagador.telefono, email: pagador.email, direccion: pagador.direccion, nif: pagador.nif }
+      : emptyPagadorDraft())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagador?.id])
+
   function openSaludEditing() {
     if (salud) setSaludForm({ alergias: salud.alergias, condiciones_medicas: salud.condiciones_medicas, medicacion: salud.medicacion })
     setSaludEditing(true)
+  }
+
+  function openGeneralEditing() {
+    if (alumno) {
+      setGeneralForm({
+        nombre: alumno.nombre, telefono: alumno.telefono ?? "", email: alumno.email ?? "",
+        dni: alumno.dni ?? "", notas: alumno.notas ?? "", es_adulto: alumno.es_adulto ?? false,
+      })
+    }
+    setGeneralEditing(true)
   }
 
   const fotoMut = useMutation({
@@ -99,9 +154,36 @@ export default function AlumnoDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }),
   })
 
+  const generalMut = useMutation({
+    mutationFn: () => {
+      const payload: Record<string, unknown> = { ...generalForm }
+      // Just switched from minor to adult self-pay: clear any existing payer
+      // link so the backend auto-creates/links a fresh one from this alumno's
+      // own (just-saved) contact data, instead of leaving a stale minor-payer
+      // link behind. Already-adult alumnos keep whatever link they have.
+      if (generalForm.es_adulto && !alumno?.es_adulto) {
+        payload.pagador = null
+      }
+      return alumnosApi.update(alumnoId, payload)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["pagadores"] })
+      setGeneralEditing(false)
+    },
+  })
+
   const pagadorMut = useMutation({
     mutationFn: (pagadorId: number | null) => alumnosApi.update(alumnoId, { pagador: pagadorId }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }),
+  })
+
+  const pagadorFieldsMut = useMutation({
+    mutationFn: () => {
+      if (!pagador) return Promise.resolve(null)
+      return pagadoresApi.update(pagador.id, pagadorDraft)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pagadores"] }),
   })
 
   const fechaMut = useMutation({
@@ -150,7 +232,6 @@ export default function AlumnoDetailPage() {
   if (loadingAlumno) return <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Cargando...</p>
   if (!alumno) return <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Alumno no encontrado.</p>
 
-  const pagador = pagadores.find(p => p.id === alumno.pagador) ?? null
   const grupoDetalle = alumno.grupos_detalle?.[0] ?? null
   const yearsOld = age(alumno.fnac)
   const pagos = resumen?.pagos ?? []
@@ -208,12 +289,40 @@ export default function AlumnoDetailPage() {
 
       {/* Datos generales */}
       <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
-        <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
-          Datos generales
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+            Datos generales
+          </h2>
+          {!generalEditing && <button className="btn-ghost" onClick={openGeneralEditing}>Editar</button>}
+        </div>
+
+        {generalEditing ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1rem" }}>
+            <div className="grid-2col">
+              <TextInput label="Nombre" value={generalForm.nombre} onChange={v => setGeneralForm(f => ({ ...f, nombre: v }))} />
+              <TextInput label="DNI" value={generalForm.dni} onChange={v => setGeneralForm(f => ({ ...f, dni: v }))} />
+              <TextInput label="Teléfono" value={generalForm.telefono} onChange={v => setGeneralForm(f => ({ ...f, telefono: v }))} />
+              <TextInput label="Email" value={generalForm.email} onChange={v => setGeneralForm(f => ({ ...f, email: v }))} />
+            </div>
+            <Textarea label="Notas" value={generalForm.notas} onChange={v => setGeneralForm(f => ({ ...f, notas: v }))} />
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text)", cursor: "pointer" }}>
+              <input type="checkbox" checked={generalForm.es_adulto}
+                onChange={e => setGeneralForm(f => ({ ...f, es_adulto: e.target.checked }))} />
+              El alumno es adulto / paga el mismo
+            </label>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+              <button className="btn-ghost" onClick={() => setGeneralEditing(false)}>Cancelar</button>
+              <button className="btn-primary" disabled={!generalForm.nombre.trim() || generalMut.isPending} onClick={() => generalMut.mutate()}>
+                {generalMut.isPending ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid-2col">
           <Field label="Contacto" value={[alumno.telefono, alumno.email].filter(Boolean).join(" · ") || "—"} />
           <Field label="DNI" value={alumno.dni || "—"} />
+          <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
           <Field label="Nivel actual" value={alumno.nivel || "—"} />
           <div>
             <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
@@ -244,17 +353,32 @@ export default function AlumnoDetailPage() {
         <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Pagador
         </h2>
-        {pagador ? (
-          <div className="card" style={{ padding: "1rem", marginBottom: "0.75rem" }}>
-            <p style={{ fontWeight: 500, color: "var(--text)" }}>{pagador.nombre}</p>
-            <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>
-              {[pagador.telefono, pagador.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
-            </p>
-          </div>
+        {alumno.es_adulto ? (
+          <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>
+            Se usa el propio alumno como pagador (nombre, teléfono y email indicados en Datos generales).
+          </p>
         ) : (
-          <p style={{ fontSize: "0.875rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>Sin pagador vinculado.</p>
+          <>
+            {pagador ? (
+              <div className="card" style={{ padding: "1rem", marginBottom: "0.75rem" }}>
+                <p style={{ fontWeight: 500, color: "var(--text)" }}>{pagador.nombre}</p>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>
+                  {[pagador.telefono, pagador.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: "0.875rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>Sin pagador vinculado.</p>
+            )}
+            <PagadorCombobox theme="gold" value={alumno.pagador} onChange={pagadorId => pagadorMut.mutate(pagadorId)} />
+            {pagador && (
+              <div style={{ marginTop: "1rem" }}>
+                <PagadorFieldsEditor theme="gold" value={pagadorDraft}
+                  onChange={patch => setPagadorDraft(d => ({ ...d, ...patch }))}
+                  onBlur={() => pagadorFieldsMut.mutate()} />
+              </div>
+            )}
+          </>
         )}
-        <PagadorCombobox theme="gold" value={alumno.pagador} onChange={pagadorId => pagadorMut.mutate(pagadorId)} />
       </section>
 
       {/* Pagos */}
@@ -281,6 +405,36 @@ export default function AlumnoDetailPage() {
                     <td style={{ textTransform: "capitalize" }}>{p.metodo}</td>
                     <td><span className="badge" style={p.estado === "pagado" ? { background: "var(--sage-muted)", color: "var(--sage)" } : { background: "var(--terracotta-muted)", color: "var(--terracotta)" }}>{p.estado}</span></td>
                     <td style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{p.num_doc || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Facturas y recibos — read-only, distinct from "Documentos y consentimientos"
+          below (which is consent forms: image rights/data protection/enrollment). */}
+      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+        <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+          Facturas y recibos
+        </h2>
+        {!documentos.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin documentos generados.</p>}
+        {!!documentos.length && (
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table">
+              <thead><tr>{["Nº doc", "Tipo", "Fecha de emisión", "Estado"].map(h => <th key={h}>{h}</th>)}</tr></thead>
+              <tbody>
+                {documentos.map(d => (
+                  <tr key={d.id}>
+                    <td style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{d.num_doc || d.nombre}</td>
+                    <td>{DOC_TIPO_LABEL[d.tipo] ?? d.tipo}</td>
+                    <td>{formatDocFecha(d.emitida_at)}</td>
+                    <td>
+                      <span className="badge" style={d.estado === "anulada" ? { background: "var(--terracotta-muted)", color: "var(--terracotta)" } : { background: "var(--sage-muted)", color: "var(--sage)" }}>
+                        {d.estado}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -454,6 +608,15 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
     <div>
       <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
       <textarea rows={2} className="input" style={{ resize: "none" }} value={value} onChange={e => onChange(e.target.value)} />
+    </div>
+  )
+}
+
+function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
+      <input type="text" className="input" value={value} onChange={e => onChange(e.target.value)} />
     </div>
   )
 }

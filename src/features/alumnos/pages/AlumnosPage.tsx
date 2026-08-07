@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
+import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
 import { gruposApi } from "@/features/grupos/api"
 import type { Alumno, Pagador, Grupo, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
@@ -35,17 +36,21 @@ const MARCAS: { value: Marca; label: string }[] = [
   { value: "cami_and_co", label: "Cami & Co" },
 ]
 
+const emptyPagadorDraft = (): PagadorDraft => ({ telefono: "", email: "", direccion: "", nif: "" })
+
 interface FormState {
-  nombre: string; fnac: string; telefono: string; email: string; notas: string
+  nombre: string; fnac: string; telefono: string; email: string; dni: string; notas: string
   marca: Marca | ""
-  pagador: number | null; es_adulto: boolean; aviso_cumple_dias: number | null
+  pagador: number | null; pagadorDraft: PagadorDraft
+  es_adulto: boolean; aviso_cumple_dias: number | null
   grupos: number[]; horarios: HorarioSlot[]
 }
 
 const emptyForm = (): FormState => ({
-  nombre: "", fnac: "", telefono: "", email: "", notas: "",
+  nombre: "", fnac: "", telefono: "", email: "", dni: "", notas: "",
   marca: "",
-  pagador: null, es_adulto: false, aviso_cumple_dias: null, grupos: [], horarios: [],
+  pagador: null, pagadorDraft: emptyPagadorDraft(),
+  es_adulto: false, aviso_cumple_dias: null, grupos: [], horarios: [],
 })
 
 export default function AlumnosPage() {
@@ -93,24 +98,30 @@ export default function AlumnosPage() {
 
   const saveMut = useMutation({
     mutationFn: async (f: FormState) => {
-      let pagadorId = f.pagador
-      // Strict null/undefined check (not a plain falsy check) — a Pagador id
-      // is never 0, but this guards against ever treating a would-be-falsy-
-      // but-set id as "no pagador linked" and skipping the auto-create below.
-      if (f.es_adulto && pagadorId == null) {
-        // Alumno pays for themself and no Pagador is linked yet — auto-create
-        // one from the alumno's own contact data instead of making the user
-        // pick/create one via the combobox.
-        const pagRes = await pagadoresApi.create({
-          nombre: f.nombre, telefono: f.telefono, email: f.email,
+      // Minor with a linked/selected Pagador: persist any edits made in the
+      // payer sub-section directly onto that Pagador. (Adult self-pay never
+      // reaches here with f.pagador set — the checkbox clears it — and the
+      // backend auto-creates/links that Pagador transparently.)
+      if (!f.es_adulto && f.pagador) {
+        await pagadoresApi.update(f.pagador, {
+          telefono: f.pagadorDraft.telefono,
+          email: f.pagadorDraft.email,
+          direccion: f.pagadorDraft.direccion,
+          nif: f.pagadorDraft.nif,
         })
-        pagadorId = pagRes.data.id
       }
-      const payload = {
+      const payload: Record<string, unknown> = {
         nombre: f.nombre, fnac: f.fnac || null, telefono: f.telefono,
-        email: f.email, notas: f.notas, pagador: pagadorId, es_adulto: f.es_adulto,
+        email: f.email, dni: f.dni, notas: f.notas, es_adulto: f.es_adulto,
         marca: f.marca as Marca,
         aviso_cumple_dias: f.aviso_cumple_dias,
+      }
+      // Adult self-pay: deliberately omit `pagador` — the backend auto-
+      // creates/links one from the alumno's own contact data. Sending null
+      // here would still work, but omitting it entirely keeps this request
+      // from ever looking like it's clearing an existing link on update.
+      if (!f.es_adulto) {
+        payload.pagador = f.pagador
       }
       const res = editing
         ? await alumnosApi.update(editing.id, payload)
@@ -141,17 +152,33 @@ export default function AlumnosPage() {
 
   function openEdit(a: Alumno) {
     setEditing(a)
+    const linkedPagador = pagadores.find(p => p.id === a.pagador) ?? null
     setForm({
       nombre: a.nombre, fnac: a.fnac ?? "", telefono: a.telefono ?? "",
-      email: a.email ?? "", notas: a.notas ?? "",
+      email: a.email ?? "", dni: a.dni ?? "", notas: a.notas ?? "",
       marca: a.marca,
-      pagador: a.pagador ?? null, es_adulto: a.es_adulto ?? false, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
+      pagador: a.pagador ?? null,
+      pagadorDraft: linkedPagador
+        ? { telefono: linkedPagador.telefono, email: linkedPagador.email, direccion: linkedPagador.direccion, nif: linkedPagador.nif }
+        : emptyPagadorDraft(),
+      es_adulto: a.es_adulto ?? false, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
       grupos: (a.grupos_detalle ?? []).map(g => g.grupo),
       horarios: (a.grupos_detalle ?? []).flatMap(g =>
         g.horarios.map(h => ({ ...h, grupoId: g.grupo }))
       ),
     })
     setFormError(""); setShowModal(true)
+  }
+
+  function selectPagador(pagadorId: number | null) {
+    const p = pagadorId != null ? pagadores.find(x => x.id === pagadorId) ?? null : null
+    setForm(f => ({
+      ...f,
+      pagador: pagadorId,
+      pagadorDraft: p
+        ? { telefono: p.telefono, email: p.email, direccion: p.direccion, nif: p.nif }
+        : emptyPagadorDraft(),
+    }))
   }
 
   function closeModal() { setShowModal(false); setEditing(null); setForm(emptyForm()) }
@@ -183,6 +210,10 @@ export default function AlumnosPage() {
   function handleSubmit() {
     if (!form.nombre.trim()) { setFormError("El nombre es obligatorio."); return }
     if (!form.marca) { setFormError("Elige la marca/emisor antes de guardar."); return }
+    if (!form.es_adulto && form.pagador && !form.pagadorDraft.nif.trim()) {
+      setFormError("El DNI/NIF del pagador es obligatorio.")
+      return
+    }
     setFormError("")
     saveMut.mutate(form)
   }
@@ -417,6 +448,13 @@ export default function AlumnosPage() {
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   {!isReception && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">DNI</label>
+                      <input type="text" value={form.dni} onChange={e => setForm(f => ({ ...f, dni: e.target.value }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  )}
+                  {!isReception && (
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
                       <textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
@@ -445,7 +483,13 @@ export default function AlumnosPage() {
                         Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
                       </p>
                     ) : (
-                      <PagadorCombobox value={form.pagador} onChange={pagador => setForm(f => ({ ...f, pagador }))} />
+                      <>
+                        <PagadorCombobox value={form.pagador} onChange={selectPagador} />
+                        {form.pagador && (
+                          <PagadorFieldsEditor value={form.pagadorDraft}
+                            onChange={patch => setForm(f => ({ ...f, pagadorDraft: { ...f.pagadorDraft, ...patch } }))} />
+                        )}
+                      </>
                     )}
                   </div>
                 </section>

@@ -1,5 +1,6 @@
 export interface Pagador {
   id: number; nombre: string; nif: string; telefono: string; email: string
+  direccion: string
   metodo: string; frecuencia: string; iban: string; notas: string
   fnac: string | null; aviso_cumple_dias: number | null; alumnos_count: number
 }

@@ -182,7 +182,7 @@ export default function CRMPage() {
   const [mForm, setMForm] = useState({ grupo_id: "", mensualidad: "", fecha_inicio: "" })
   const [mError, setMError] = useState("")
   const [matriculaResult, setMatriculaResult] = useState<{
-    alumno_id: number; alumno_nombre: string; pagador_nombre: string; pagador_autocompletado: boolean
+    alumno_id: number; alumno_nombre: string; pagador_nombre: string | null; pagador_autocompletado: boolean
   } | null>(null)
 
   // ── queries ──────────────────────────────────────────────────────────────
@@ -884,7 +884,9 @@ export default function CRMPage() {
                 Alumno creado: <span className="font-semibold">{matriculaResult.alumno_nombre}</span>
               </p>
               <p className="text-sm text-slate-700">
-                Pagador: <span className="font-semibold">{matriculaResult.pagador_nombre}</span>
+                Pagador: <span className="font-semibold">
+                  {matriculaResult.pagador_nombre ?? "se añadirá en la ficha del alumno"}
+                </span>
               </p>
               {matriculaResult.pagador_autocompletado && (
                 <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 p-3 rounded-lg">
