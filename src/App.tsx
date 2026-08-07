@@ -21,6 +21,7 @@ import CRMPage from "@/features/crm/Pages/CRMPage"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
+import RangersHomepage from "@/pages/RangersHomepage"
 
 function DefaultRedirect() {
   return <Navigate to="/dashboard" replace />
@@ -31,6 +32,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/rangers-preview" element={<RangersHomepage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleProtectedRoute />}>
           <Route element={<AppShell />}>

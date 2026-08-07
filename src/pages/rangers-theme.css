@@ -1,0 +1,144 @@
+/* Rangers Academy brand theme — extracted from Claude Design export */
+
+@import url('https://fonts.googleapis.com/css2?family=Bevan&family=Barlow+Semi+Condensed:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --pine-900: #3F5242;
+  --pine-800: #465a48;
+  --pine-700: #52654f;
+  --pine-600: #6D7B5B;
+  --pine-500: #7c8a68;
+  --pine-300: #a3ad8f;
+
+  --khaki-400: #C8B896;
+  --khaki-300: #D8C8A8;
+  --khaki-200: #e6dcc4;
+  --khaki-100: #F6F1E7;
+  --paper: #F6F1E7;
+
+  --brass-700: #8A6B49;
+  --brass-500: #C8A45A;
+  --brass-300: #ddc48c;
+
+  --rust-600: #8A6B49;
+  --rust-500: #a17f56;
+
+  --ink: #3F5242;
+  --ink-soft: #6D7B5B;
+
+  --font-head: 'Bevan', serif;
+  --font-body: 'Barlow Semi Condensed', sans-serif;
+
+  /* Default accent = brass. Swap this block for the rust variant below if wanted. */
+  --accent-500: var(--brass-500);
+  --accent-300: var(--brass-300);
+  --accent-700: var(--brass-700);
+}
+
+/* Optional "canyon" accent variant — copy these three lines onto :root (or a
+   wrapper class) to swap the gold trim for a rust trim. */
+.accent-rust {
+  --accent-500: var(--rust-500);
+  --accent-300: oklch(0.72 0.11 40);
+  --accent-700: var(--rust-600);
+}
+
+/* ---- Shared component classes (hover states need real CSS, not inline styles) ---- */
+
+.rg-nav-link {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  color: var(--khaki-200);
+  padding: 8px 14px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+.rg-nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--khaki-100);
+}
+
+.rg-lang-btn {
+  border: 2px solid var(--accent-500);
+  background: transparent;
+  color: var(--accent-300);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.rg-lang-btn:hover {
+  background: var(--accent-500);
+  color: var(--pine-900);
+}
+
+.rg-cta-btn {
+  background: var(--accent-500);
+  color: var(--pine-900);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 11px 20px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rg-cta-btn:hover {
+  background: var(--accent-300);
+}
+.rg-cta-btn--lg {
+  font-size: 16px;
+  padding: 16px 28px;
+}
+
+.rg-outline-btn {
+  color: var(--khaki-100);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 16px 24px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  transition: background 0.15s;
+}
+.rg-outline-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.rg-kicker {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-700);
+  margin-bottom: 14px;
+}
+
+.rg-h2 {
+  font-family: var(--font-head);
+  font-weight: 400;
+  font-size: clamp(28px, 3.4vw, 42px);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.rg-field-label {
+  color: var(--accent-300);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
