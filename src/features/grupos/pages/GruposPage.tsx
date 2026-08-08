@@ -103,12 +103,12 @@ export default function GruposPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Grupos</h1>
-          <p className="text-sm text-slate-700 mt-1">{all.length} grupos activos</p>
+          <h1 className="text-3xl font-bold text-pine-900">Grupos</h1>
+          <p className="text-sm text-pine-800 mt-1">{all.length} grupos activos</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+            className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700">
             + Nuevo grupo
           </button>
         )}
@@ -117,12 +117,12 @@ export default function GruposPage() {
       {/* Search */}
       <input type="text" placeholder="Buscar por nombre o nivel…" value={search}
         onChange={e => setSearch(e.target.value)}
-        className="mb-5 border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        className="mb-5 border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
 
-      {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-pine-300 text-sm">Cargando...</p>}
 
       {!isLoading && !grupos.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 text-pine-300">
           <span className="text-5xl mb-3">🗂️</span>
           <p className="text-sm">{search ? "Sin resultados para esa búsqueda." : "Sin grupos. Crea el primero."}</p>
         </div>
@@ -141,20 +141,20 @@ export default function GruposPage() {
                 <div className="w-1.5 flex-shrink-0" style={{ background: c.accent }} />
 
                 <div className="flex-1 p-4 flex items-center justify-between flex-wrap gap-3
-                  cursor-pointer hover:bg-slate-50 transition-colors"
+                  cursor-pointer hover:bg-khaki-100 transition-colors"
                   onClick={() => navigate(`/grupos/${g.id}`)}>
                   <div className="flex items-center gap-3 flex-wrap min-w-0">
-                    <span className="font-bold text-slate-800">{g.nombre}</span>
+                    <span className="font-bold text-pine-900">{g.nombre}</span>
                     {g.nivel && (
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                         style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
                         {g.nivel}
                       </span>
                     )}
-                    <span className="text-xs text-slate-700">👥 {g.alumnos_count} alumnos</span>
-                    {g.aula && <span className="text-xs text-slate-700">📍 {g.aula}</span>}
+                    <span className="text-xs text-pine-800">👥 {g.alumnos_count} alumnos</span>
+                    {g.aula && <span className="text-xs text-pine-800">📍 {g.aula}</span>}
                     {g.tarifa > 0 && (
-                      <span className="text-xs font-semibold text-slate-600">
+                      <span className="text-xs font-semibold text-pine-700">
                         {Number(g.tarifa).toFixed(2)} €/mes
                       </span>
                     )}
@@ -177,7 +177,7 @@ export default function GruposPage() {
                     {!isReception && (
                       <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
                         <button onClick={() => openEdit(g)}
-                          className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
+                          className="px-3 py-1.5 border rounded-lg text-xs text-pine-700 hover:bg-khaki-100">
                           Editar
                         </button>
                         <button onClick={() => setConfirmDelete(g)}
@@ -201,8 +201,8 @@ export default function GruposPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-slate-800">{editing ? "Editar grupo" : "Nuevo grupo"}</h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+              <h2 className="text-lg font-bold text-pine-900">{editing ? "Editar grupo" : "Nuevo grupo"}</h2>
+              <button onClick={closeModal} className="text-pine-300 hover:text-pine-700 text-xl leading-none">✕</button>
             </div>
 
             {/* Body */}
@@ -212,34 +212,34 @@ export default function GruposPage() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre *</label>
+                <label className="block text-xs font-semibold text-pine-800 mb-1">Nombre *</label>
                 <input type="text" value={form.nombre} placeholder="Ej: B1 Martes tarde"
                   onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nivel</label>
+                  <label className="block text-xs font-semibold text-pine-800 mb-1">Nivel</label>
                   <select value={form.nivel} onChange={e => setForm(f => ({ ...f, nivel: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
                     {NIVELES.map(n => <option key={n} value={n}>{n || "— Sin nivel —"}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tarifa mensual (€)</label>
+                  <label className="block text-xs font-semibold text-pine-800 mb-1">Tarifa mensual (€)</label>
                   <input type="number" value={form.tarifa} min="0" step="0.01"
                     onChange={e => setForm(f => ({ ...f, tarifa: +e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Aula</label>
+                  <label className="block text-xs font-semibold text-pine-800 mb-1">Aula</label>
                   <input type="text" value={form.aula} placeholder="Aula 1, Online…"
                     onChange={e => setForm(f => ({ ...f, aula: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Color</label>
+                  <label className="block text-xs font-semibold text-pine-800 mb-1">Color</label>
                   <div className="flex gap-2 flex-wrap mt-1">
                     {PALETTE.map((c, i) => (
                       <button key={i} onClick={() => setForm(f => ({ ...f, color_idx: i }))}
@@ -258,13 +258,13 @@ export default function GruposPage() {
               {/* Schedule */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-semibold text-slate-700">Horario base</label>
-                  <button onClick={addHorario} className="text-xs text-blue-600 hover:text-blue-800">
+                  <label className="text-xs font-semibold text-pine-800">Horario base</label>
+                  <button onClick={addHorario} className="text-xs text-brass-700 hover:text-brass-700">
                     + Añadir franja
                   </button>
                 </div>
                 {!form.horarios.length && (
-                  <p className="text-xs text-slate-600 italic">Sin franjas. Pulsa + Añadir franja.</p>
+                  <p className="text-xs text-pine-700 italic">Sin franjas. Pulsa + Añadir franja.</p>
                 )}
                 <div className="space-y-2">
                   {form.horarios.map((h, idx) => (
@@ -275,7 +275,7 @@ export default function GruposPage() {
                       </select>
                       <input type="time" value={h.ini} onChange={e => updateHorario(idx, "ini", e.target.value)}
                         className="border rounded-lg px-2 py-1.5 text-sm w-28 focus:outline-none" />
-                      <span className="text-sm text-slate-400">→</span>
+                      <span className="text-sm text-pine-300">→</span>
                       <input type="time" value={h.fin} onChange={e => updateHorario(idx, "fin", e.target.value)}
                         className="border rounded-lg px-2 py-1.5 text-sm w-28 focus:outline-none" />
                       <button onClick={() => removeHorario(idx)}
@@ -302,11 +302,11 @@ export default function GruposPage() {
             {/* Footer */}
             <div className="px-6 py-4 border-t flex justify-end gap-2 flex-shrink-0">
               <button onClick={closeModal}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
                 Cancelar
               </button>
               <button onClick={handleSubmit} disabled={saveMut.isPending}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+                className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
                 {saveMut.isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear grupo"}
               </button>
             </div>
@@ -318,17 +318,17 @@ export default function GruposPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-slate-800 mb-1">Eliminar grupo</h3>
-            <p className="text-sm text-slate-700 mb-1">
+            <h3 className="font-semibold text-pine-900 mb-1">Eliminar grupo</h3>
+            <p className="text-sm text-pine-800 mb-1">
               ¿Eliminar <strong>{confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-slate-600 mb-4">
+            <p className="text-xs text-pine-700 mb-4">
               Los alumnos del grupo no se eliminarán, pero perderán la asignación.
             </p>
             {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
                 Cancelar
               </button>
               <button onClick={() => deleteMut.mutate(confirmDelete.id)} disabled={deleteMut.isPending}
