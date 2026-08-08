@@ -57,8 +57,8 @@ export default function Sidebar() {
     <aside style={{
       width: '220px',
       flexShrink: 0,
-      background: 'var(--dark-2)',
-      borderRight: '1px solid var(--border-subtle)',
+      background: '#3F5242',
+      borderRight: '1px solid #52654f',
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
@@ -66,7 +66,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div style={{
         padding: '1.75rem 1.25rem',
-        borderBottom: '1px solid var(--border-subtle)',
+        borderBottom: '1px solid #52654f',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -92,7 +92,7 @@ export default function Sidebar() {
           fontSize: '0.55rem',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: 'var(--text-dim)',
+          color: '#C8B896',
           textAlign: 'center',
         }}>
           Academia de Inglés
@@ -107,7 +107,7 @@ export default function Sidebar() {
               fontSize: '0.6rem',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--text-dim)',
+              color: 'rgba(200, 184, 150, 0.65)',
               padding: '0 0.75rem',
               marginBottom: '0.4rem',
             }}>
@@ -130,21 +130,21 @@ export default function Sidebar() {
                     borderRadius: '8px',
                     fontSize: '0.82rem',
                     fontWeight: 400,
-                    color: isActive ? 'var(--gold)' : 'var(--text-muted)',
-                    background: isActive ? 'var(--gold-muted)' : 'transparent',
+                    color: isActive ? '#ddc48c' : 'rgba(246, 241, 231, 0.68)',
+                    background: isActive ? 'rgba(200, 164, 90, 0.18)' : 'transparent',
                     transition: 'all 0.15s',
                     marginBottom: '0.1rem',
                     cursor: 'pointer',
                   }}
                   onMouseEnter={e => {
                     if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.color = 'var(--text)'
-                      ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-hover)'
+                      (e.currentTarget as HTMLElement).style.color = '#F6F1E7'
+                      ;(e.currentTarget as HTMLElement).style.background = 'rgba(255, 255, 255, 0.06)'
                     }
                   }}
                   onMouseLeave={e => {
                     if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'
+                      (e.currentTarget as HTMLElement).style.color = 'rgba(246, 241, 231, 0.68)'
                       ;(e.currentTarget as HTMLElement).style.background = 'transparent'
                     }
                   }}
@@ -162,14 +162,14 @@ export default function Sidebar() {
       {/* Footer */}
       <div style={{
         padding: '1rem 1.5rem',
-        borderTop: '1px solid var(--border-subtle)',
+        borderTop: '1px solid #52654f',
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
       }}>
         <NavLink to="/config" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Settings size={13} strokeWidth={1.5} style={{ color: 'var(--text-dim)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Configuración</span>
+          <Settings size={13} strokeWidth={1.5} style={{ color: '#C8B896' }} />
+          <span style={{ fontSize: '0.75rem', color: '#C8B896' }}>Configuración</span>
         </NavLink>
       </div>
     </aside>

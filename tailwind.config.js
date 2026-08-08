@@ -8,6 +8,21 @@ export default {
   theme: {
     extend: {
       colors: {
+        pine: {
+          900: "#3F5242",
+          700: "#52654f",
+          600: "#6D7B5B",
+          300: "#a3ad8f",
+        },
+        khaki: {
+          400: "#C8B896",
+          100: "#F6F1E7",
+        },
+        brass: {
+          700: "#8A6B49",
+          500: "#C8A45A",
+          300: "#ddc48c",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
