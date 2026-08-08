@@ -15,6 +15,7 @@ export default {
           600: "#6D7B5B",
           500: "#7c8a68",
           300: "#a3ad8f",
+          100: "#dde3d3",
         },
         khaki: {
           400: "#C8B896",
@@ -26,6 +27,11 @@ export default {
           700: "#8A6B49",
           500: "#C8A45A",
           300: "#ddc48c",
+        },
+        rust: {
+          600: "#8A6B49",
+          500: "#a17f56",
+          100: "#e6d8bc",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -52,6 +58,10 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+      },
+      fontFamily: {
+        head: ["Bevan", "serif"],
+        body: ["'Barlow Semi Condensed'", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

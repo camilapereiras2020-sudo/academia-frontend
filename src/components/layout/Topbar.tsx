@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut } from "lucide-react"
@@ -20,16 +21,27 @@ const PAGE_TITLES: Record<string, string> = {
   '/config': 'Configuración',
 }
 
+function useClock() {
+  const [time, setTime] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+  return time
+}
+
 export default function Topbar() {
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const now = useClock()
 
   const title = PAGE_TITLES[location.pathname] || 'Cami&Co'
 
-  const today = new Date().toLocaleDateString('es-ES', {
+  const today = now.toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
+  const clockTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
 
   const handleLogout = () => {
     useAuthStore.getState().logout()
@@ -38,71 +50,34 @@ export default function Topbar() {
   }
 
   return (
-    <header style={{
-      height: '56px',
-      borderBottom: '1px solid var(--border-subtle)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 1.75rem',
-      background: 'var(--dark)',
-      flexShrink: 0,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
-        <span style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '1.1rem',
-          fontWeight: 400,
-          color: 'var(--text)',
-          letterSpacing: '0.01em',
-        }}>
-          {title}
-        </span>
-        <span style={{
-          fontSize: '0.72rem',
-          color: 'var(--text-dim)',
-          letterSpacing: '0.03em',
-        }}>
+    <header className="flex items-center justify-between gap-4 px-7 py-4 bg-khaki-100 border-b-[3px] border-pine-800 flex-shrink-0 flex-wrap">
+      <div className="min-w-0">
+        <div className="text-[12px] font-extrabold uppercase tracking-[0.06em] text-pine-700 whitespace-nowrap">
           {today}
-        </span>
+        </div>
+        <h1 className="font-head font-normal text-[24px] text-pine-800 mt-1 whitespace-nowrap">
+          {title}
+        </h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="flex items-center gap-3 flex-wrap justify-end">
+        <div className="flex items-center gap-2 bg-pine-800 text-khaki-100 px-3.5 py-2 rounded-[5px] flex-shrink-0">
+          <span className="font-head text-[16px] leading-none">{clockTime}</span>
+          <span className="text-[10px] font-bold text-brass-300 uppercase tracking-[0.03em] whitespace-nowrap">Trail Time</span>
+        </div>
+
         <button
           onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}
-          style={{
-            fontSize: '0.7rem',
-            color: 'var(--text-dim)',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            background: 'none',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '6px',
-            padding: '0.25rem 0.6rem',
-            cursor: 'pointer',
-          }}
+          className="text-[11px] font-body font-semibold text-pine-700 uppercase tracking-[0.1em] bg-transparent border border-pine-800/30 rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-pine-800/5"
         >
           {i18n.language === 'es' ? 'ES' : 'EN'}
         </button>
 
         <button
           onClick={handleLogout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            fontSize: '0.75rem',
-            color: 'var(--text-dim)',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '0.25rem 0',
-            transition: 'color 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-dim)')}
+          className="flex items-center gap-1.5 text-[13px] text-pine-700 bg-transparent border-none cursor-pointer px-1 py-1 transition-colors hover:text-brass-700"
         >
-          <LogOut size={13} strokeWidth={1.5} />
+          <LogOut size={14} strokeWidth={2} />
           Salir
         </button>
       </div>

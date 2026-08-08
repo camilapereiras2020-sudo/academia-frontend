@@ -4,10 +4,9 @@ import { useBrandStore } from "@/store/brandStore"
 import { useAuthStore } from "@/store/authStore"
 import { canAccess } from "@/lib/roles"
 import {
-  LayoutDashboard, GraduationCap, FolderOpen,
-  CheckSquare, Plus, ClipboardList, Clock, Cake, Settings,
-  FileText, UserSearch, Building2, MessageCircle,
-  Receipt
+  LayoutDashboard, GraduationCap, CreditCard, Building2,
+  Compass, CheckSquare, Tag, UserSearch,
+  Coins, FileText, MessageCircle, Cake, Settings,
 } from "lucide-react"
 
 const LOGO_SRC = {
@@ -15,33 +14,34 @@ const LOGO_SRC = {
   rangers_academy: "/logos/rangers-academy-logo.png",
 } as const
 
+// `to: null` marks a nav item from the new IA that doesn't have a page yet —
+// rendered disabled with a "Soon" tag rather than a broken link.
 const NAV_SECTIONS = [
   {
-    label: "Academia",
+    label: "Front Desk",
     items: [
-      { to: "/dashboard", icon: LayoutDashboard, label: "Panel" },
-      { to: "/alumnos", icon: GraduationCap, label: "Alumnos" },
-      { to: "/grupos", icon: FolderOpen, label: "Grupos" },
-      { to: "/asistencia", icon: CheckSquare, label: "Asistencia" },
-      { to: "/cumpleanos", icon: Cake, label: "Cumpleaños" },
+      { to: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+      { to: "/alumnos", icon: GraduationCap, label: "Students" },
+      { to: null, icon: CreditCard, label: "Payers" },
+      { to: "/empresas", icon: Building2, label: "Companies" },
     ]
   },
   {
-    label: "Finanzas",
+    label: "Trail Ops",
     items: [
-      { to: "/pagos/nuevo", icon: Plus, label: "Nuevo pago" },
-      { to: "/pagos", icon: ClipboardList, label: "Pagos" },
-      { to: "/pendientes", icon: Clock, label: "Pendientes" },
-      { to: "/documentos", icon: FileText, label: "Documentos" },
-      { to: "/facturacion", icon: Receipt, label: "Facturación" },
-    ]
-  },
-  {
-    label: "Crecimiento",
-    items: [
+      { to: "/grupos", icon: Compass, label: "Groups" },
+      { to: "/asistencia", icon: CheckSquare, label: "Attendance" },
+      { to: null, icon: Tag, label: "Rates" },
       { to: "/crm", icon: UserSearch, label: "CRM" },
-      { to: "/whatsapp-respuestas", icon: MessageCircle, label: "Respuestas WhatsApp" },
-      { to: "/empresas", icon: Building2, label: "Empresas" },
+    ]
+  },
+  {
+    label: "Ledger",
+    items: [
+      { to: "/pagos", icon: Coins, label: "Payments" },
+      { to: "/documentos", icon: FileText, label: "Invoicing" },
+      { to: "/whatsapp-respuestas", icon: MessageCircle, label: "WhatsApp" },
+      { to: "/cumpleanos", icon: Cake, label: "Birthdays" },
     ]
   },
 ]
@@ -50,127 +50,85 @@ export default function Sidebar() {
   const activeBrand = useBrandStore((s) => s.activeBrand)
   const brand = activeBrand ?? "cami_and_co"
   const role = useAuthStore((s) => s.user?.role)
+  const user = useAuthStore((s) => s.user)
   const navSections = NAV_SECTIONS
-    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(role, item.to)) }))
+    .map((section) => ({ ...section, items: section.items.filter((item) => item.to === null || canAccess(role, item.to)) }))
     .filter((section) => section.items.length > 0)
+
   return (
-    <aside style={{
-      width: '220px',
-      flexShrink: 0,
-      background: '#3F5242',
-      borderRight: '1px solid #52654f',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-    }}>
-      {/* Logo */}
-      <div style={{
-        padding: '1.75rem 1.25rem',
-        borderBottom: '1px solid #52654f',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '0.75rem',
-      }}>
-        <div style={{
-          background: brand === "rangers_academy" ? "#fff" : "transparent",
-          borderRadius: brand === "rangers_academy" ? "8px" : 0,
-          padding: brand === "rangers_academy" ? "0.5rem" : 0,
-        }}>
+    <aside className="w-[250px] flex-shrink-0 bg-pine-900 flex flex-col h-screen border-r-4 border-brass-500 relative overflow-hidden">
+      {/* Logo / crest */}
+      <div className="relative px-6 pt-8 pb-10 border-b border-white/10 overflow-hidden">
+        <svg viewBox="0 0 250 90" preserveAspectRatio="none" className="pointer-events-none absolute left-0 right-0 bottom-0 w-full h-[82px] opacity-50">
+          <path d="M0 90 L30 38 L55 68 L85 18 L115 60 L150 28 L185 65 L215 34 L250 62 L250 90 Z" fill="#52654f" />
+          <path d="M0 90 L45 60 L75 75 L110 44 L140 72 L175 52 L210 75 L250 55 L250 90 Z" fill="#465a48" />
+        </svg>
+        <div className="relative flex items-center gap-3.5 flex-wrap">
           <img
             src={LOGO_SRC[brand]}
             alt={brand === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}
-            style={{
-              width: '140px',
-              height: 'auto',
-              opacity: brand === "rangers_academy" ? 1 : 0.9,
-              display: 'block',
-            }}
+            className="w-[58px] h-[58px] object-contain flex-shrink-0"
           />
-        </div>
-        <div style={{
-          fontSize: '0.55rem',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          color: '#C8B896',
-          textAlign: 'center',
-        }}>
-          Academia de Inglés
+          <div className="font-head text-[19px] text-khaki-100 leading-tight whitespace-nowrap">
+            RANGERS
+            <br />
+            <span className="text-[11px] tracking-[0.2em] text-brass-300 font-body font-bold">STATION DESK</span>
+          </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '1rem 0.75rem', overflowY: 'auto' }}>
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         {navSections.map((section) => (
-          <div key={section.label} style={{ marginBottom: '1.5rem' }}>
-            <div style={{
-              fontSize: '0.6rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'rgba(200, 184, 150, 0.65)',
-              padding: '0 0.75rem',
-              marginBottom: '0.4rem',
-            }}>
+          <div key={section.label} className="mb-4">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-brass-300 px-2 pt-3.5 pb-2">
               {section.label}
             </div>
-            {section.items.map(({ to, icon: Icon, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/pagos"}
-                style={{ textDecoration: 'none' }}
-                className={({ isActive }) => isActive ? 'nav-active' : ''}
-              >
-                {({ isActive }) => (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    padding: '0.45rem 0.75rem',
-                    borderRadius: '8px',
-                    fontSize: '0.82rem',
-                    fontWeight: 400,
-                    color: isActive ? '#ddc48c' : 'rgba(246, 241, 231, 0.68)',
-                    background: isActive ? 'rgba(200, 164, 90, 0.18)' : 'transparent',
-                    transition: 'all 0.15s',
-                    marginBottom: '0.1rem',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.color = '#F6F1E7'
-                      ;(e.currentTarget as HTMLElement).style.background = 'rgba(255, 255, 255, 0.06)'
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.color = 'rgba(246, 241, 231, 0.68)'
-                      ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-                    }
-                  }}
-                  >
-                    <Icon size={14} strokeWidth={1.5} />
-                    {label}
-                  </div>
-                )}
-              </NavLink>
-            ))}
+            {section.items.map(({ to, icon: Icon, label }) =>
+              to === null ? (
+                <div
+                  key={label}
+                  className="flex items-center gap-3 px-3.5 py-3 rounded-[7px] font-head text-[16px] text-khaki-100/30 border-2 border-transparent mb-2 cursor-not-allowed"
+                >
+                  <Icon size={17} strokeWidth={2} />
+                  {label}
+                  <span className="ml-auto text-[9px] font-body font-bold uppercase tracking-wider text-khaki-100/40 border border-white/10 rounded px-1.5 py-0.5">
+                    Soon
+                  </span>
+                </div>
+              ) : (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3.5 py-3 rounded-[7px] font-head text-[16px] mb-2 border-2 transition-colors ${
+                      isActive
+                        ? "text-pine-900 bg-brass-500 border-brass-700 shadow-[0_2px_0_#8A6B49]"
+                        : "text-khaki-100 bg-white/[0.04] border-white/10 hover:bg-white/10 hover:border-brass-500"
+                    }`
+                  }
+                >
+                  <Icon size={17} strokeWidth={2} />
+                  {label}
+                </NavLink>
+              )
+            )}
           </div>
         ))}
       </nav>
 
       {/* Footer */}
-      <div style={{
-        padding: '1rem 1.5rem',
-        borderTop: '1px solid #52654f',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-      }}>
-        <NavLink to="/config" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Settings size={13} strokeWidth={1.5} style={{ color: '#C8B896' }} />
-          <span style={{ fontSize: '0.75rem', color: '#C8B896' }}>Configuración</span>
-        </NavLink>
+      <div className="px-5 py-4 border-t border-white/10 flex items-center gap-2.5">
+        <div className="w-[34px] h-[34px] rounded-full bg-brass-500 flex items-center justify-center font-head text-pine-900 text-sm flex-shrink-0">
+          {(user?.username || "?").charAt(0).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] text-khaki-200 font-semibold truncate">{user?.username || "Front Desk"}</div>
+          <NavLink to="/config" className="text-[11px] text-khaki-300 hover:text-brass-300 no-underline inline-flex items-center gap-1">
+            <Settings size={11} strokeWidth={2} />
+            Settings
+          </NavLink>
+        </div>
       </div>
     </aside>
   )
