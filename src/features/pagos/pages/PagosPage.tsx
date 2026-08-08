@@ -25,7 +25,7 @@ const ESTADO_LABEL: Record<string, string> = {
 
 function Badge({ estado }: { estado: string }) {
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_CLS[estado] ?? "bg-slate-100 text-slate-600"}`}>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_CLS[estado] ?? "bg-khaki-100 text-pine-600"}`}>
       {ESTADO_LABEL[estado] ?? estado}
     </span>
   )
@@ -168,8 +168,8 @@ export default function PagosPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Pagos</h1>
-          <p className="text-sm text-slate-700 mt-1">{pagos.length} registros</p>
+          <h1 className="text-3xl font-bold text-pine-900">Pagos</h1>
+          <p className="text-sm text-pine-700 mt-1">{pagos.length} registros</p>
         </div>
         <div className="flex gap-2">
           {pendientesCount > 0 && (
@@ -182,7 +182,7 @@ export default function PagosPage() {
           )}
           <button
             onClick={showForm ? closeForm : openForm}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700"
           >
             {showForm ? "✕ Cancelar" : "+ Nuevo pago"}
           </button>
@@ -192,16 +192,16 @@ export default function PagosPage() {
       {/* Create form */}
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <h2 className="font-semibold text-slate-800 mb-4">Nuevo pago</h2>
+          <h2 className="font-semibold text-pine-900 mb-4">Nuevo pago</h2>
           {formError && (
             <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{formError}</p>
           )}
           <div className="mb-4">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Marca / Emisor *</label>
+            <label className="block text-xs font-semibold text-pine-700 mb-1">Marca / Emisor *</label>
             <select
               value={form.marca}
               onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
             >
               <option value="">Seleccionar...</option>
               {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -209,61 +209,61 @@ export default function PagosPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Alumno *</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Alumno *</label>
               <select
                 value={form.alumno}
                 onChange={e => onAlumnoChange(e.target.value ? +e.target.value : "")}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
               >
                 <option value="">Seleccionar...</option>
                 {alumnos.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Pagador *</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Pagador *</label>
               <select
                 value={form.pagador}
                 onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : "" }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
               >
                 <option value="">Seleccionar...</option>
                 {pagadores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Importe (€) *</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Importe (€) *</label>
               <input
                 type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.mensualidad}
                 onChange={e => setForm(f => ({ ...f, mensualidad: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Método</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Método</label>
               <select
                 value={form.metodo}
                 onChange={e => setForm(f => ({ ...f, metodo: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
               >
                 {METODOS.map(m => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Periodo *</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Periodo *</label>
               <input
                 type="month"
                 value={form.periodo}
                 onChange={e => setForm(f => ({ ...f, periodo: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Grupo</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
               <select
                 value={form.grupo}
                 onChange={e => setForm(f => ({ ...f, grupo: e.target.value ? +e.target.value : "" }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
               >
                 <option value="">Sin grupo</option>
                 {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
@@ -271,16 +271,16 @@ export default function PagosPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
+            <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
             <textarea
               rows={2} placeholder="Observaciones..."
               value={form.notas}
               onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none"
             />
           </div>
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeForm} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+            <button onClick={closeForm} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200">
               Cancelar
             </button>
             <button onClick={handleSaveDraft} disabled={createMut.isPending}
@@ -289,7 +289,7 @@ export default function PagosPage() {
               {createMut.isPending ? "Guardando..." : "Guardar como borrador"}
             </button>
             <button onClick={handleSubmit} disabled={createMut.isPending}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+              className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
               {createMut.isPending ? "Guardando..." : "Crear pago"}
             </button>
           </div>
@@ -301,7 +301,7 @@ export default function PagosPage() {
         <select
           value={estadoFilter}
           onChange={e => setEstadoFilter(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
         >
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
@@ -311,10 +311,10 @@ export default function PagosPage() {
         <input
           type="month" value={periodoFilter}
           onChange={e => setPeriodoFilter(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
         />
         {periodoFilter && (
-          <button onClick={() => setPeriodoFilter("")} className="text-xs text-blue-600 hover:text-blue-800">
+          <button onClick={() => setPeriodoFilter("")} className="text-xs text-brass-700 hover:text-pine-900">
             Limpiar mes
           </button>
         )}
@@ -325,7 +325,7 @@ export default function PagosPage() {
             ["cami_and_co", "Cami & Co"],
           ] as const).map(([value, label]) => (
             <button key={value} onClick={() => setMarcaFilter(value)}
-              className={`px-3 py-2 ${marcaFilter === value ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+              className={`px-3 py-2 ${marcaFilter === value ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
               {label}
             </button>
           ))}
@@ -337,10 +337,10 @@ export default function PagosPage() {
       )}
 
       {/* List */}
-      {isLoading && <p className="text-slate-400 text-sm py-4">Cargando...</p>}
+      {isLoading && <p className="text-khaki-400 text-sm py-4">Cargando...</p>}
 
       {!isLoading && !pagos.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
           <span className="text-4xl mb-3">💳</span>
           <p className="text-sm">Sin pagos registrados.</p>
         </div>
@@ -349,25 +349,25 @@ export default function PagosPage() {
       {!isLoading && !!pagos.length && (
         <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b">
+            <thead className="bg-khaki-100 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Fecha de pago", "Importe", "Método", "Doc", "Estado", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-700 font-semibold whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-pine-700 font-semibold whitespace-nowrap">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-khaki-100">
               {pagos.map(p => (
-                <tr key={p.id} onClick={() => setSelectedPago(p)} className="hover:bg-slate-50 cursor-pointer">
-                  <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{formatEur(Number(p.total))}</td>
-                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
-                  <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
+                <tr key={p.id} onClick={() => setSelectedPago(p)} className="hover:bg-khaki-100 cursor-pointer">
+                  <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
+                  <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
+                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
+                  <td className="px-4 py-3 font-semibold text-pine-900 whitespace-nowrap">{formatEur(Number(p.total))}</td>
+                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
+                  <td className="px-4 py-3 text-xs text-pine-600 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge estado={p.estado} />
                     {p.estado_carga === "pendiente_completar" && (
@@ -391,7 +391,7 @@ export default function PagosPage() {
                         <button
                           onClick={() => generarMut.mutate(p)}
                           disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
-                          className="px-2 py-1 border rounded text-xs text-blue-600 hover:bg-blue-50 disabled:opacity-50 whitespace-nowrap"
+                          className="px-2 py-1 border rounded text-xs text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
                           title="Generar factura o recibo"
                         >
                           🧾
@@ -416,15 +416,15 @@ export default function PagosPage() {
       {confirmDelete !== null && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-slate-800 mb-1">Eliminar pago</h3>
-            <p className="text-sm text-slate-700 mb-4">Esta acción no se puede deshacer.</p>
+            <h3 className="font-semibold text-pine-900 mb-1">Eliminar pago</h3>
+            <p className="text-sm text-pine-700 mb-4">Esta acción no se puede deshacer.</p>
             {deleteError && (
               <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{deleteError}</p>
             )}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => { setConfirmDelete(null); setDeleteError("") }}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200"
+                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200"
               >
                 Cancelar
               </button>
