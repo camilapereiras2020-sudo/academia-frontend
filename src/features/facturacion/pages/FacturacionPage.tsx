@@ -71,8 +71,8 @@ export default function FacturacionPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-800">Facturación</h1>
-        <p className="text-sm text-slate-700 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
+        <h1 className="text-3xl font-bold text-pine-900">Facturación</h1>
+        <p className="text-sm text-pine-700 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
       </div>
 
       {downloadError && (
@@ -82,10 +82,10 @@ export default function FacturacionPage() {
         <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{actionError}</p>
       )}
 
-      {isLoading && <p className="text-slate-400 text-sm py-4">Cargando...</p>}
+      {isLoading && <p className="text-khaki-400 text-sm py-4">Cargando...</p>}
 
       {!isLoading && !pagos.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
           <span className="text-4xl mb-3">🧾</span>
           <p className="text-sm">Sin pagos cobrados todavía.</p>
         </div>
@@ -93,33 +93,33 @@ export default function FacturacionPage() {
 
       {!!pendientes.length && (
         <div className="bg-white rounded-xl shadow-sm border overflow-x-auto mb-6">
-          <div className="px-4 py-3 border-b bg-slate-50">
-            <span className="text-xs uppercase tracking-wide text-slate-700 font-semibold">
+          <div className="px-4 py-3 border-b bg-khaki-100">
+            <span className="text-xs uppercase tracking-wide text-pine-700 font-semibold">
               Pendientes de facturar ({pendientes.length})
             </span>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b">
+            <thead className="bg-khaki-100 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Marca", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-700 font-semibold whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-pine-700 font-semibold whitespace-nowrap">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-khaki-100">
               {pendientes.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                  <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{p.marca_display ?? "—"}</td>
+                <tr key={p.id} className="hover:bg-khaki-100">
+                  <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
+                  <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
+                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{p.marca_display ?? "—"}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => generarMut.mutate(p)}
                       disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
-                      className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50 whitespace-nowrap"
+                      className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50 whitespace-nowrap"
                     >
                       {generarMut.isPending && (generarMut.variables as Pago)?.id === p.id ? "Generando..." : "🧾 Generar factura/recibo"}
                     </button>
@@ -133,35 +133,35 @@ export default function FacturacionPage() {
 
       {!!listos.length && (
         <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-          <div className="px-4 py-3 border-b bg-slate-50">
-            <span className="text-xs uppercase tracking-wide text-slate-700 font-semibold">
+          <div className="px-4 py-3 border-b bg-khaki-100">
+            <span className="text-xs uppercase tracking-wide text-pine-700 font-semibold">
               Ya facturados ({listos.length})
             </span>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b">
+            <thead className="bg-khaki-100 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Doc", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-slate-700 font-semibold whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-pine-700 font-semibold whitespace-nowrap">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-khaki-100">
               {listos.map(p => {
                 const doc = docByPago.get(p.id)!
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">{doc.num_doc}</td>
+                  <tr key={p.id} className="hover:bg-khaki-100">
+                    <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
+                    <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
+                    <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                    <td className="px-4 py-3 text-xs text-pine-600 font-mono whitespace-nowrap">{doc.num_doc}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleDescargar(doc)}
                         disabled={downloadingId === doc.id}
-                        className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50 whitespace-nowrap"
+                        className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50 whitespace-nowrap"
                       >
                         {downloadingId === doc.id ? "..." : "📥 Descargar"}
                       </button>

@@ -19,7 +19,7 @@ function formatFecha(iso: string | null, opts?: Intl.DateTimeFormatOptions) {
 }
 
 const TIPO_CLS: Record<string, string> = {
-  factura:          "bg-blue-100 text-blue-800",
+  factura:          "bg-khaki-200 text-brass-700",
   recibo:           "bg-purple-100 text-purple-800",
   recibo_efectivo:  "bg-amber-100 text-amber-800",
 }
@@ -106,8 +106,8 @@ export default function DocumentosPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Documentos</h1>
-          <p className="text-sm text-slate-700 mt-1">{visibles.length} documentos generados</p>
+          <h1 className="text-3xl font-bold text-pine-900">Documentos</h1>
+          <p className="text-sm text-pine-700 mt-1">{visibles.length} documentos generados</p>
         </div>
       </div>
 
@@ -121,8 +121,8 @@ export default function DocumentosPage() {
           <button key={v} onClick={() => setTipoFilter(v)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               tipoFilter === v
-                ? "bg-slate-800 text-white border-slate-800"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                ? "bg-pine-900 text-white border-pine-900"
+                : "bg-white text-pine-600 border-khaki-300 hover:border-khaki-400"
             }`}>
             {v === "" ? "Todos" : TIPO_LABEL[v]}
           </button>
@@ -135,8 +135,8 @@ export default function DocumentosPage() {
             <button key={value} onClick={() => setEstadoTab(value)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                 estadoTab === value
-                  ? value === "anuladas" ? "bg-red-600 text-white border-red-600" : "bg-slate-800 text-white border-slate-800"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                  ? value === "anuladas" ? "bg-red-600 text-white border-red-600" : "bg-pine-900 text-white border-pine-900"
+                  : "bg-white text-pine-600 border-khaki-300 hover:border-khaki-400"
               }`}>
               {label}
             </button>
@@ -144,10 +144,10 @@ export default function DocumentosPage() {
         </div>
       </div>
 
-      {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
 
       {!isLoading && !docs.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
           <span className="text-5xl mb-3">📁</span>
           <p className="text-sm">
             {tipoFilter
@@ -163,15 +163,15 @@ export default function DocumentosPage() {
         {docs.map(d => (
           <div key={d.id} className={`bg-white rounded-xl border shadow-sm p-4 flex items-center justify-between flex-wrap gap-3 ${d.estado === "anulada" ? "opacity-60" : ""}`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-base flex-shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-khaki-100 flex items-center justify-center text-base flex-shrink-0">
                 {d.tipo === "factura" ? "🧾" : "📄"}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`font-semibold text-slate-800 font-mono text-sm ${d.estado === "anulada" ? "line-through" : ""}`}>
+                  <span className={`font-semibold text-pine-900 font-mono text-sm ${d.estado === "anulada" ? "line-through" : ""}`}>
                     {d.num_doc || d.nombre}
                   </span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIPO_CLS[d.tipo] ?? "bg-slate-100 text-slate-600"}`}>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIPO_CLS[d.tipo] ?? "bg-khaki-100 text-pine-600"}`}>
                     {d.tipo}
                   </span>
                   {d.estado === "anulada" && (
@@ -180,13 +180,13 @@ export default function DocumentosPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-700 mt-0.5 truncate">
+                <p className="text-xs text-pine-700 mt-0.5 truncate">
                   {d.pago_info
                     ? `${d.pago_info.alumno} · ${d.pago_info.pagador} · ${d.pago_info.periodo} · ${Number(d.pago_info.total).toFixed(2)} €`
                     : null
                   }
                 </p>
-                <p className="text-xs text-slate-600 mt-0.5">
+                <p className="text-xs text-pine-600 mt-0.5">
                   <span title="Cuándo pagó el cliente">Fecha de pago: {formatFecha(d.pago_info?.fecha ?? null)}</span>
                   <span className="mx-1.5">·</span>
                   <span title="Cuándo se emitió este documento/PDF">
@@ -199,7 +199,7 @@ export default function DocumentosPage() {
               <button
                 onClick={() => handleDescargar(d)}
                 disabled={downloadingId === d.id}
-                className="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-medium disabled:opacity-50">
+                className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
                 {downloadingId === d.id ? "..." : "📥 Descargar"}
               </button>
               {d.estado === "anulada" ? null : d.estado === "borrador" ? (
@@ -225,14 +225,14 @@ export default function DocumentosPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-slate-800 mb-1">Eliminar documento</h3>
-            <p className="text-sm text-slate-700 mb-1">
+            <h3 className="font-semibold text-pine-900 mb-1">Eliminar documento</h3>
+            <p className="text-sm text-pine-700 mb-1">
               ¿Eliminar <strong>{confirmDelete.num_doc || confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-slate-600 mb-4">Se eliminará el archivo físico y el registro. No se puede deshacer.</p>
+            <p className="text-xs text-pine-600 mb-4">Se eliminará el archivo físico y el registro. No se puede deshacer.</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-300">
                 Cancelar
               </button>
               <button onClick={() => deleteMut.mutate(confirmDelete.id)} disabled={deleteMut.isPending}
@@ -249,19 +249,19 @@ export default function DocumentosPage() {
       {confirmAnular && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-slate-800 mb-1">Anular documento</h3>
-            <p className="text-sm text-slate-700 mb-1">
+            <h3 className="font-semibold text-pine-900 mb-1">Anular documento</h3>
+            <p className="text-sm text-pine-700 mb-1">
               ¿Anular <strong>{confirmAnular.num_doc || confirmAnular.nombre}</strong>?
             </p>
-            <p className="text-xs text-slate-600 mb-3">
+            <p className="text-xs text-pine-600 mb-3">
               El número queda reservado y el PDF se conserva marcado como ANULADA — no se elimina nada, para mantener la secuencia intacta a efectos fiscales.
             </p>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Motivo (obligatorio)</label>
+            <label className="block text-xs font-semibold text-pine-700 mb-1">Motivo (obligatorio)</label>
             <textarea value={motivoAnulacion} onChange={e => setMotivoAnulacion(e.target.value)} rows={2}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4" />
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none mb-4" />
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmAnular(null)}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-300">
                 Cancelar
               </button>
               <button
