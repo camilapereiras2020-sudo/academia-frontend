@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/authStore"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
-  "bg-blue-500", "bg-green-600", "bg-rose-500", "bg-amber-500",
+  "bg-brass-500", "bg-green-600", "bg-rose-500", "bg-amber-500",
   "bg-purple-600", "bg-teal-600", "bg-pink-500", "bg-indigo-600",
 ]
 
@@ -233,12 +233,12 @@ export default function AlumnosPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Alumnos</h1>
-          <p className="text-sm text-slate-700 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
+          <h1 className="text-3xl font-bold text-pine-900">Alumnos</h1>
+          <p className="text-sm text-pine-700 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+            className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700">
             + Nuevo alumno
           </button>
         )}
@@ -249,7 +249,7 @@ export default function AlumnosPage() {
         <input
           type="text" placeholder="Buscar por nombre, email o teléfono..." value={search}
           onChange={e => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
         />
         <div className="inline-flex rounded-lg border overflow-hidden text-sm">
           {([
@@ -258,7 +258,7 @@ export default function AlumnosPage() {
             ["cami_and_co", "Cami & Co"],
           ] as const).map(([value, label]) => (
             <button key={value} onClick={() => setMarcaFilter(value)}
-              className={`px-3 py-2 ${marcaFilter === value ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+              className={`px-3 py-2 ${marcaFilter === value ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
               {label}
             </button>
           ))}
@@ -278,9 +278,9 @@ export default function AlumnosPage() {
       )}
 
       {/* States */}
-      {isLoading && <p className="text-slate-400 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
       {!isLoading && !alumnosFiltrados.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
           <span className="text-5xl mb-3">🎓</span>
           <p className="text-sm">
             {soloIncompletos ? "Ningún alumno con datos incompletos." : search ? "Sin resultados para esa búsqueda." : "Sin alumnos. Crea el primero."}
@@ -298,7 +298,7 @@ export default function AlumnosPage() {
           const gruposDetalle = a.grupos_detalle ?? []
           return (
             <div key={a.id} onClick={() => navigate(`/alumnos/${a.id}`)}
-              className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4 cursor-pointer hover:border-blue-300 transition-colors">
+              className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4 cursor-pointer hover:border-brass-300 transition-colors">
               {/* Avatar */}
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${color}`}>
                 {initials(a.nombre)}
@@ -307,49 +307,49 @@ export default function AlumnosPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-semibold text-slate-800">{a.nombre}</span>
+                  <span className="font-semibold text-pine-900">{a.nombre}</span>
                   {yearsOld !== null && (
-                    <span className="text-xs text-slate-600">{yearsOld} años</span>
+                    <span className="text-xs text-pine-600">{yearsOld} años</span>
                   )}
                   {a.fnac && (
-                    <span className="text-xs text-slate-600">{new Date(a.fnac).toLocaleDateString("es-ES")}</span>
+                    <span className="text-xs text-pine-600">{new Date(a.fnac).toLocaleDateString("es-ES")}</span>
                   )}
                 </div>
 
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                   {a.telefono && (
-                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-700 hover:text-blue-600">
+                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-pine-700 hover:text-brass-700">
                       📞 {a.telefono}
                     </a>
                   )}
                   {a.email && (
-                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-slate-700 hover:text-blue-600">
+                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-pine-700 hover:text-brass-700">
                       ✉ {a.email}
                     </a>
                   )}
                   {pag && (
-                    <span className="text-xs text-slate-700">💳 {pag}</span>
+                    <span className="text-xs text-pine-700">💳 {pag}</span>
                   )}
                 </div>
 
                 {a.notas && (
-                  <p className="text-xs text-slate-600 mt-1 italic truncate max-w-md">{a.notas}</p>
+                  <p className="text-xs text-pine-600 mt-1 italic truncate max-w-md">{a.notas}</p>
                 )}
 
                 {/* Group badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {gruposDetalle.map(g => (
-                    <span key={g.grupo} className="inline-flex items-center gap-1 text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                    <span key={g.grupo} className="inline-flex items-center gap-1 text-xs font-medium bg-khaki-100 text-brass-700 px-2 py-0.5 rounded-full">
                       {g.grupo_nombre}
                       {g.horarios.length > 0 && (
-                        <span className="font-normal text-blue-500">
+                        <span className="font-normal text-brass-500">
                           · {g.horarios.map(h => DIAS[h.dia]?.slice(0, 3) + " " + h.ini).join(", ")}
                         </span>
                       )}
                     </span>
                   ))}
                   {!gruposDetalle.length && (
-                    <span className="text-xs text-slate-600 italic">Sin grupo asignado</span>
+                    <span className="text-xs text-pine-600 italic">Sin grupo asignado</span>
                   )}
                 </div>
               </div>
@@ -366,12 +366,12 @@ export default function AlumnosPage() {
                 )}
                 {pagObj_?.email && (
                   <button onClick={() => setEmailTarget(a)}
-                    className="px-3 py-1.5 border rounded-lg text-xs text-blue-700 hover:bg-blue-50 border-blue-200">
+                    className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 border-khaki-400">
                     ✉ Email
                   </button>
                 )}
                 <button onClick={() => openEdit(a)}
-                  className="px-3 py-1.5 border rounded-lg text-xs text-slate-600 hover:bg-slate-50">
+                  className="px-3 py-1.5 border rounded-lg text-xs text-pine-600 hover:bg-khaki-100">
                   Editar
                 </button>
                 {!isReception && (
@@ -392,8 +392,8 @@ export default function AlumnosPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
             {/* Modal header */}
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-slate-800">{editing ? "Editar alumno" : "Nuevo alumno"}</h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+              <h2 className="text-lg font-bold text-pine-900">{editing ? "Editar alumno" : "Nuevo alumno"}</h2>
+              <button onClick={closeModal} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
             </div>
 
             {/* Modal body */}
@@ -404,18 +404,18 @@ export default function AlumnosPage() {
 
               {/* Datos personales */}
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Datos personales</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Datos personales</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre *</label>
+                    <label className="block text-xs font-semibold text-pine-700 mb-1">Nombre *</label>
                     <input type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                   </div>
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Marca / Emisor *</label>
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">Marca / Emisor *</label>
                       <select value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
                         <option value="">Seleccionar...</option>
                         {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                       </select>
@@ -423,42 +423,42 @@ export default function AlumnosPage() {
                   )}
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Fecha de nacimiento</label>
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">Fecha de nacimiento</label>
                       <input type="date" value={form.fnac} onChange={e => setForm(f => ({ ...f, fnac: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                     </div>
                   )}
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Aviso cumpleaños (días antes)</label>
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">Aviso cumpleaños (días antes)</label>
                       <input type="number" min="0" placeholder="14"
                         value={form.aviso_cumple_dias ?? ""}
                         onChange={e => setForm(f => ({ ...f, aviso_cumple_dias: e.target.value ? +e.target.value : null }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
+                    <label className="block text-xs font-semibold text-pine-700 mb-1">Teléfono</label>
                     <input type="tel" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                    <label className="block text-xs font-semibold text-pine-700 mb-1">Email</label>
                     <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                   </div>
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">DNI</label>
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">DNI</label>
                       <input type="text" value={form.dni} onChange={e => setForm(f => ({ ...f, dni: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                     </div>
                   )}
                   {!isReception && (
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Notas</label>
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
                       <textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none" />
                     </div>
                   )}
                 </div>
@@ -467,19 +467,19 @@ export default function AlumnosPage() {
               {/* Pagador */}
               {!isReception && (
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Pagador</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Pagador</p>
                   <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-pine-700 cursor-pointer">
                       <input type="checkbox" checked={form.es_adulto}
                         onChange={e => {
                           const checked = e.target.checked
                           setForm(f => ({ ...f, es_adulto: checked, pagador: null }))
                         }}
-                        className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-blue-500" />
+                        className="w-4 h-4 rounded border-khaki-400 focus:ring-2 focus:ring-brass-500" />
                       El alumno es adulto / paga el mismo
                     </label>
                     {form.es_adulto ? (
-                      <p className="text-xs text-slate-700">
+                      <p className="text-xs text-pine-700">
                         Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
                       </p>
                     ) : (
@@ -498,7 +498,7 @@ export default function AlumnosPage() {
               {/* Grupos y horarios */}
               {!isReception && (
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3">Grupos y horarios</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Grupos y horarios</p>
                   {!grupos.length
                     ? <p className="text-xs text-amber-600">No hay grupos. Crea uno en la sección Grupos primero.</p>
                     : (
@@ -507,13 +507,13 @@ export default function AlumnosPage() {
                           const selected = form.grupos.includes(g.id)
                           const slots = form.horarios.filter(h => h.grupoId === g.id)
                           return (
-                            <div key={g.id} className={`border rounded-lg p-3 transition-colors ${selected ? "border-blue-300 bg-blue-50" : "border-slate-200"}`}>
+                            <div key={g.id} className={`border rounded-lg p-3 transition-colors ${selected ? "border-brass-300 bg-khaki-100" : "border-khaki-400"}`}>
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input type="checkbox" checked={selected} onChange={() => toggleGrupo(g.id)}
-                                  className="accent-blue-600 w-4 h-4" />
-                                <span className="font-medium text-sm text-slate-800">{g.nombre}</span>
-                                {g.nivel && <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{g.nivel}</span>}
-                                {g.tarifa > 0 && <span className="text-xs text-slate-700 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
+                                  className="accent-brass-500 w-4 h-4" />
+                                <span className="font-medium text-sm text-pine-900">{g.nombre}</span>
+                                {g.nivel && <span className="text-xs bg-khaki-100 text-pine-600 px-2 py-0.5 rounded-full">{g.nivel}</span>}
+                                {g.tarifa > 0 && <span className="text-xs text-pine-700 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
                               </label>
                               {selected && (
                                 <div className="mt-3 pl-6 space-y-2">
@@ -527,7 +527,7 @@ export default function AlumnosPage() {
                                         </select>
                                         <input type="time" value={h.ini} onChange={e => updateHorario(realIdx, "ini", e.target.value)}
                                           className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
-                                        <span className="text-xs text-slate-400">→</span>
+                                        <span className="text-xs text-khaki-400">→</span>
                                         <input type="time" value={h.fin} onChange={e => updateHorario(realIdx, "fin", e.target.value)}
                                           className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
                                         <button onClick={() => setForm(f => ({ ...f, horarios: f.horarios.filter((_, i) => i !== realIdx) }))}
@@ -536,7 +536,7 @@ export default function AlumnosPage() {
                                     )
                                   })}
                                   <button onClick={() => addHorario(g.id)}
-                                    className="text-xs text-blue-600 hover:text-blue-800">+ Añadir día</button>
+                                    className="text-xs text-brass-700 hover:text-pine-900">+ Añadir día</button>
                                 </div>
                               )}
                             </div>
@@ -551,11 +551,11 @@ export default function AlumnosPage() {
             {/* Modal footer */}
             <div className="px-6 py-4 border-t flex justify-end gap-2 flex-shrink-0">
               <button onClick={closeModal}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-400">
                 Cancelar
               </button>
               <button onClick={handleSubmit} disabled={saveMut.isPending}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+                className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
                 {saveMut.isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear alumno"}
               </button>
             </div>
@@ -576,15 +576,15 @@ export default function AlumnosPage() {
       {confirmDelete && createPortal(
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-slate-800 mb-1">Eliminar alumno</h3>
-            <p className="text-sm text-slate-700 mb-1">
+            <h3 className="font-semibold text-pine-900 mb-1">Eliminar alumno</h3>
+            <p className="text-sm text-pine-700 mb-1">
               ¿Eliminar a <strong>{confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-slate-600 mb-4">Esta acción no se puede deshacer.</p>
+            <p className="text-xs text-pine-600 mb-4">Esta acción no se puede deshacer.</p>
             {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-400">
                 Cancelar
               </button>
               <button onClick={() => deleteMut.mutate(confirmDelete.id)} disabled={deleteMut.isPending}
