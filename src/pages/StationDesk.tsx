@@ -1,60 +1,69 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import './station-desk-theme.css';
 import crest from '../assets/rangers-crest.png';
+import { alumnosApi } from '@/features/alumnos/alumnos_api';
+import { gruposApi } from '@/features/grupos/api';
+import { pagosApi } from '@/features/pagos/api';
+import { dashboardApi } from '@/features/dashboard/api';
+import type { Grupo } from '@/types';
 
 /**
  * STATION DESK — Rangers Academy admin dashboard
  *
- * This is a visual port of the Claude Design mockup. All data below
- * (STATS, PAYMENTS, LEADS, BIRTHDAYS, TIMETABLE, ROLL_NAMES) is
- * placeholder/mock data — swap each block for a real API call
- * (Alumnos, Pagos, CRM leads, Grupos, etc.) before shipping.
+ * This is a visual port of the Claude Design mockup. STATS, PAYMENTS,
+ * BIRTHDAYS and TIMETABLE/On-Duty are now wired to real API data
+ * (Alumnos, Pagos, Grupos, Dashboard). LEADS and ROLL_NAMES are still
+ * placeholder/mock data — see the notes above each block for why.
  * Search input, sidebar nav links, and "+ New Invoice" are not wired
  * to routing/actions yet — this is the visual layer only.
  */
 
-const STATS = [
-  { label: 'Active Students', value: '84', delta: '+3 this month' },
-  { label: 'Outstanding Invoices', value: '€1,240', delta: '6 pending' },
-  { label: 'Groups Running', value: '11', delta: '2 nearly full' },
-  { label: "This Month's Revenue", value: '€6,380', delta: '+8% vs last' },
-];
-
-const PAYMENTS = [
-  { invoice: 'CC-0142', student: 'Marcos Vidal', method: 'Bizum', amount: '€70', status: 'Paid' },
-  { invoice: 'RE-0089', student: 'Sofía Lago', method: 'Domiciliación', amount: '€48', status: 'Paid' },
-  { invoice: 'CC-0143', student: 'Iago Fernández', method: 'Transferencia', amount: '€100', status: 'Pending' },
-  { invoice: 'CC-0144', student: 'Noa Rey', method: 'Tarjeta', amount: '€130', status: 'Paid' },
-  { invoice: 'RE-0090', student: 'Uxía Barros', method: 'Efectivo', amount: '€48', status: 'Overdue' },
-  { invoice: 'CC-0145', student: 'Brais Costas', method: 'Bizum', amount: '€70', status: 'Paid' },
-];
-
-const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  Paid: { bg: 'var(--pine-100)', color: 'var(--pine-700)' },
-  Pending: { bg: 'var(--brass-300)', color: 'var(--brass-700)' },
-  Overdue: { bg: 'var(--rust-100)', color: 'var(--rust-600)' },
-};
-
+// LEADS has no dedicated api.ts of its own — CRMPage.tsx calls the leads
+// endpoint inline, and sharing it cleanly here would be scope creep for
+// this pass. Left as mock data.
 const LEADS = [
   { name: 'Andrea Souto', note: 'Asked about FCE prep', age: '5d' },
   { name: 'Familia Pombo', note: 'Trial class scheduled', age: '2d' },
   { name: 'Diego Camba', note: 'Adult conversation inquiry', age: '9d' },
 ];
 
-const BIRTHDAYS = [
-  { name: 'Sofía Lago', date: 'Aug 3' },
-  { name: 'Teacher Cande', date: 'Aug 12' },
-];
-
-const TIMETABLE = [
-  { time: '16:00', group: 'Rangers Kids A1', teacher: 'Teacher Cande', room: 'Room 1', dot: 'var(--brass-500)' },
-  { time: '17:00', group: 'Cambridge FCE', teacher: 'Teacher Cande', room: 'Room 1', dot: 'var(--pine-600)' },
-  { time: '18:00', group: 'IB MYP English', teacher: 'Teacher Cami', room: 'Room 2', dot: 'var(--rust-500)' },
-  { time: '19:00', group: 'Adult Conversation', teacher: 'Teacher Cami', room: 'Room 2', dot: 'var(--brass-500)' },
-  { time: '20:00', group: 'CAE Prep', teacher: 'Teacher Cande', room: 'Room 1', dot: 'var(--pine-600)' },
-];
-
+// ROLL_NAMES (and the attendance quick-check roll state below) requires
+// multi-call assembly plus attendance-writing logic that's out of scope
+// for this pass. Left as mock data.
 const ROLL_NAMES = ['Marcos Vidal', 'Sofía Lago', 'Iago Fernández', 'Noa Rey'];
+
+const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  Paid: { bg: 'var(--pine-100)', color: 'var(--pine-700)' },
+  Pending: { bg: 'var(--brass-300)', color: 'var(--brass-700)' },
+  Partial: { bg: 'var(--brass-300)', color: 'var(--brass-700)' },
+};
+
+const ESTADO_LABEL: Record<string, string> = {
+  pagado: 'Paid',
+  pendiente: 'Pending',
+  parcial: 'Partial',
+};
+
+const eur = (n: number) => `€${n.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+// TEMP: teacher assignment is heuristic (no teacher field on Grupo
+// yet). Revisit once a real teacher FK/field exists.
+function teacherForGrupo(g: Grupo): 'Teacher Cami' | 'Teacher Cande' {
+  const label = `${g.nivel ?? ''} ${g.nombre ?? ''}`.toUpperCase();
+  if (label.includes('IB') || label.includes('ADULT') || label.includes('CONVERSATION') || label.includes('CONVERSACIÓN') || label.includes('CONVERSACION')) {
+    return 'Teacher Cami';
+  }
+  if (/\b(FCE|CAE|CPE|KET|PET)\b/.test(label) || label.includes('RANGERS') || label.includes('KIDS')) {
+    return 'Teacher Cande';
+  }
+  return 'Teacher Cande';
+}
+
+const DOT_BY_TEACHER: Record<string, string> = {
+  'Teacher Cande': 'var(--brass-500)',
+  'Teacher Cami': 'var(--rust-500)',
+};
 
 const NAV_SECTIONS: { label: string; items: string[] }[] = [
   { label: 'Front Desk', items: ['Overview', 'Students', 'Payers', 'Companies'] },
@@ -104,6 +113,74 @@ export default function StationDesk() {
   const today = clock.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const calendarMonth = clock.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   const clockTime = clock.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  // ── live data ────────────────────────────────────────────────────────────
+
+  const { data: alumnos, isLoading: alumnosLoading, isError: alumnosError } = useQuery({
+    queryKey: ['alumnos'],
+    queryFn: () => alumnosApi.list().then((r) => r.data),
+  });
+
+  const { data: grupos, isLoading: gruposLoading, isError: gruposError } = useQuery({
+    queryKey: ['grupos'],
+    queryFn: () => gruposApi.list().then((r) => r.data),
+  });
+
+  const { data: pagos, isLoading: pagosLoading, isError: pagosError } = useQuery({
+    queryKey: ['pagos'],
+    queryFn: () => pagosApi.list().then((r) => r.data),
+  });
+
+  const { data: reception, isLoading: receptionLoading, isError: receptionError } = useQuery({
+    queryKey: ['dashboard-reception-summary'],
+    queryFn: () => dashboardApi.receptionSummary().then((r) => r.data),
+  });
+
+  const statsLoading = alumnosLoading || gruposLoading || pagosLoading;
+  const statsError = alumnosError || gruposError || pagosError;
+
+  const revenue = (pagos ?? []).filter((p) => p.estado === 'pagado').reduce((sum, p) => sum + Number(p.total), 0);
+  const outstanding = (pagos ?? []).filter((p) => p.estado !== 'pagado').reduce((sum, p) => sum + Number(p.total), 0);
+  const outstandingCount = (pagos ?? []).filter((p) => p.estado !== 'pagado').length;
+
+  const STATS = [
+    { label: 'Active Students', value: String(alumnos?.length ?? 0), delta: '' },
+    { label: 'Outstanding Invoices', value: eur(outstanding), delta: `${outstandingCount} pending` },
+    { label: 'Groups Running', value: String(grupos?.length ?? 0), delta: '' },
+    { label: "This Month's Revenue", value: eur(revenue), delta: '' },
+  ];
+
+  const PAYMENTS = (pagos ?? []).slice(0, 6).map((p) => ({
+    invoice: p.num_doc,
+    student: p.alumno_nombre ?? '—',
+    method: p.metodo,
+    amount: eur(Number(p.total)),
+    status: ESTADO_LABEL[p.estado] ?? p.estado,
+  }));
+
+  const BIRTHDAYS = (reception?.cumpleanos ?? []).map((b) => ({
+    name: b.nombre,
+    date: b.dias_para_cumpleanos === 0 ? 'Today' : `in ${b.dias_para_cumpleanos}d`,
+  }));
+
+  // Monday-first day-of-week index (0=Mon .. 6=Sun) to match Grupo.horarios' `dia`.
+  const todayDow = (clock.getDay() + 6) % 7;
+  const TIMETABLE = (grupos ?? [])
+    .flatMap((g) =>
+      g.horarios
+        .filter((h) => h.dia === todayDow)
+        .map((h) => {
+          const teacher = teacherForGrupo(g);
+          return { time: h.ini, group: g.nombre, teacher, room: g.aula, dot: DOT_BY_TEACHER[teacher] };
+        })
+    )
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  const onDutyTeachers = Array.from(new Set(TIMETABLE.map((t) => t.teacher)));
+  const ON_DUTY = [
+    { name: 'Teacher Cami', blurb: 'IB, Rangers Adults & Teens' },
+    { name: 'Teacher Cande', blurb: 'Cambridge Adults, Teens & Kids' },
+  ].filter((t) => onDutyTeachers.length === 0 || onDutyTeachers.includes(t.name as 'Teacher Cami' | 'Teacher Cande'));
 
   return (
     <div className="sd-root" style={{ display: 'flex', minHeight: '100vh' }}>
@@ -189,32 +266,40 @@ export default function StationDesk() {
 
         <main style={{ flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
           {/* STAT LEDGER */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
-              background: 'var(--khaki-100)',
-              border: '2px solid var(--pine-800)',
-              borderRadius: 6,
-              marginBottom: 28,
-              overflow: 'hidden',
-            }}
-          >
-            {STATS.map((s) => (
-              <div key={s.label} style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderRight: '1px solid var(--paper-line)', borderBottom: '1px solid var(--paper-line)' }}>
-                <div style={{ width: 4, alignSelf: 'stretch', background: 'var(--brass-500)', borderRadius: 2, flexShrink: 0 }} />
-                <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--ink-soft)', lineHeight: 1.25 }}>
-                    {s.label}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, flexWrap: 'wrap' }}>
-                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, color: 'var(--pine-800)', whiteSpace: 'nowrap' }}>{s.value}</div>
-                    <div style={{ fontSize: 10.5, color: 'var(--pine-700)', fontWeight: 600, whiteSpace: 'nowrap' }}>{s.delta}</div>
+          {statsError ? (
+            <div style={{ padding: '14px 18px', marginBottom: 28, background: 'var(--rust-100)', color: 'var(--rust-600)', border: '2px solid var(--pine-800)', borderRadius: 6, fontSize: 13, fontWeight: 600 }}>
+              Error loading data
+            </div>
+          ) : statsLoading ? (
+            <div style={{ padding: '14px 18px', marginBottom: 28, color: 'var(--ink-soft)', fontSize: 13 }}>Loading…</div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
+                background: 'var(--khaki-100)',
+                border: '2px solid var(--pine-800)',
+                borderRadius: 6,
+                marginBottom: 28,
+                overflow: 'hidden',
+              }}
+            >
+              {STATS.map((s) => (
+                <div key={s.label} style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderRight: '1px solid var(--paper-line)', borderBottom: '1px solid var(--paper-line)' }}>
+                  <div style={{ width: 4, alignSelf: 'stretch', background: 'var(--brass-500)', borderRadius: 2, flexShrink: 0 }} />
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--ink-soft)', lineHeight: 1.25 }}>
+                      {s.label}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, flexWrap: 'wrap' }}>
+                      <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, color: 'var(--pine-800)', whiteSpace: 'nowrap' }}>{s.value}</div>
+                      {s.delta && <div style={{ fontSize: 10.5, color: 'var(--pine-700)', fontWeight: 600, whiteSpace: 'nowrap' }}>{s.delta}</div>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* CALENDAR + TIMETABLE */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 20, marginBottom: 32 }}>
@@ -279,16 +364,24 @@ export default function StationDesk() {
                 🧭 Today's Timetable
               </div>
               <div style={{ padding: '8px 20px 16px' }}>
-                {TIMETABLE.map((t, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderBottom: '1px solid var(--paper-line)' }}>
-                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, color: 'var(--pine-700)', width: 64, flexShrink: 0 }}>{t.time}</div>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{t.group}</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{t.teacher} · {t.room}</div>
+                {gruposError ? (
+                  <div style={{ padding: '12px 0', color: 'var(--rust-600)', fontSize: 13, fontWeight: 600 }}>Error loading data</div>
+                ) : gruposLoading ? (
+                  <div style={{ padding: '12px 0', color: 'var(--ink-soft)', fontSize: 13 }}>Loading…</div>
+                ) : TIMETABLE.length === 0 ? (
+                  <div style={{ padding: '12px 0', color: 'var(--ink-soft)', fontSize: 13 }}>No classes scheduled today.</div>
+                ) : (
+                  TIMETABLE.map((t, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderBottom: '1px solid var(--paper-line)' }}>
+                      <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, color: 'var(--pine-700)', width: 64, flexShrink: 0 }}>{t.time}</div>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{t.group}</div>
+                        <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{t.teacher} · {t.room}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -311,22 +404,28 @@ export default function StationDesk() {
                   </tr>
                 </thead>
                 <tbody>
-                  {PAYMENTS.map((p) => {
-                    const s = STATUS_STYLE[p.status];
-                    return (
-                      <tr key={p.invoice}>
-                        <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', fontWeight: 700, color: 'var(--pine-800)' }}>{p.invoice}</td>
-                        <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>{p.student}</td>
-                        <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', color: 'var(--ink-soft)' }}>{p.method}</td>
-                        <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', fontWeight: 700 }}>{p.amount}</td>
-                        <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>
-                          <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', padding: '4px 10px', borderRadius: 3, background: s.bg, color: s.color }}>
-                            {p.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {pagosError ? (
+                    <tr><td colSpan={5} style={{ padding: '16px 14px', color: 'var(--rust-600)', fontSize: 13, fontWeight: 600 }}>Error loading data</td></tr>
+                  ) : pagosLoading ? (
+                    <tr><td colSpan={5} style={{ padding: '16px 14px', color: 'var(--ink-soft)', fontSize: 13 }}>Loading…</td></tr>
+                  ) : (
+                    PAYMENTS.map((p) => {
+                      const s = STATUS_STYLE[p.status];
+                      return (
+                        <tr key={p.invoice}>
+                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', fontWeight: 700, color: 'var(--pine-800)' }}>{p.invoice}</td>
+                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>{p.student}</td>
+                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', color: 'var(--ink-soft)' }}>{p.method}</td>
+                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', fontWeight: 700 }}>{p.amount}</td>
+                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>
+                            <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', padding: '4px 10px', borderRadius: 3, background: s.bg, color: s.color }}>
+                              {p.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -336,10 +435,10 @@ export default function StationDesk() {
               {/* ATTENDANCE QUICK CHECK */}
               <div style={{ background: 'var(--khaki-100)', border: '2px solid var(--pine-800)', borderRadius: 6, padding: '18px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, color: 'var(--pine-800)' }}>✅ Attendance — {TIMETABLE[0].group}</div>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, color: 'var(--pine-800)' }}>✅ Attendance{TIMETABLE[0] ? ` — ${TIMETABLE[0].group}` : ''}</div>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginBottom: 12 }}>
-                  {TIMETABLE[0].time} · {TIMETABLE[0].teacher} · {TIMETABLE[0].room}
+                  {TIMETABLE[0] ? `${TIMETABLE[0].time} · ${TIMETABLE[0].teacher} · ${TIMETABLE[0].room}` : 'No class scheduled right now.'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {ROLL_NAMES.map((name) => {
@@ -381,22 +480,40 @@ export default function StationDesk() {
               {/* TEACHERS */}
               <div style={{ background: 'var(--khaki-100)', border: '2px solid var(--pine-800)', borderRadius: 6, padding: '18px 20px' }}>
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, color: 'var(--pine-800)', marginBottom: 14 }}>🎓 On Duty</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--pine-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', color: 'var(--khaki-100)', fontSize: 14 }}>C</div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Teacher Cami</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>IB, Rangers Adults &amp; Teens</div>
-                    </div>
+                {gruposError ? (
+                  <div style={{ color: 'var(--rust-600)', fontSize: 13, fontWeight: 600 }}>Error loading data</div>
+                ) : gruposLoading ? (
+                  <div style={{ color: 'var(--ink-soft)', fontSize: 13 }}>Loading…</div>
+                ) : ON_DUTY.length === 0 ? (
+                  <div style={{ color: 'var(--ink-soft)', fontSize: 13 }}>No one on duty today.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {ON_DUTY.map((t) => (
+                      <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            background: t.name === 'Teacher Cami' ? 'var(--pine-700)' : 'var(--brass-500)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontFamily: 'var(--font-head)',
+                            color: t.name === 'Teacher Cami' ? 'var(--khaki-100)' : 'var(--pine-900)',
+                            fontSize: 14,
+                          }}
+                        >
+                          C
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{t.name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{t.blurb}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--brass-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', color: 'var(--pine-900)', fontSize: 14 }}>C</div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Teacher Cande</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>Cambridge Adults, Teens &amp; Kids</div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* CRM FOLLOW-UPS */}
@@ -420,11 +537,19 @@ export default function StationDesk() {
               {/* BIRTHDAYS */}
               <div style={{ background: 'var(--khaki-100)', border: '2px solid var(--pine-800)', borderRadius: 6, padding: '18px 20px' }}>
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, color: 'var(--pine-800)', marginBottom: 12 }}>🎂 Upcoming Birthdays</div>
-                <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
-                  {BIRTHDAYS.map((b) => (
-                    <div key={b.name}>{b.name} — {b.date}</div>
-                  ))}
-                </div>
+                {receptionError ? (
+                  <div style={{ color: 'var(--rust-600)', fontSize: 13, fontWeight: 600 }}>Error loading data</div>
+                ) : receptionLoading ? (
+                  <div style={{ color: 'var(--ink-soft)', fontSize: 13 }}>Loading…</div>
+                ) : BIRTHDAYS.length === 0 ? (
+                  <div style={{ color: 'var(--ink-soft)', fontSize: 13 }}>No upcoming birthdays.</div>
+                ) : (
+                  <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
+                    {BIRTHDAYS.map((b, i) => (
+                      <div key={i}>{b.name} — {b.date}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
