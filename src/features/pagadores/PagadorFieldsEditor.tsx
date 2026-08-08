@@ -22,10 +22,10 @@ interface Props {
  * presentational/controlled: callers own persistence (create/update/PATCH). */
 export default function PagadorFieldsEditor({ value, onChange, theme = "tailwind", onBlur }: Props) {
   const gold = theme === "gold"
-  const inputCls = gold ? "input" : "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+  const inputCls = gold ? "input" : "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
   const labelCls = gold
     ? undefined
-    : "block text-xs font-semibold text-slate-700 mb-1"
+    : "block text-xs font-semibold text-pine-700 mb-1"
   const labelStyle = gold ? { fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem", display: "block" } : undefined
 
   return (
