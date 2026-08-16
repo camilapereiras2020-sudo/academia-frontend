@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { gruposApi } from "@/features/grupos/api"
@@ -155,13 +155,31 @@ function buildWhatsappContext(lead: Lead): string {
 export default function CRMPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // list state
   const [filtroEtapa, setFiltroEtapa] = useState("")
   const [search, setSearch] = useState("")
 
-  // detail panel
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  // detail panel — opening from ?lead=<id> (e.g. the reminders popup's
+  // "Ver" button) selects it up front via a lazy initializer, so there's
+  // no effect racing the first render.
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    const leadParam = searchParams.get("lead")
+    return leadParam ? Number(leadParam) : null
+  })
+
+  // Drop the ?lead= param once we've consumed it, so it doesn't re-fire
+  // if the user later clears the selection and the component re-renders.
+  useEffect(() => {
+    if (!searchParams.get("lead")) return
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete("lead")
+      return next
+    }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [confirmDeletePanel, setConfirmDeletePanel] = useState(false)
   const [deleteError, setDeleteError] = useState("")
   const [actionError, setActionError] = useState("")

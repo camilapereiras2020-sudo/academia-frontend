@@ -2,6 +2,7 @@
 import { Outlet } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import Topbar from "./Topbar"
+import RemindersModal from "@/features/crm/components/RemindersModal"
 
 export default function AppShell() {
   return (
@@ -29,6 +30,7 @@ export default function AppShell() {
           </div>
         </main>
       </div>
+      <RemindersModal />
     </div>
   )
 }
