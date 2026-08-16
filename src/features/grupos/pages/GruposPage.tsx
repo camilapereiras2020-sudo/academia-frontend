@@ -5,12 +5,7 @@ import { gruposApi } from "../api"
 import { DIAS, PALETTE } from "../palette"
 import type { Grupo } from "@/types"
 import { useAuthStore } from "@/store/authStore"
-
-const NIVELES = [
-  "", "A1 - Principiantes", "A2 - Básico", "B1 - Intermedio",
-  "B1+ - Intermedio alto", "B2 - Avanzado", "B2 Cambridge FCE",
-  "C1 - Proficiency", "Kids A1", "Kids A2",
-]
+import { NivelSelect } from "@/features/niveles/NivelSelect"
 
 interface HorarioSlot { dia: number; ini: string; fin: string }
 interface GrupoForm {
@@ -221,10 +216,8 @@ export default function GruposPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-pine-800 mb-1">Nivel</label>
-                  <select value={form.nivel} onChange={e => setForm(f => ({ ...f, nivel: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
-                    {NIVELES.map(n => <option key={n} value={n}>{n || "— Sin nivel —"}</option>)}
-                  </select>
+                  <NivelSelect value={form.nivel} onChange={v => setForm(f => ({ ...f, nivel: v }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-pine-800 mb-1">Tarifa mensual (€)</label>
