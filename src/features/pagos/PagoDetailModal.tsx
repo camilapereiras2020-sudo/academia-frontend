@@ -70,10 +70,15 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
+  const selectedAlumno = alumno !== "" ? alumnos.find((a: any) => a.id === alumno) : undefined
+  const alumnoEsAdulto = !!selectedAlumno?.es_adulto
+
   function onAlumnoChange(aid: number | "") {
     setAlumno(aid)
     const a = aid !== "" ? alumnos.find((x: any) => x.id === aid) : undefined
-    if (a?.pagador) setPagador(a.pagador)
+    // An adult alumno pays for themself by default — only prefill pagador
+    // when one is actually on file (e.g. a parent still covers an adult's fees).
+    setPagador(a?.pagador ?? "")
   }
 
   function onTarifaChange(tid: number | "") {
@@ -88,7 +93,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const saveMut = useMutation({
     mutationFn: () => pagosApi.update(pago.id, {
       alumno: alumno as number,
-      pagador: pagador as number,
+      pagador: pagador === "" ? null : pagador,
       grupo: grupo === "" ? null : (grupo as number),
       tarifa: tarifa === "" ? null : (tarifa as number),
       periodo,
@@ -158,7 +163,8 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   }
 
   function handleSubmit() {
-    if (!alumno || !pagador || !periodo) {
+    // An adult alumno (es_adulto) pays for themself — pagador is optional in that case.
+    if (!alumno || (!pagador && !alumnoEsAdulto) || !periodo) {
       setError("Alumno, pagador y periodo son obligatorios.")
       return
     }
@@ -207,12 +213,17 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Pagador *</label>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">
+                Pagador{alumnoEsAdulto ? "" : " *"}
+              </label>
               <select value={pagador} onChange={e => setPagador(e.target.value ? +e.target.value : "")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
-                <option value="">Seleccionar...</option>
+                <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
                 {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
+              {alumnoEsAdulto && !pagador && (
+                <p className="text-xs text-khaki-500 mt-1">Alumno adulto — el pagador es opcional.</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
