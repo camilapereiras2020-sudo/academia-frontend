@@ -35,12 +35,16 @@
   padding: 0;
 }
 
+html {
+  font-size: 17px;
+}
+
 html, body, #root {
   height: 100%;
   background: var(--dark);
   color: var(--text);
   font-family: 'Barlow Semi Condensed', 'DM Sans', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 }
 
