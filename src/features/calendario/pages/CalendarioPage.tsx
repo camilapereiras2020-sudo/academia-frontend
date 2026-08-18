@@ -11,6 +11,10 @@ const MESES = [
 ]
 const DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
+function capitalizeFirst(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 function dow(year: number, month: number, day: number) {
   // 0=Monday..6=Sunday, matching Grupo.horarios.dia (0-5, Mon-Sat; no Sunday classes)
   return (new Date(year, month, day).getDay() + 6) % 7
@@ -145,8 +149,8 @@ export default function CalendarioPage() {
           onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null) }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="font-head font-normal text-lg text-pine-900 capitalize">
-                {selectedDate.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+              <h2 className="font-head font-normal text-lg text-pine-900">
+                {capitalizeFirst(selectedDate.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }))}
               </h2>
               <button onClick={() => setSelectedDay(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
             </div>
