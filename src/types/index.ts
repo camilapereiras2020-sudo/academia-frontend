@@ -16,6 +16,13 @@ export interface AlumnoGrupo {
 
 export type Marca = "cami_and_co" | "rangers_academy"
 
+export type CategoriaNivel = "kids" | "teens" | "adults"
+
+export interface Nivel {
+  id: number; nombre: string; categoria: CategoriaNivel; categoria_display: string
+  orden: number; activo: boolean; created_at: string
+}
+
 export type NivelObjetivo = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
 export type ExamenObjetivo = "KET" | "PET" | "FCE" | "CAE" | "CPE" | "ninguno"
 

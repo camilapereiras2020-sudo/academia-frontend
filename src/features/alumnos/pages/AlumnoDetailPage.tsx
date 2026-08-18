@@ -9,6 +9,7 @@ import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/Pag
 import EmailModal from "@/components/shared/EmailModal"
 import WhatsappReplyModal from "../components/WhatsappReplyModal"
 import { useAuthStore } from "@/store/authStore"
+import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
 import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo } from "@/types"
@@ -323,7 +324,11 @@ export default function AlumnoDetailPage() {
           <Field label="Contacto" value={[alumno.telefono, alumno.email].filter(Boolean).join(" · ") || "—"} />
           <Field label="DNI" value={alumno.dni || "—"} />
           <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
-          <Field label="Nivel actual" value={alumno.nivel || "—"} />
+          <div>
+            <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel actual</p>
+            <NivelSelect className="input" value={alumno.nivel}
+              onChange={v => alumnosApi.update(alumnoId, { nivel: v }).then(() => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }))} />
+          </div>
           <div>
             <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
             <div style={{ display: "flex", gap: "0.5rem" }}>

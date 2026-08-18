@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useAuthStore } from "@/store/authStore"
 import { authApi } from "@/features/auth/api"
+import NivelesConfigSection from "@/features/niveles/NivelesConfigSection"
 
 export default function ConfigPage() {
   const { user, setUser } = useAuthStore()
@@ -93,6 +94,8 @@ export default function ConfigPage() {
           </button>
         </div>
       </div>
+
+      <NivelesConfigSection />
 
       {/* Danger zone */}
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-red-100 p-6">
