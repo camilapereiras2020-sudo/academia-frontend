@@ -106,7 +106,7 @@ export default function DocumentosPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-pine-900">Documentos</h1>
+          <h1 className="font-head font-normal text-3xl text-pine-900">Documentos</h1>
           <p className="text-sm text-pine-700 mt-1">{visibles.length} documentos generados</p>
         </div>
       </div>

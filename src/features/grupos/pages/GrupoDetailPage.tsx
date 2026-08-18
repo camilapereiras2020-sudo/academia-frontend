@@ -161,7 +161,7 @@ export default function GrupoDetailPage() {
           <div className="w-1.5 flex-shrink-0" style={{ background: c.accent }} />
           <div className="flex-1 p-5">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-pine-900">{grupo.nombre}</h1>
+              <h1 className="font-head font-normal text-2xl text-pine-900">{grupo.nombre}</h1>
               {grupo.nivel && (
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>

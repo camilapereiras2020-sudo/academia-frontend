@@ -34,35 +34,35 @@ export default function ConfigPage() {
 
   const field = (key: keyof typeof form, label: string, placeholder = "") => (
     <div key={key}>
-      <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
+      <label className="block text-xs font-semibold text-pine-700 mb-1">{label}</label>
       <input
         type="text"
         value={form[key]}
         placeholder={placeholder}
         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
       />
     </div>
   )
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-3xl font-bold text-slate-800 mb-6">Configuración</h1>
+      <h1 className="font-head font-normal text-3xl text-pine-900 mb-6">Configuración</h1>
 
       {/* Account info */}
-      <div className="bg-slate-50 border rounded-xl p-4 mb-5 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+      <div className="bg-khaki-100 border rounded-xl p-4 mb-5 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-brass-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
           {user?.email?.[0]?.toUpperCase() ?? "U"}
         </div>
         <div>
-          <p className="font-semibold text-slate-800 text-sm">{user?.email}</p>
-          <p className="text-xs text-slate-700">Cuenta de academia</p>
+          <p className="font-semibold text-pine-900 text-sm">{user?.email}</p>
+          <p className="text-xs text-pine-700">Cuenta de academia</p>
         </div>
       </div>
 
       {/* Academy settings */}
       <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Datos de la academia</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-pine-600">Datos de la academia</p>
 
         {field("academia_nombre", "Nombre de la academia", "Mi Academia de Inglés")}
         {field("academia_nif",    "NIF / CIF",             "B12345678")}
@@ -70,12 +70,12 @@ export default function ConfigPage() {
         {field("academia_tel",    "Teléfono",              "912 345 678")}
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Email (no editable)</label>
+          <label className="block text-xs font-semibold text-pine-700 mb-1">Email (no editable)</label>
           <input
             type="text"
             value={user?.email ?? ""}
             disabled
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-600 cursor-not-allowed"
+            className="w-full border rounded-lg px-3 py-2 text-sm bg-khaki-100 text-pine-600 cursor-not-allowed"
           />
         </div>
 
@@ -89,7 +89,7 @@ export default function ConfigPage() {
           <button
             onClick={() => { setSaveState("idle"); saveMut.mutate() }}
             disabled={saveMut.isPending}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+            className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
             {saveMut.isPending ? "Guardando..." : "Guardar cambios"}
           </button>
         </div>
@@ -100,7 +100,7 @@ export default function ConfigPage() {
       {/* Danger zone */}
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-red-100 p-6">
         <p className="text-xs font-bold uppercase tracking-widest text-red-400 mb-3">Zona de peligro</p>
-        <p className="text-sm text-slate-700 mb-4">
+        <p className="text-sm text-pine-700 mb-4">
           Para cerrar sesión o eliminar la cuenta, contacta con el administrador.
         </p>
         <button

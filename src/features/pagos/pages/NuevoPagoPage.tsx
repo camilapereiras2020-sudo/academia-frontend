@@ -120,7 +120,7 @@ export default function NuevoPagoPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-3xl font-bold text-pine-900 mb-6">Nuevo pago</h1>
+      <h1 className="font-head font-normal text-3xl text-pine-900 mb-6">Nuevo pago</h1>
 
       <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
         {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}

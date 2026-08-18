@@ -57,8 +57,8 @@ export default function WhatsAppReplyPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Respuestas WhatsApp</h1>
-          <p className="text-sm text-slate-700 mt-1">
+          <h1 className="font-head font-normal text-3xl text-pine-900">Respuestas WhatsApp</h1>
+          <p className="text-sm text-pine-700 mt-1">
             Generá un borrador de respuesta con el tono de Rangers Academy.
           </p>
         </div>
@@ -67,19 +67,19 @@ export default function WhatsAppReplyPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-xl border shadow-sm p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-pine-700 mb-1">
               Mensaje recibido
             </label>
             <textarea
               value={incoming}
               onChange={(e) => setIncoming(e.target.value)}
               placeholder="Pega el mensaje de WhatsApp aquí..."
-              className="w-full min-h-[120px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-[120px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">
+            <label className="block text-xs font-semibold text-pine-700 mb-2">
               Situación
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -90,8 +90,8 @@ export default function WhatsAppReplyPage() {
                   onClick={() => setSituation(s.value)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     situation === s.value
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                      ? "bg-brass-500 text-white border-brass-500"
+                      : "bg-white text-pine-600 border-khaki-300 hover:border-brass-500"
                   }`}
                 >
                   {s.label}
@@ -101,14 +101,14 @@ export default function WhatsAppReplyPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-pine-700 mb-1">
               Contexto adicional (opcional)
             </label>
             <textarea
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="Ej: horario disponible martes y jueves 11-12:30, es para B2..."
-              className="w-full min-h-[70px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-[70px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
             />
           </div>
 
@@ -116,7 +116,7 @@ export default function WhatsAppReplyPage() {
             type="button"
             onClick={handleGenerate}
             disabled={generarMut.isPending}
-            className="w-full px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="w-full px-4 py-2.5 rounded-lg bg-brass-500 text-white text-sm font-medium hover:bg-brass-700 disabled:opacity-50"
           >
             {generarMut.isPending ? "Generando..." : "Generar respuesta"}
           </button>
@@ -125,14 +125,14 @@ export default function WhatsAppReplyPage() {
         </div>
 
         <div className="bg-white rounded-xl border shadow-sm p-6">
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-pine-700 mb-1">
             Respuesta sugerida
           </label>
           <textarea
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             placeholder="Aquí aparecerá la respuesta generada."
-            className="w-full min-h-[200px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full min-h-[200px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
           />
           <button
             type="button"
@@ -141,7 +141,7 @@ export default function WhatsAppReplyPage() {
             className={`mt-3 w-full px-4 py-2 rounded-lg border text-sm transition-colors ${
               copied
                 ? "border-green-300 text-green-700 bg-green-50"
-                : "border-slate-200 text-slate-600 hover:border-slate-400"
+                : "border-khaki-300 text-pine-600 hover:border-brass-500"
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {copied ? "Copiado" : "Copiar"}

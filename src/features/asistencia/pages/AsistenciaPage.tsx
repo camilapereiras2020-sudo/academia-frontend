@@ -63,7 +63,7 @@ export default function AsistenciaPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-pine-900 mb-6">Asistencia</h1>
+      <h1 className="font-head font-normal text-3xl text-pine-900 mb-6">Asistencia</h1>
 
       <div className="flex gap-3 mb-6 flex-wrap items-end">
         <div>
