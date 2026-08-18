@@ -56,10 +56,15 @@ export default function NuevoPagoPage() {
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
+  const selectedAlumno = alumnos.find((a: any) => a.id === alumno)
+  const alumnoEsAdulto = !!selectedAlumno?.es_adulto
+
   function onAlumnoChange(aid: number) {
     setAlumno(aid)
     const a = alumnos.find((x: any) => x.id === aid)
-    if (a?.pagador) setPagador(a.pagador)
+    // An adult alumno pays for themself by default — only prefill pagador
+    // when one is actually on file (e.g. a parent still covers an adult's fees).
+    setPagador(a?.pagador ?? "")
   }
 
   function onTarifaChange(tid: number) {
@@ -94,7 +99,11 @@ export default function NuevoPagoPage() {
 
   function handleSubmit() {
     if (!marca) { setError("Elige la marca/emisor antes de guardar."); return }
-    if (!alumno || !pagador || !periodo) { setError("Completa todos los campos obligatorios"); return }
+    // An adult alumno (es_adulto) pays for themself — pagador is optional in that case.
+    if (!alumno || (!pagador && !alumnoEsAdulto) || !periodo) {
+      setError("Completa todos los campos obligatorios")
+      return
+    }
     setError("")
     saveMut.mutate(false)
   }
@@ -135,12 +144,17 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Pagador *</label>
-            <select value={pagador} onChange={e => setPagador(+e.target.value)}
+            <label className="block text-xs font-semibold text-pine-700 mb-1">
+              Pagador{alumnoEsAdulto ? "" : " *"}
+            </label>
+            <select value={pagador} onChange={e => setPagador(e.target.value ? +e.target.value : "")}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
-              <option value="">Seleccionar...</option>
+              <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
               {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
             </select>
+            {alumnoEsAdulto && !pagador && (
+              <p className="text-xs text-khaki-500 mt-1">Alumno adulto — el pagador es opcional.</p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
