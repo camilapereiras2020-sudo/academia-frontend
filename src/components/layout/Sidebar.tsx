@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/authStore"
 import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, CreditCard, Building2,
-  Compass, CheckSquare, Tag, UserSearch,
+  Compass, CheckSquare, Tag, UserSearch, CalendarDays,
   Coins, FileText, MessageCircle, Cake, Settings,
 } from "lucide-react"
 
@@ -30,6 +30,7 @@ const NAV_SECTIONS = [
     label: "Trail Ops",
     items: [
       { to: "/grupos", icon: Compass, label: "Groups" },
+      { to: "/calendario", icon: CalendarDays, label: "Calendar" },
       { to: "/asistencia", icon: CheckSquare, label: "Attendance" },
       { to: null, icon: Tag, label: "Rates" },
       { to: "/crm", icon: UserSearch, label: "CRM" },

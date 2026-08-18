@@ -9,6 +9,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/dashboard": ALL_ROLES,
   "/alumnos": ALL_ROLES,
   "/grupos": ALL_ROLES,
+  "/calendario": ALL_ROLES,
   "/asistencia": ["owner", "co_manager"],
   "/pagos": ["owner", "co_manager"],
   "/pagos/nuevo": ["owner", "co_manager"],
