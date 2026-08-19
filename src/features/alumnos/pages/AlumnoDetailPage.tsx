@@ -291,7 +291,7 @@ export default function AlumnoDetailPage() {
       {/* Datos generales */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+          <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)" }}>
             Datos generales
           </h2>
           {!generalEditing && <button className="btn-ghost" onClick={openGeneralEditing}>Editar</button>}
@@ -325,12 +325,12 @@ export default function AlumnoDetailPage() {
           <Field label="DNI" value={alumno.dni || "—"} />
           <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
           <div>
-            <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel actual</p>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel actual</p>
             <NivelSelect className="input" value={alumno.nivel}
               onChange={v => alumnosApi.update(alumnoId, { nivel: v }).then(() => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }))} />
           </div>
           <div>
-            <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <select className="input" value={alumno.nivel_objetivo}
                 onChange={e => alumnosApi.update(alumnoId, { nivel_objetivo: e.target.value as NivelObjetivo }).then(() => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }))}>
@@ -355,7 +355,7 @@ export default function AlumnoDetailPage() {
 
       {/* Pagador */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Pagador
         </h2>
         {alumno.es_adulto ? (
@@ -389,7 +389,7 @@ export default function AlumnoDetailPage() {
       {/* Pagos */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Pagos</h2>
+          <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)" }}>Pagos</h2>
           {periodos.length > 0 && (
             <select className="input" style={{ width: "auto" }} value={periodoFilter} onChange={e => setPeriodoFilter(e.target.value)}>
               <option value="">Todos los periodos</option>
@@ -421,7 +421,7 @@ export default function AlumnoDetailPage() {
       {/* Facturas y recibos — read-only, distinct from "Documentos y consentimientos"
           below (which is consent forms: image rights/data protection/enrollment). */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Facturas y recibos
         </h2>
         {!documentos.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin documentos generados.</p>}
@@ -451,7 +451,7 @@ export default function AlumnoDetailPage() {
       {/* Académico */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Académico</h2>
+          <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)" }}>Académico</h2>
           {!showFechaForm && <button className="btn-ghost" onClick={() => setShowFechaForm(true)}>+ añadir fecha</button>}
         </div>
 
@@ -508,7 +508,7 @@ export default function AlumnoDetailPage() {
 
       {/* Notas / reuniones (timeline) */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Notas y reuniones
         </h2>
         {!notas.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin registros.</p>}
@@ -527,7 +527,7 @@ export default function AlumnoDetailPage() {
 
       {/* Documentos / Consentimientos */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Documentos y consentimientos
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
@@ -554,8 +554,8 @@ export default function AlumnoDetailPage() {
       {canSeeSalud && (
         <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
           <div style={{ marginBottom: "1rem" }}>
-            <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Salud</h2>
-            <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", fontStyle: "italic", marginTop: "0.25rem" }}>
+            <h2 style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)" }}>Salud</h2>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontStyle: "italic", marginTop: "0.25rem" }}>
               Dato sensible — visibilidad restringida
             </p>
           </div>
@@ -602,7 +602,7 @@ export default function AlumnoDetailPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ marginBottom: "0.75rem" }}>
-      <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.2rem" }}>{label}</p>
+      <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.2rem" }}>{label}</p>
       <p style={{ fontSize: "0.875rem", color: "var(--text)" }}>{value}</p>
     </div>
   )
@@ -611,7 +611,7 @@ function Field({ label, value }: { label: string; value: string }) {
 function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
+      <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
       <textarea rows={2} className="input" style={{ resize: "none" }} value={value} onChange={e => onChange(e.target.value)} />
     </div>
   )
@@ -620,7 +620,7 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
 function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
+      <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
       <input type="text" className="input" value={value} onChange={e => onChange(e.target.value)} />
     </div>
   )
