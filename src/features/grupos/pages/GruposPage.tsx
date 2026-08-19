@@ -9,12 +9,12 @@ import { NivelSelect } from "@/features/niveles/NivelSelect"
 
 interface HorarioSlot { dia: number; ini: string; fin: string }
 interface GrupoForm {
-  nombre: string; nivel: string; tarifa: number
+  nombre: string; nivel: string; profesor: string; tarifa: number
   aula: string; color_idx: number; horarios: HorarioSlot[]
 }
 
 const emptyForm = (nextColorIdx = 0): GrupoForm => ({
-  nombre: "", nivel: "", tarifa: 0, aula: "", color_idx: nextColorIdx, horarios: [],
+  nombre: "", nivel: "", profesor: "", tarifa: 0, aula: "", color_idx: nextColorIdx, horarios: [],
 })
 
 export default function GruposPage() {
@@ -61,7 +61,7 @@ export default function GruposPage() {
   function openEdit(g: Grupo) {
     setEditing(g)
     setForm({
-      nombre: g.nombre, nivel: g.nivel ?? "", tarifa: g.tarifa,
+      nombre: g.nombre, nivel: g.nivel ?? "", profesor: g.profesor ?? "", tarifa: g.tarifa,
       aula: g.aula ?? "", color_idx: g.color_idx ?? 0,
       horarios: g.horarios ?? [],
     })
@@ -148,6 +148,7 @@ export default function GruposPage() {
                     )}
                     <span className="text-xs text-pine-800">👥 {g.alumnos_count} alumnos</span>
                     {g.aula && <span className="text-xs text-pine-800">📍 {g.aula}</span>}
+                    {g.profesor && <span className="text-xs text-pine-800">🧑‍🏫 {g.profesor}</span>}
                     {g.tarifa > 0 && (
                       <span className="text-xs font-semibold text-pine-700">
                         {Number(g.tarifa).toFixed(2)} €/mes
@@ -229,6 +230,12 @@ export default function GruposPage() {
                   <label className="block text-xs font-semibold text-pine-800 mb-1">Aula</label>
                   <input type="text" value={form.aula} placeholder="Aula 1, Online…"
                     onChange={e => setForm(f => ({ ...f, aula: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-pine-800 mb-1">Profesor/a</label>
+                  <input type="text" value={form.profesor} placeholder="Nombre del profesor"
+                    onChange={e => setForm(f => ({ ...f, profesor: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 </div>
                 <div>
