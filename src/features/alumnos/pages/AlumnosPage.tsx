@@ -29,8 +29,6 @@ function age(fnac: string | null) {
     (now < new Date(now.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0)
 }
 
-interface HorarioSlot { dia: number; ini: string; fin: string; grupoId: number }
-
 const MARCAS: { value: Marca; label: string }[] = [
   { value: "rangers_academy", label: "Rangers Academy" },
   { value: "cami_and_co", label: "Cami & Co" },
@@ -43,14 +41,14 @@ interface FormState {
   marca: Marca | ""
   pagador: number | null; pagadorDraft: PagadorDraft
   es_adulto: boolean; aviso_cumple_dias: number | null
-  grupos: number[]; horarios: HorarioSlot[]
+  grupo: number | null
 }
 
 const emptyForm = (): FormState => ({
   nombre: "", fnac: "", telefono: "", email: "", dni: "", notas: "",
   marca: "",
   pagador: null, pagadorDraft: emptyPagadorDraft(),
-  es_adulto: false, aviso_cumple_dias: null, grupos: [], horarios: [],
+  es_adulto: false, aviso_cumple_dias: null, grupo: null,
 })
 
 export default function AlumnosPage() {
@@ -113,7 +111,7 @@ export default function AlumnosPage() {
       const payload: Record<string, unknown> = {
         nombre: f.nombre, fnac: f.fnac || null, telefono: f.telefono,
         email: f.email, dni: f.dni, notas: f.notas, es_adulto: f.es_adulto,
-        marca: f.marca as Marca,
+        marca: f.marca as Marca, grupo: f.grupo,
         aviso_cumple_dias: f.aviso_cumple_dias,
       }
       // Adult self-pay: deliberately omit `pagador` — the backend auto-
@@ -123,14 +121,9 @@ export default function AlumnosPage() {
       if (!f.es_adulto) {
         payload.pagador = f.pagador
       }
-      const res = editing
+      return editing
         ? await alumnosApi.update(editing.id, payload)
         : await alumnosApi.create(payload)
-      for (const gid of f.grupos) {
-        const horarios = f.horarios.filter(h => h.grupoId === gid)
-        await alumnosApi.asignarGrupo(res.data.id, gid, horarios)
-      }
-      return res
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["alumnos"] })
@@ -162,10 +155,7 @@ export default function AlumnosPage() {
         ? { telefono: linkedPagador.telefono, email: linkedPagador.email, direccion: linkedPagador.direccion, nif: linkedPagador.nif }
         : emptyPagadorDraft(),
       es_adulto: a.es_adulto ?? false, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
-      grupos: (a.grupos_detalle ?? []).map(g => g.grupo),
-      horarios: (a.grupos_detalle ?? []).flatMap(g =>
-        g.horarios.map(h => ({ ...h, grupoId: g.grupo }))
-      ),
+      grupo: a.grupos_detalle?.[0]?.grupo ?? null,
     })
     setFormError(""); setShowModal(true)
   }
@@ -182,30 +172,6 @@ export default function AlumnosPage() {
   }
 
   function closeModal() { setShowModal(false); setEditing(null); setForm(emptyForm()) }
-
-  function toggleGrupo(gid: number) {
-    setForm(f => {
-      const grupos = f.grupos.includes(gid) ? f.grupos.filter(g => g !== gid) : [...f.grupos, gid]
-      return { ...f, grupos, horarios: f.horarios.filter(h => grupos.includes(h.grupoId)) }
-    })
-  }
-
-  function addHorario(gid: number) {
-    const g = grupos.find(x => x.id === gid)
-    const def = g?.horarios?.[0]
-    setForm(f => ({
-      ...f,
-      horarios: [...f.horarios, { dia: def?.dia ?? 0, ini: def?.ini ?? "09:00", fin: def?.fin ?? "10:00", grupoId: gid }],
-    }))
-  }
-
-  function updateHorario(idx: number, field: string, value: string | number) {
-    setForm(f => {
-      const h = [...f.horarios]
-      h[idx] = { ...h[idx], [field]: value }
-      return { ...f, horarios: h }
-    })
-  }
 
   function handleSubmit() {
     if (!form.nombre.trim()) { setFormError("El nombre es obligatorio."); return }
@@ -495,55 +461,27 @@ export default function AlumnosPage() {
                 </section>
               )}
 
-              {/* Grupos y horarios */}
+              {/* Grupo */}
               {!isReception && (
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Grupos y horarios</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Grupo</p>
                   {!grupos.length
                     ? <p className="text-xs text-amber-600">No hay grupos. Crea uno en la sección Grupos primero.</p>
                     : (
-                      <div className="space-y-2">
-                        {grupos.map(g => {
-                          const selected = form.grupos.includes(g.id)
-                          const slots = form.horarios.filter(h => h.grupoId === g.id)
-                          return (
-                            <div key={g.id} className={`border rounded-lg p-3 transition-colors ${selected ? "border-brass-300 bg-khaki-100" : "border-khaki-400"}`}>
-                              <label className="flex items-center gap-2 cursor-pointer select-none">
-                                <input type="checkbox" checked={selected} onChange={() => toggleGrupo(g.id)}
-                                  className="accent-brass-500 w-4 h-4" />
-                                <span className="font-medium text-sm text-pine-900">{g.nombre}</span>
-                                {g.nivel && <span className="text-xs bg-khaki-100 text-pine-600 px-2 py-0.5 rounded-full">{g.nivel}</span>}
-                                {g.tarifa > 0 && <span className="text-xs text-pine-700 ml-auto">{Number(g.tarifa).toFixed(2)} €/mes</span>}
-                              </label>
-                              {selected && (
-                                <div className="mt-3 pl-6 space-y-2">
-                                  {slots.map((h, slotIdx) => {
-                                    const realIdx = form.horarios.indexOf(h)
-                                    return (
-                                      <div key={slotIdx} className="flex items-center gap-2 flex-wrap">
-                                        <select value={h.dia} onChange={e => updateHorario(realIdx, "dia", +e.target.value)}
-                                          className="border rounded-lg px-2 py-1 text-xs focus:outline-none">
-                                          {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                                        </select>
-                                        <input type="time" value={h.ini} onChange={e => updateHorario(realIdx, "ini", e.target.value)}
-                                          className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
-                                        <span className="text-xs text-khaki-400">→</span>
-                                        <input type="time" value={h.fin} onChange={e => updateHorario(realIdx, "fin", e.target.value)}
-                                          className="border rounded-lg px-2 py-1 text-xs w-24 focus:outline-none" />
-                                        <button onClick={() => setForm(f => ({ ...f, horarios: f.horarios.filter((_, i) => i !== realIdx) }))}
-                                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                                      </div>
-                                    )
-                                  })}
-                                  <button onClick={() => addHorario(g.id)}
-                                    className="text-xs text-brass-700 hover:text-pine-900">+ Añadir día</button>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
+                      <select value={form.grupo ?? ""} onChange={e => setForm(f => ({ ...f, grupo: e.target.value ? +e.target.value : null }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                        <option value="">— Sin grupo —</option>
+                        {grupos.map(g => (
+                          <option key={g.id} value={g.id}>
+                            {g.nombre}{g.nivel ? ` · ${g.nivel}` : ""}
+                            {g.horarios.length > 0 ? ` · ${g.horarios.map(h => DIAS[h.dia]?.slice(0, 3) + " " + h.ini).join(", ")}` : ""}
+                          </option>
+                        ))}
+                      </select>
                     )}
+                  <p className="text-[11px] text-pine-600 mt-1.5">
+                    El horario de la clase es el del grupo — se edita desde la sección Grupos.
+                  </p>
                 </section>
               )}
             </div>
