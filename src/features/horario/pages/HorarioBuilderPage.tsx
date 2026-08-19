@@ -8,10 +8,20 @@ import type { EventContentArg } from "@fullcalendar/core"
 import { gruposApi } from "@/features/grupos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { PALETTE } from "@/features/grupos/palette"
-import type { Alumno, Grupo } from "@/types"
+import { useSetActiveBrand } from "@/store/useSetActiveBrand"
+import type { Alumno, Grupo, Marca } from "@/types"
 
 const MAX_PER_CLASS = 6
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+
+const BRAND_META: Record<Marca, { label: string; tag: string; bg: string; text: string; dot: string }> = {
+  rangers_academy: { label: "Rangers Academy", tag: "RA", bg: "#3F5242", text: "#F6F1E7", dot: "#3F5242" },
+  cami_and_co: { label: "Cami & Co", tag: "C&Co", bg: "#1E3A5F", text: "#F6F1E7", dot: "#1E3A5F" },
+}
+const MARCAS: { value: Marca; label: string }[] = [
+  { value: "rangers_academy", label: "Rangers Academy" },
+  { value: "cami_and_co", label: "Cami & Co" },
+]
 
 interface CalEvent {
   id: string
@@ -22,7 +32,7 @@ interface CalEvent {
   backgroundColor: string
   borderColor: string
   textColor: string
-  extendedProps: { grupoId: number; roster: Alumno[]; profesor: string; aula: string }
+  extendedProps: { grupoId: number; roster: Alumno[]; profesor: string; aula: string; marca: Marca }
 }
 
 function initials(name: string) {
@@ -32,9 +42,12 @@ function initials(name: string) {
 export default function HorarioBuilderPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
+  const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null)
   const [toast, setToast] = useState("")
   const sidebarRef = useRef<HTMLDivElement>(null)
+
+  useSetActiveBrand(marcaFilter || null)
 
   const { data: gruposRaw, isLoading: loadingGrupos } = useQuery({
     queryKey: ["grupos"],
@@ -55,11 +68,12 @@ export default function HorarioBuilderPage() {
   })
 
   const unassigned = useMemo(() => {
-    const list = alumnos.filter(a => !a.grupos_detalle?.length)
+    let list = alumnos.filter(a => !a.grupos_detalle?.length)
+    if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
     if (!search.trim()) return list
     const q = search.toLowerCase()
     return list.filter(a => a.nombre.toLowerCase().includes(q))
-  }, [alumnos, search])
+  }, [alumnos, search, marcaFilter])
 
   const rosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
@@ -72,7 +86,12 @@ export default function HorarioBuilderPage() {
     return map
   }, [alumnos])
 
-  const events: CalEvent[] = useMemo(() => grupos.flatMap(g => {
+  const visibleGrupos = useMemo(
+    () => marcaFilter ? grupos.filter(g => g.marca === marcaFilter) : grupos,
+    [grupos, marcaFilter]
+  )
+
+  const events: CalEvent[] = useMemo(() => visibleGrupos.flatMap(g => {
     const roster = rosterByGrupo.get(g.id) ?? []
     const pal = PALETTE[g.color_idx % PALETTE.length]
     return (g.horarios ?? []).map((h, i) => ({
@@ -84,9 +103,9 @@ export default function HorarioBuilderPage() {
       backgroundColor: pal.bg,
       borderColor: pal.border,
       textColor: pal.text,
-      extendedProps: { grupoId: g.id, roster, profesor: g.profesor, aula: g.aula },
+      extendedProps: { grupoId: g.id, roster, profesor: g.profesor, aula: g.aula, marca: g.marca },
     }))
-  }), [grupos, rosterByGrupo])
+  }), [visibleGrupos, rosterByGrupo])
 
   // External drag source: student pills in the sidebar
   useEffect(() => {
@@ -103,8 +122,13 @@ export default function HorarioBuilderPage() {
     const grupoId = targetEl ? Number(targetEl.dataset.grupoId) : null
     if (!grupoId) return
     const grupo = grupos.find(g => g.id === grupoId)
+    const alumno = alumnos.find(a => a.id === alumnoId)
     const currentRoster = rosterByGrupo.get(grupoId) ?? []
-    if (!grupo) return
+    if (!grupo || !alumno) return
+    if (alumno.marca !== grupo.marca) {
+      setToast(`${alumnoNombre} es de ${BRAND_META[alumno.marca].label} — "${grupo.nombre}" es de ${BRAND_META[grupo.marca].label}.`)
+      return
+    }
     if (currentRoster.length >= MAX_PER_CLASS) {
       setToast(`"${grupo.nombre}" ya tiene ${MAX_PER_CLASS} alumnos (máximo por clase).`)
       return
@@ -120,10 +144,18 @@ export default function HorarioBuilderPage() {
   }, [toast])
 
   function renderEventContent(arg: EventContentArg) {
-    const { roster, profesor } = arg.event.extendedProps as CalEvent["extendedProps"]
+    const { roster, profesor, marca } = arg.event.extendedProps as CalEvent["extendedProps"]
+    const brand = BRAND_META[marca]
     return (
-      <div className="px-1 py-[1px] overflow-hidden h-full leading-none" data-grupo-id={String(arg.event.extendedProps.grupoId)}>
-        <div className="font-head text-[11px] leading-tight truncate">{arg.event.title}</div>
+      <div className="px-1 py-[1px] overflow-hidden h-full leading-none relative" data-grupo-id={String(arg.event.extendedProps.grupoId)}>
+        <span
+          className="absolute top-[1px] right-[1px] text-[7px] font-bold leading-none px-[3px] py-[1px] rounded-sm"
+          style={{ background: brand.bg, color: brand.text }}
+          title={brand.label}
+        >
+          {brand.tag}
+        </span>
+        <div className="font-head text-[11px] leading-tight truncate pr-6">{arg.event.title}</div>
         <div className="text-[9px] leading-tight opacity-80 truncate">
           {arg.timeText}{profesor ? ` · ${profesor}` : ""} · {roster.length}/{MAX_PER_CLASS}
         </div>
@@ -142,6 +174,22 @@ export default function HorarioBuilderPage() {
           <h1 className="font-head font-normal text-xl text-pine-900">Horario</h1>
           <p className="text-xs text-pine-600 mt-0.5">Arrastra un alumno a una clase para asignarlo.</p>
         </div>
+
+        <div className="flex rounded-lg border border-khaki-300 overflow-hidden text-xs font-semibold">
+          <button onClick={() => setMarcaFilter("")}
+            className={`flex-1 px-2 py-1.5 ${marcaFilter === "" ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
+            Todas
+          </button>
+          {MARCAS.map(m => (
+            <button key={m.value} onClick={() => setMarcaFilter(m.value)}
+              className={`flex-1 px-2 py-1.5 border-l border-khaki-300 flex items-center justify-center gap-1 ${marcaFilter === m.value ? "text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}
+              style={marcaFilter === m.value ? { background: BRAND_META[m.value].bg } : undefined}>
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: marcaFilter === m.value ? "#fff" : BRAND_META[m.value].dot }} />
+              {BRAND_META[m.value].tag}
+            </button>
+          ))}
+        </div>
+
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
         <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
@@ -154,8 +202,10 @@ export default function HorarioBuilderPage() {
             <p className="text-xs text-pine-600 italic">Todo el mundo está asignado ✓</p>
           ) : (
             unassigned.map(a => (
-              <span key={a.id} className="student-pill text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full px-2.5 py-1 cursor-grab select-none"
-                data-name={a.nombre} data-alumno-id={a.id}>
+              <span key={a.id}
+                className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
+                data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                 {a.nombre}
               </span>
             ))
@@ -204,7 +254,13 @@ export default function HorarioBuilderPage() {
           <div className="w-80 bg-white h-full shadow-xl flex flex-col">
             <div className="px-5 py-4 border-b flex items-start justify-between">
               <div>
-                <p className="font-head font-normal text-lg text-pine-900">{selectedGrupo.nombre}</p>
+                <p className="font-head font-normal text-lg text-pine-900 flex items-center gap-2">
+                  {selectedGrupo.nombre}
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: BRAND_META[selectedGrupo.marca].bg, color: BRAND_META[selectedGrupo.marca].text }}>
+                    {BRAND_META[selectedGrupo.marca].tag}
+                  </span>
+                </p>
                 <p className="text-xs text-pine-600 mt-0.5">
                   {selectedGrupo.profesor ? `Prof. ${selectedGrupo.profesor} · ` : ""}
                   {(selectedGrupo.horarios ?? []).map((h, i) => (
