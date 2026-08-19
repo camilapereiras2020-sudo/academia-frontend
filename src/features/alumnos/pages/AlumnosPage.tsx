@@ -6,8 +6,7 @@ import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
-import { gruposApi } from "@/features/grupos/api"
-import type { Alumno, Pagador, Grupo, Marca } from "@/types"
+import type { Alumno, Pagador, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import { useAuthStore } from "@/store/authStore"
@@ -91,8 +90,6 @@ export default function AlumnosPage() {
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(pagadoresRaw) ? pagadoresRaw : []
 
-  const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
-  const grupos: Grupo[] = Array.isArray(gruposRaw) ? gruposRaw : []
 
   const saveMut = useMutation({
     mutationFn: async (f: FormState) => {
@@ -461,29 +458,6 @@ export default function AlumnosPage() {
                 </section>
               )}
 
-              {/* Grupo */}
-              {!isReception && (
-                <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Grupo</p>
-                  {!grupos.length
-                    ? <p className="text-xs text-amber-600">No hay grupos. Crea uno en la sección Grupos primero.</p>
-                    : (
-                      <select value={form.grupo ?? ""} onChange={e => setForm(f => ({ ...f, grupo: e.target.value ? +e.target.value : null }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
-                        <option value="">— Sin grupo —</option>
-                        {grupos.map(g => (
-                          <option key={g.id} value={g.id}>
-                            {g.nombre}{g.nivel ? ` · ${g.nivel}` : ""}
-                            {g.horarios.length > 0 ? ` · ${g.horarios.map(h => DIAS[h.dia]?.slice(0, 3) + " " + h.ini).join(", ")}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  <p className="text-[11px] text-pine-600 mt-1.5">
-                    El horario de la clase es el del grupo — se edita desde la sección Grupos.
-                  </p>
-                </section>
-              )}
             </div>
 
             {/* Modal footer */}

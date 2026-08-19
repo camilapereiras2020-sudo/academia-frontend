@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/alumnos': 'Alumnos',
   '/grupos': 'Grupos',
   '/calendario': 'Calendario',
+  '/horario': 'Horario',
   '/asistencia': 'Asistencia',
   '/pagos': 'Pagos',
   '/pagos/nuevo': 'Nuevo pago',

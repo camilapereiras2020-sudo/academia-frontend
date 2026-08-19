@@ -10,6 +10,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/alumnos": ALL_ROLES,
   "/grupos": ALL_ROLES,
   "/calendario": ALL_ROLES,
+  "/horario": ["owner", "co_manager"],
   "/asistencia": ["owner", "co_manager"],
   "/pagos": ["owner", "co_manager"],
   "/pagos/nuevo": ["owner", "co_manager"],
