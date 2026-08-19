@@ -52,6 +52,16 @@ h1, h2, h3, label {
   font-weight: 500;
 }
 
+/* Bevan (font-head) is only loaded at its one default weight (400). Any
+   element using it that doesn't explicitly request 400 inherits whatever
+   weight is ambient on the page (600 on body, or 500/700 from the rule
+   above) — the browser then fake-bolds a font that has no bold file,
+   which renders as visibly blurry text. Pin it to the only weight that
+   actually exists, unconditionally. */
+.font-head {
+  font-weight: 400 !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
