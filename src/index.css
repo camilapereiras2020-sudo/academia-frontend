@@ -21,8 +21,8 @@
   --terracotta: #b5654a;
   --terracotta-muted: rgba(181, 101, 74, 0.14);
   --text: #1A1714;
-  --text-muted: rgba(26, 23, 20, 0.8);
-  --text-dim: rgba(26, 23, 20, 0.92);
+  --text-muted: rgba(26, 23, 20, 1);
+  --text-dim: rgba(26, 23, 20, 1);
   --surface: rgba(0,0,0,0.02);
   --surface-hover: rgba(0,0,0,0.04);
   --radius: 12px;
@@ -44,14 +44,12 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Barlow Semi Condensed is a condensed face — narrow strokes read as thin
-   even at medium weight. Small/uppercase text (labels, eyebrows, badges)
-   needs a heavier weight than body copy to stay legible at size. Excludes
-   .font-head (Bevan, loaded at a single weight — forcing bold there would
-   fake-bold and blur it) and defers to any explicit Tailwind font-weight
-   utility already on the element (classes always win the cascade here). */
+/* 700 read as blurry on this condensed face at small sizes — 500 plus the
+   bigger/darker treatment on the labels themselves is the actual fix.
+   Defers to any explicit Tailwind font-weight utility already on the
+   element (classes always win the cascade here). */
 h1, h2, h3, label {
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* Scrollbar */
