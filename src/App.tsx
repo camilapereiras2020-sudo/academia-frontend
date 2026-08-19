@@ -21,6 +21,7 @@ import CRMPage from "@/features/crm/Pages/CRMPage"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
 import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
+import CalendarioPage from "@/features/calendario/pages/CalendarioPage"
 import RangersHomepage from "@/pages/RangersHomepage"
 import StationDesk from "@/pages/StationDesk"
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/alumnos/:id" element={<AlumnoDetailPage />} />
             <Route path="/grupos" element={<GruposPage />} />
             <Route path="/grupos/:id" element={<GrupoDetailPage />} />
+            <Route path="/calendario" element={<CalendarioPage />} />
             <Route path="/asistencia" element={<AsistenciaPage />} />
             <Route path="/pagos" element={<PagosPage />} />
             <Route path="/pagos/nuevo" element={<NuevoPagoPage />} />

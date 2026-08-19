@@ -6,7 +6,7 @@ export interface Pagador {
 }
 
 export interface Grupo {
-  id: number; nombre: string; nivel: string; tarifa: number; aula: string
+  id: number; nombre: string; nivel: string; profesor: string; tarifa: number; aula: string
   color_idx: number; horarios: { dia: number; ini: string; fin: string }[]; alumnos_count: number
 }
 

@@ -20,8 +20,6 @@ export const alumnosApi = {
   create: (data: Partial<Alumno>) => api.post<Alumno>("/alumnos/", data),
   update: (id: number, data: Partial<Alumno>) => api.patch<Alumno>(`/alumnos/${id}/`, data),
   delete: (id: number) => api.delete(`/alumnos/${id}/`),
-  asignarGrupo: (id: number, grupo_id: number, horarios: object[]) =>
-    api.post(`/alumnos/${id}/asignar-grupo/`, { grupo_id, horarios }),
   cumpleanos: (dias?: number) =>
     api.get(`/alumnos/cumpleanos/${dias ? `?dias=${dias}` : ""}`),
   enviarEmail: (id: number, asunto: string, cuerpo: string) =>

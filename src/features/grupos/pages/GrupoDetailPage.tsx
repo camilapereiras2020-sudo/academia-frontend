@@ -172,6 +172,7 @@ export default function GrupoDetailPage() {
             <div className="flex items-center gap-3 flex-wrap mt-2 text-sm text-pine-800">
               <span>👥 {grupo.alumnos_count} alumnos</span>
               {grupo.aula && <span>📍 {grupo.aula}</span>}
+              {grupo.profesor && <span>🧑‍🏫 {grupo.profesor}</span>}
               {grupo.tarifa > 0 && <span className="font-semibold text-pine-700">{Number(grupo.tarifa).toFixed(2)} €/mes</span>}
             </div>
           </div>
