@@ -39,6 +39,28 @@ function initials(name: string) {
   return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
 }
 
+function age(fnac: string | null) {
+  if (!fnac) return null
+  const b = new Date(fnac), now = new Date()
+  return now.getFullYear() - b.getFullYear() -
+    (now < new Date(now.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0)
+}
+
+type AgeGroup = "kids" | "teens" | "adults" | "sinEdad"
+const AGE_GROUP_LABELS: Record<AgeGroup, string> = {
+  kids: "Kids (hasta 12)", teens: "Teens (13–17)", adults: "Adultos (18+)", sinEdad: "Sin edad registrada",
+}
+const AGE_GROUP_ORDER: AgeGroup[] = ["kids", "teens", "adults", "sinEdad"]
+
+function ageGroupOf(a: Alumno): AgeGroup {
+  if (a.es_adulto) return "adults"
+  const yrs = age(a.fnac)
+  if (yrs == null) return "sinEdad"
+  if (yrs < 13) return "kids"
+  if (yrs < 18) return "teens"
+  return "adults"
+}
+
 export default function HorarioBuilderPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
@@ -67,13 +89,20 @@ export default function HorarioBuilderPage() {
     onError: () => setToast("Error al asignar. Inténtalo de nuevo."),
   })
 
-  const unassigned = useMemo(() => {
+  const unassignedByAge = useMemo(() => {
     let list = alumnos.filter(a => !a.grupos_detalle?.length)
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
-    if (!search.trim()) return list
-    const q = search.toLowerCase()
-    return list.filter(a => a.nombre.toLowerCase().includes(q))
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(a => a.nombre.toLowerCase().includes(q))
+    }
+    const groups: Record<AgeGroup, Alumno[]> = { kids: [], teens: [], adults: [], sinEdad: [] }
+    list.forEach(a => groups[ageGroupOf(a)].push(a))
+    AGE_GROUP_ORDER.forEach(g => groups[g].sort((a, b) => a.nombre.localeCompare(b.nombre)))
+    return groups
   }, [alumnos, search, marcaFilter])
+
+  const unassignedCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + unassignedByAge[g].length, 0)
 
   const rosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
@@ -115,7 +144,7 @@ export default function HorarioBuilderPage() {
       eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
     })
     return () => d.destroy()
-  }, [unassigned])
+  }, [unassignedByAge])
 
   function handleDrop(alumnoId: number, alumnoNombre: string, jsEvent: MouseEvent) {
     const targetEl = (jsEvent.target as HTMLElement)?.closest("[data-grupo-id]") as HTMLElement | null
@@ -193,21 +222,30 @@ export default function HorarioBuilderPage() {
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
         <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
-          Sin asignar ({unassigned.length})
+          Sin asignar ({unassignedCount})
         </p>
-        <div ref={sidebarRef} className="flex-1 overflow-y-auto flex flex-wrap content-start gap-1.5 border-2 border-dashed border-khaki-300 rounded-lg p-2">
+        <div ref={sidebarRef} className="flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
           {loadingAlumnos ? (
             <p className="text-xs text-pine-600">Cargando…</p>
-          ) : unassigned.length === 0 ? (
+          ) : unassignedCount === 0 ? (
             <p className="text-xs text-pine-600 italic">Todo el mundo está asignado ✓</p>
           ) : (
-            unassigned.map(a => (
-              <span key={a.id}
-                className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
-                data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
-                {a.nombre}
-              </span>
+            AGE_GROUP_ORDER.filter(g => unassignedByAge[g].length > 0).map(g => (
+              <div key={g}>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-khaki-400 mb-1">
+                  {AGE_GROUP_LABELS[g]} ({unassignedByAge[g].length})
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {unassignedByAge[g].map(a => (
+                    <span key={a.id}
+                      className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
+                      data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
+                      {a.nombre}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))
           )}
         </div>
