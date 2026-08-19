@@ -10,6 +10,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Panel principal',
   '/alumnos': 'Alumnos',
   '/grupos': 'Grupos',
+  '/horario': 'Horario',
   '/asistencia': 'Asistencia',
   '/pagos': 'Pagos',
   '/pagos/nuevo': 'Nuevo pago',
