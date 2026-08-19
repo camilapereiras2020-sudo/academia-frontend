@@ -395,7 +395,7 @@ export default function CRMPage() {
         {/* Header */}
         <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-pine-900">CRM</h1>
+            <h1 className="font-head font-normal text-3xl text-pine-900">CRM</h1>
             <p className="text-sm text-pine-700 mt-0.5">Gestión de consultas y leads</p>
           </div>
           <button onClick={openNew}

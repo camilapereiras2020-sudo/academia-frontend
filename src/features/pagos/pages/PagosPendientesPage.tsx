@@ -140,7 +140,7 @@ export default function PagosPendientesPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-pine-900">Pagos pendientes de completar</h1>
+          <h1 className="font-head font-normal text-3xl text-pine-900">Pagos pendientes de completar</h1>
           <p className="text-sm text-pine-700 mt-1">
             {pending.length} pago(s) importado(s) sin alumno/pagador asignado — se sugieren coincidencias a partir del concepto original de Bizum.
           </p>

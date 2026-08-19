@@ -23,28 +23,28 @@ export default function LoginPage() {
   })
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center text-slate-800 mb-6">Academia de Ingles</h1>
+    <div className="min-h-screen flex items-center justify-center bg-khaki-100">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm border-2 border-khaki-300">
+        <h1 className="font-head font-normal text-2xl text-center text-pine-900 mb-6">Academia de Ingles</h1>
         {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded-lg">{error}</p>}
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1">Email</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-pine-700 mb-1">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1">Contrasena</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-pine-700 mb-1">Contrasena</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === "Enter" && mutation.mutate()}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
           </div>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            className="w-full bg-brass-500 text-pine-900 py-2 rounded-lg text-sm font-medium hover:bg-brass-700 hover:text-white disabled:opacity-50">
             {mutation.isPending ? "Iniciando sesion..." : "Iniciar sesion"}
           </button>
-          <p className="text-center text-sm text-slate-700">
-            No tienes cuenta? <Link to="/register" className="text-blue-600 underline">Crear cuenta</Link>
+          <p className="text-center text-sm text-pine-700">
+            No tienes cuenta? <Link to="/register" className="text-brass-700 underline">Crear cuenta</Link>
           </p>
         </div>
       </div>

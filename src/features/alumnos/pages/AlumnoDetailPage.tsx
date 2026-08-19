@@ -248,7 +248,7 @@ export default function AlumnoDetailPage() {
       </button>
 
       {/* Header */}
-      <div className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem", display: "flex", gap: "1.25rem", alignItems: "center", flexWrap: "wrap" }}>
+      <div className="card" style={{ padding: "1.1rem", marginBottom: "1rem", display: "flex", gap: "1.25rem", alignItems: "center", flexWrap: "wrap" }}>
         <button
           onClick={() => fotoInputRef.current?.click()}
           disabled={fotoMut.isPending}
@@ -289,7 +289,7 @@ export default function AlumnoDetailPage() {
       </div>
 
       {/* Datos generales */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
           <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
             Datos generales
@@ -354,7 +354,7 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Pagador */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Pagador
         </h2>
@@ -387,7 +387,7 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Pagos */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
           <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Pagos</h2>
           {periodos.length > 0 && (
@@ -420,7 +420,7 @@ export default function AlumnoDetailPage() {
 
       {/* Facturas y recibos — read-only, distinct from "Documentos y consentimientos"
           below (which is consent forms: image rights/data protection/enrollment). */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Facturas y recibos
         </h2>
@@ -449,7 +449,7 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Académico */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
           <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Académico</h2>
           {!showFechaForm && <button className="btn-ghost" onClick={() => setShowFechaForm(true)}>+ añadir fecha</button>}
@@ -507,7 +507,7 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Notas / reuniones (timeline) */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Notas y reuniones
         </h2>
@@ -526,7 +526,7 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Documentos / Consentimientos */}
-      <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Documentos y consentimientos
         </h2>
@@ -552,7 +552,7 @@ export default function AlumnoDetailPage() {
 
       {/* Salud — never rendered for reception */}
       {canSeeSalud && (
-        <section className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+        <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
           <div style={{ marginBottom: "1rem" }}>
             <h2 style={{ fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Salud</h2>
             <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", fontStyle: "italic", marginTop: "0.25rem" }}>

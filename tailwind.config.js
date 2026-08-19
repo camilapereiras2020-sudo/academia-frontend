@@ -59,6 +59,13 @@ export default {
           foreground: "hsl(var(--accent-foreground))",
         },
       },
+      borderColor: {
+        // Bare `border`/`border-t`/etc (no explicit color) fell back to
+        // Tailwind's own gray-200 default, which nearly disappears against
+        // the warm cream/khaki backgrounds and white cards used everywhere.
+        // Give it a warm tone from the palette that's actually visible.
+        DEFAULT: "#B8A47E",
+      },
       fontFamily: {
         head: ["Bevan", "serif"],
         body: ["'Barlow Semi Condensed'", "sans-serif"],

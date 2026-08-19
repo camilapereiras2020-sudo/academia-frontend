@@ -75,8 +75,8 @@ export default function NivelesConfigSection() {
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6 space-y-6 mt-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Niveles</p>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs font-bold uppercase tracking-widest text-pine-600">Niveles</p>
+        <p className="text-xs text-pine-600 mt-1">
           Los niveles disponibles en los desplegables de Grupos y Alumnos, agrupados por Kids / Teens / Adults.
         </p>
       </div>
@@ -84,22 +84,22 @@ export default function NivelesConfigSection() {
       {error && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{error}</p>}
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Cargando…</p>
+        <p className="text-sm text-pine-600">Cargando…</p>
       ) : (
         CATEGORIAS.map(({ value: categoria, label }) => {
           const items = niveles.filter(n => n.categoria === categoria).sort((a, b) => a.orden - b.orden)
           return (
             <div key={categoria}>
-              <p className="text-sm font-semibold text-slate-700 mb-2">{label}</p>
+              <p className="text-sm font-semibold text-pine-700 mb-2">{label}</p>
               <div className="space-y-1">
                 {items.map((n, idx) => (
                   <div key={n.id}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${n.activo ? "bg-white" : "bg-slate-50 opacity-60"}`}>
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${n.activo ? "bg-white" : "bg-khaki-100 opacity-60"}`}>
                     <div className="flex flex-col leading-none">
                       <button type="button" disabled={idx === 0} onClick={() => move(categoria, idx, -1)}
-                        className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs" aria-label="Subir">▲</button>
+                        className="text-khaki-400 hover:text-pine-700 disabled:opacity-30 text-xs" aria-label="Subir">▲</button>
                       <button type="button" disabled={idx === items.length - 1} onClick={() => move(categoria, idx, 1)}
-                        className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs" aria-label="Bajar">▼</button>
+                        className="text-khaki-400 hover:text-pine-700 disabled:opacity-30 text-xs" aria-label="Bajar">▼</button>
                     </div>
                     {editingId === n.id ? (
                       <input autoFocus className="flex-1 border rounded px-2 py-1 text-sm"
@@ -110,28 +110,28 @@ export default function NivelesConfigSection() {
                     ) : (
                       <span className="flex-1">{n.nombre}</span>
                     )}
-                    {!n.activo && <span className="text-xs text-slate-400">(inactivo)</span>}
+                    {!n.activo && <span className="text-xs text-khaki-400">(inactivo)</span>}
                     {editingId !== n.id && (
-                      <button type="button" className="text-xs text-slate-500 hover:text-slate-800"
+                      <button type="button" className="text-xs text-pine-600 hover:text-pine-900"
                         onClick={() => startEditing(n)}>Renombrar</button>
                     )}
-                    <button type="button" className="text-xs text-slate-500 hover:text-red-600"
+                    <button type="button" className="text-xs text-pine-600 hover:text-red-600"
                       onClick={() => toggleActivo(n)}>
                       {n.activo ? "Desactivar" : "Activar"}
                     </button>
                   </div>
                 ))}
-                {!items.length && <p className="text-xs text-slate-400">Sin niveles.</p>}
+                {!items.length && <p className="text-xs text-khaki-400">Sin niveles.</p>}
               </div>
               <div className="flex gap-2 mt-2">
                 <input type="text" placeholder={`Nuevo nivel ${label}…`}
                   value={nuevoNombre[categoria]}
                   onChange={e => setNuevoNombre(f => ({ ...f, [categoria]: e.target.value }))}
                   onKeyDown={e => { if (e.key === "Enter") addNivel(categoria) }}
-                  className="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 <button type="button" onClick={() => addNivel(categoria)}
                   disabled={!nuevoNombre[categoria].trim() || createMut.isPending}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs hover:bg-blue-700 disabled:opacity-50">
+                  className="px-3 py-1.5 rounded-lg bg-brass-500 text-white text-xs hover:bg-brass-700 disabled:opacity-50">
                   Añadir
                 </button>
               </div>
