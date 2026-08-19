@@ -167,7 +167,9 @@ export default function CalendarioPage() {
                       <span className="w-2 h-10 rounded-full flex-shrink-0" style={{ background: palette.accent }} />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-pine-900 truncate">{grupo.nombre}</p>
-                        <p className="text-xs text-pine-600">{horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}</p>
+                        <p className="text-xs text-pine-600">
+                          {horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}{grupo.profesor ? ` · 🧑‍🏫 ${grupo.profesor}` : ""}
+                        </p>
                       </div>
                     </button>
                   )
