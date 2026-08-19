@@ -9,6 +9,7 @@ import AlumnosPage from "@/features/alumnos/pages/AlumnosPage"
 import AlumnoDetailPage from "@/features/alumnos/pages/AlumnoDetailPage"
 import GruposPage from "@/features/grupos/pages/GruposPage"
 import GrupoDetailPage from "@/features/grupos/pages/GrupoDetailPage"
+import HorarioBuilderPage from "@/features/horario/pages/HorarioBuilderPage"
 import AsistenciaPage from "@/features/asistencia/pages/AsistenciaPage"
 import PagosPage from "@/features/pagos/pages/PagosPage"
 import NuevoPagoPage from "@/features/pagos/pages/NuevoPagoPage"
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/alumnos/:id" element={<AlumnoDetailPage />} />
             <Route path="/grupos" element={<GruposPage />} />
             <Route path="/grupos/:id" element={<GrupoDetailPage />} />
+            <Route path="/horario" element={<HorarioBuilderPage />} />
             <Route path="/asistencia" element={<AsistenciaPage />} />
             <Route path="/pagos" element={<PagosPage />} />
             <Route path="/pagos/nuevo" element={<NuevoPagoPage />} />

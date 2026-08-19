@@ -7,6 +7,7 @@ export interface Pagador {
 
 export interface Grupo {
   id: number; nombre: string; nivel: string; profesor: string; tarifa: number; aula: string
+  marca: Marca; marca_display?: string
   color_idx: number; horarios: { dia: number; ini: string; fin: string }[]; alumnos_count: number
 }
 
@@ -31,6 +32,7 @@ export interface Alumno {
   fnac: string | null; telefono: string; email: string; dni: string; nivel: string
   notas: string; aviso_cumple_dias: number | null; pagador: number | null
   es_adulto: boolean
+  grupo: number | null; grupo_nombre?: string
   grupos_detalle: AlumnoGrupo[]; created_at: string
   foto_url: string
   nivel_objetivo: NivelObjetivo | ""
