@@ -7,12 +7,14 @@ import esLocale from "@fullcalendar/core/locales/es"
 import type { EventContentArg } from "@fullcalendar/core"
 import { gruposApi } from "@/features/grupos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
+import { profesoresApi } from "@/features/profesores/api"
 import { PALETTE } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
-import type { Alumno, Grupo, Marca } from "@/types"
+import type { Alumno, Grupo, Marca, Profesor } from "@/types"
 
 const MAX_PER_CLASS = 6
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+const SIN_PROFESOR_COLOR = { bg: "#e7e3d8", text: "#57534e", border: "#d6d0bf", accent: "#a8a29e" }
 
 const BRAND_META: Record<Marca, { label: string; tag: string; bg: string; text: string; dot: string }> = {
   rangers_academy: { label: "Rangers Academy", tag: "RA", bg: "#3F5242", text: "#F6F1E7", dot: "#3F5242" },
@@ -32,7 +34,10 @@ interface CalEvent {
   backgroundColor: string
   borderColor: string
   textColor: string
-  extendedProps: { grupoId: number; roster: Alumno[]; profesorNombre: string | null; aula: string; marca: Marca }
+  extendedProps: {
+    grupoId: number; roster: Alumno[]; profesorNombre: string | null; aula: string; marca: Marca
+    dirty: boolean
+  }
 }
 
 function initials(name: string) {
@@ -61,13 +66,23 @@ function ageGroupOf(a: Alumno): AgeGroup {
   return "adults"
 }
 
+function committedGrupoOf(a: Alumno): number | null {
+  return a.grupos_detalle?.[0]?.grupo ?? null
+}
+
 export default function HorarioBuilderPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null)
   const [toast, setToast] = useState("")
+  // Placements staged locally, not yet saved — lets you try out arrangements
+  // (drag students in and out repeatedly) without committing on every move.
+  // Keyed by alumnoId -> target grupoId (null = unassign).
+  const [draft, setDraft] = useState<Map<number, number | null>>(new Map())
+  const [saving, setSaving] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const drawerRosterRef = useRef<HTMLDivElement>(null)
 
   useSetActiveBrand(marcaFilter || null)
 
@@ -83,14 +98,55 @@ export default function HorarioBuilderPage() {
   })
   const alumnos: Alumno[] = Array.isArray(alumnosRaw) ? alumnosRaw : []
 
-  const asignarMut = useMutation({
-    mutationFn: ({ id, grupo }: { id: number; grupo: number | null }) => alumnosApi.update(id, { grupo }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["alumnos"] }),
-    onError: () => setToast("Error al asignar. Inténtalo de nuevo."),
+  const { data: profesoresRaw } = useQuery({
+    queryKey: ["profesores", "all"],
+    queryFn: () => profesoresApi.list().then(r => r.data),
+  })
+  const profesores: Profesor[] = Array.isArray(profesoresRaw) ? profesoresRaw : []
+
+  const profesorColor = useMemo(() => {
+    const sorted = profesores.slice().sort((a, b) => a.orden - b.orden)
+    const map = new Map<number, typeof PALETTE[number]>()
+    sorted.forEach((p, i) => map.set(p.id, PALETTE[i % PALETTE.length]))
+    return map
+  }, [profesores])
+
+  function colorForProfesor(profesorId: number | null) {
+    if (profesorId == null) return SIN_PROFESOR_COLOR
+    return profesorColor.get(profesorId) ?? SIN_PROFESOR_COLOR
+  }
+
+  const guardarMut = useMutation({
+    mutationFn: async (entries: [number, number | null][]) => {
+      for (const [alumnoId, grupoId] of entries) {
+        await alumnosApi.update(alumnoId, { grupo: grupoId })
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      setDraft(new Map())
+      setToast("Cambios guardados.")
+    },
+    onError: () => setToast("Error al guardar. Los cambios sin guardar siguen aquí — inténtalo de nuevo."),
   })
 
+  function effectiveGrupoOf(a: Alumno): number | null {
+    return draft.has(a.id) ? draft.get(a.id)! : committedGrupoOf(a)
+  }
+
+  function stage(alumnoId: number, grupoId: number | null) {
+    const alumno = alumnos.find(a => a.id === alumnoId)
+    if (!alumno) return
+    setDraft(prev => {
+      const next = new Map(prev)
+      if (grupoId === committedGrupoOf(alumno)) next.delete(alumnoId)
+      else next.set(alumnoId, grupoId)
+      return next
+    })
+  }
+
   const unassignedByAge = useMemo(() => {
-    let list = alumnos.filter(a => !a.grupos_detalle?.length)
+    let list = alumnos.filter(a => effectiveGrupoOf(a) == null)
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -100,14 +156,27 @@ export default function HorarioBuilderPage() {
     list.forEach(a => groups[ageGroupOf(a)].push(a))
     AGE_GROUP_ORDER.forEach(g => groups[g].sort((a, b) => a.nombre.localeCompare(b.nombre)))
     return groups
-  }, [alumnos, search, marcaFilter])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumnos, search, marcaFilter, draft])
 
   const unassignedCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + unassignedByAge[g].length, 0)
 
   const rosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
     alumnos.forEach(a => {
-      const gid = a.grupos_detalle?.[0]?.grupo
+      const gid = effectiveGrupoOf(a)
+      if (gid == null) return
+      if (!map.has(gid)) map.set(gid, [])
+      map.get(gid)!.push(a)
+    })
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumnos, draft])
+
+  const committedRosterByGrupo = useMemo(() => {
+    const map = new Map<number, Alumno[]>()
+    alumnos.forEach(a => {
+      const gid = committedGrupoOf(a)
       if (gid == null) return
       if (!map.has(gid)) map.set(gid, [])
       map.get(gid)!.push(a)
@@ -122,7 +191,10 @@ export default function HorarioBuilderPage() {
 
   const events: CalEvent[] = useMemo(() => visibleGrupos.flatMap(g => {
     const roster = rosterByGrupo.get(g.id) ?? []
-    const pal = PALETTE[g.color_idx % PALETTE.length]
+    const committedRoster = committedRosterByGrupo.get(g.id) ?? []
+    const dirty = roster.length !== committedRoster.length ||
+      roster.some(a => !committedRoster.some(c => c.id === a.id))
+    const pal = colorForProfesor(g.profesor)
     return (g.horarios ?? []).map((h, i) => ({
       id: `${g.id}-${i}`,
       title: g.nombre,
@@ -132,11 +204,14 @@ export default function HorarioBuilderPage() {
       backgroundColor: pal.bg,
       borderColor: pal.border,
       textColor: pal.text,
-      extendedProps: { grupoId: g.id, roster, profesorNombre: g.profesor_nombre ?? null, aula: g.aula, marca: g.marca },
+      extendedProps: { grupoId: g.id, roster, profesorNombre: g.profesor_nombre ?? null, aula: g.aula, marca: g.marca, dirty },
     }))
-  }), [visibleGrupos, rosterByGrupo])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [visibleGrupos, rosterByGrupo, committedRosterByGrupo, profesorColor])
 
-  // External drag source: student pills in the sidebar
+  // External drag sources: unassigned pills in the sidebar, and already-assigned
+  // pills inside the open class drawer (so a student can be dragged straight
+  // from one class to another without unassigning first).
   useEffect(() => {
     if (!sidebarRef.current) return
     const d = new Draggable(sidebarRef.current, {
@@ -146,14 +221,38 @@ export default function HorarioBuilderPage() {
     return () => d.destroy()
   }, [unassignedByAge])
 
-  function handleDrop(alumnoId: number, alumnoNombre: string, jsEvent: MouseEvent) {
-    const targetEl = (jsEvent.target as HTMLElement)?.closest("[data-grupo-id]") as HTMLElement | null
-    const grupoId = targetEl ? Number(targetEl.dataset.grupoId) : null
+  useEffect(() => {
+    if (!drawerRosterRef.current) return
+    const d = new Draggable(drawerRosterRef.current, {
+      itemSelector: ".roster-pill",
+      eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
+    })
+    return () => d.destroy()
+  }, [selectedGrupoId, rosterByGrupo])
+
+  // Which class (if any) a given drop date/time falls into. Deliberately NOT
+  // DOM hit-testing (jsEvent.target) — FullCalendar's drag "mirror" overlay
+  // tracks the cursor and can itself be the element under the pointer at
+  // drop time, making elementFromPoint miss the real event underneath and
+  // silently no-op the whole drop. The drop's date/time from FullCalendar
+  // itself is reliable regardless of what's visually on top.
+  function grupoIdAtDropDate(date: Date): number | null {
+    const dow = date.getDay() // matches CalEvent.daysOfWeek (0=Sun..6=Sat)
+    const hh = String(date.getHours()).padStart(2, "0")
+    const mm = String(date.getMinutes()).padStart(2, "0")
+    const t = `${hh}:${mm}`
+    const match = events.find(e => e.daysOfWeek.includes(dow) && t >= e.startTime && t < e.endTime)
+    return match ? match.extendedProps.grupoId : null
+  }
+
+  function handleDrop(alumnoId: number, alumnoNombre: string, dropDate: Date) {
+    const grupoId = grupoIdAtDropDate(dropDate)
     if (!grupoId) return
     const grupo = grupos.find(g => g.id === grupoId)
     const alumno = alumnos.find(a => a.id === alumnoId)
     const currentRoster = rosterByGrupo.get(grupoId) ?? []
     if (!grupo || !alumno) return
+    if (effectiveGrupoOf(alumno) === grupoId) return
     if (alumno.marca !== grupo.marca) {
       setToast(`${alumnoNombre} es de ${BRAND_META[alumno.marca].label} — "${grupo.nombre}" es de ${BRAND_META[grupo.marca].label}.`)
       return
@@ -162,25 +261,47 @@ export default function HorarioBuilderPage() {
       setToast(`"${grupo.nombre}" ya tiene ${MAX_PER_CLASS} alumnos (máximo por clase).`)
       return
     }
-    asignarMut.mutate({ id: alumnoId, grupo: grupoId })
-    setToast(`${alumnoNombre} añadido/a a ${grupo.nombre}.`)
+    stage(alumnoId, grupoId)
+    setToast(`${alumnoNombre} → ${grupo.nombre} (sin guardar todavía).`)
   }
 
   useEffect(() => {
     if (!toast) return
-    const t = setTimeout(() => setToast(""), 2200)
+    const t = setTimeout(() => setToast(""), 2500)
     return () => clearTimeout(t)
   }, [toast])
+
+  // Warn before leaving the page with staged-but-unsaved placements.
+  useEffect(() => {
+    if (draft.size === 0) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [draft.size])
+
+  function handleGuardar() {
+    setSaving(true)
+    guardarMut.mutate(Array.from(draft.entries()), { onSettled: () => setSaving(false) })
+  }
+
+  function handleDescartar() {
+    setDraft(new Map())
+    setToast("Cambios sin guardar descartados.")
+  }
 
   function renderEventContent(arg: EventContentArg) {
     // FullCalendar's external-drag "mirror" preview reuses this same renderer
     // for a plain title-only event with no extendedProps at all — guard every
     // field instead of assuming a real CalEvent, or the drag crashes mid-drop.
     const props = arg.event.extendedProps as Partial<CalEvent["extendedProps"]>
-    const { roster, profesorNombre, marca } = props
+    const { roster, profesorNombre, marca, dirty } = props
     const brand = marca ? BRAND_META[marca] : null
     return (
       <div className="px-1 py-[1px] overflow-hidden h-full leading-none relative" data-grupo-id={props.grupoId != null ? String(props.grupoId) : undefined}>
+        {dirty && (
+          <span className="absolute top-[1px] left-[1px] w-[6px] h-[6px] rounded-full bg-brass-500 ring-2 ring-white"
+            title="Cambios sin guardar" />
+        )}
         {brand && (
           <span
             className="absolute top-[1px] right-[1px] text-[7px] font-bold leading-none px-[3px] py-[1px] rounded-sm"
@@ -202,6 +323,7 @@ export default function HorarioBuilderPage() {
 
   const selectedGrupo = grupos.find(g => g.id === selectedGrupoId) ?? null
   const selectedRoster = selectedGrupoId != null ? (rosterByGrupo.get(selectedGrupoId) ?? []) : []
+  const profesoresActivos = profesores.filter(p => p.activo)
 
   return (
     <div className="flex gap-5 h-[calc(100vh-140px)]">
@@ -209,8 +331,27 @@ export default function HorarioBuilderPage() {
       <aside className="w-64 flex-shrink-0 flex flex-col gap-3">
         <div>
           <h1 className="font-head font-normal text-xl text-pine-900">Horario</h1>
-          <p className="text-xs text-pine-600 mt-0.5">Arrastra un alumno a una clase para asignarlo.</p>
+          <p className="text-xs text-pine-600 mt-0.5">
+            Arrastra alumnos para probar huecos. Nada se guarda hasta que pulses "Guardar cambios".
+          </p>
         </div>
+
+        {profesoresActivos.length > 0 && (
+          <div className="flex flex-wrap gap-2 text-[10px]">
+            {profesoresActivos.map(p => (
+              <span key={p.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+                style={{ background: colorForProfesor(p.id).bg, color: colorForProfesor(p.id).text }}>
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colorForProfesor(p.id).accent }} />
+                {p.nombre}
+              </span>
+            ))}
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+              style={{ background: SIN_PROFESOR_COLOR.bg, color: SIN_PROFESOR_COLOR.text }}>
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SIN_PROFESOR_COLOR.accent }} />
+              Sin profe
+            </span>
+          </div>
+        )}
 
         <div className="flex rounded-lg border border-khaki-300 overflow-hidden text-xs font-semibold">
           <button onClick={() => setMarcaFilter("")}
@@ -282,22 +423,33 @@ export default function HorarioBuilderPage() {
               firstDay={1}
               events={events}
               eventContent={renderEventContent}
-              eventClick={(info) => setSelectedGrupoId(Number(info.event.extendedProps.grupoId))}
-              droppable
+              eventClick={(info) => {
+                const grupoId = Number(info.event.extendedProps.grupoId)
+                if (Number.isFinite(grupoId) && grupoId > 0) setSelectedGrupoId(grupoId)
+              }}
+              // Deliberately NOT `droppable` — that flag makes FullCalendar auto-add
+              // the dropped element as its own internal calendar event (a ghost
+              // event outside our `events` state, with no grupoId, unremovable and
+              // uneditable). `drop` alone already fires for every external-drag
+              // drop and is all we need — real assignment happens through
+              // `events` (our state) once `stage()`/the API call updates it.
               drop={(info) => {
                 const alumnoId = Number(info.draggedEl.getAttribute("data-alumno-id"))
                 const nombre = info.draggedEl.getAttribute("data-name") ?? ""
-                handleDrop(alumnoId, nombre, info.jsEvent)
+                handleDrop(alumnoId, nombre, info.date)
               }}
+              eventReceive={(info) => info.revert()}
             />
           </div>
         )}
       </div>
 
-      {/* Selected-group roster drawer */}
+      {/* Selected-group roster drawer — a docked panel, NOT a modal: no
+          full-screen backdrop, so the calendar underneath stays fully
+          interactive and a student can be dragged straight from here onto
+          a different class to reassign them. */}
       {selectedGrupo && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex justify-end" onClick={e => { if (e.target === e.currentTarget) setSelectedGrupoId(null) }}>
-          <div className="w-80 bg-white h-full shadow-xl flex flex-col">
+        <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-xl flex flex-col z-40 border-l border-khaki-300">
             <div className="px-5 py-4 border-b flex items-start justify-between">
               <div>
                 <p className="font-head font-normal text-lg text-pine-900 flex items-center gap-2">
@@ -320,31 +472,48 @@ export default function HorarioBuilderPage() {
               <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600 mb-2">
                 Alumnos ({selectedRoster.length}/{MAX_PER_CLASS})
               </p>
+              <p className="text-[11px] text-pine-600 mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
               {selectedRoster.length === 0 ? (
                 <p className="text-xs text-pine-600 italic">Sin alumnos todavía. Arrastra desde la izquierda.</p>
               ) : (
-                <div className="space-y-1.5">
+                <div ref={drawerRosterRef} className="space-y-1.5">
                   {selectedRoster.map(a => (
-                    <div key={a.id} className="flex items-center justify-between bg-khaki-100 rounded-lg px-3 py-2 text-sm">
+                    <div key={a.id}
+                      className="roster-pill flex items-center justify-between bg-khaki-100 rounded-lg px-3 py-2 text-sm cursor-grab select-none"
+                      data-name={a.nombre} data-alumno-id={a.id}>
                       <span className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
                           {initials(a.nombre)}
                         </span>
                         {a.nombre}
                       </span>
-                      <button onClick={() => asignarMut.mutate({ id: a.id, grupo: null })}
+                      <button onClick={() => stage(a.id, null)}
                         className="text-red-400 hover:text-red-600 text-xs">✕</button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
+        </div>
+      )}
+
+      {/* Pending-changes bar */}
+      {draft.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-pine-900 text-white text-sm font-medium pl-4 pr-2 py-2 rounded-lg shadow-lg z-50 flex items-center gap-3">
+          <span>{draft.size} cambio{draft.size === 1 ? "" : "s"} sin guardar</span>
+          <button onClick={handleDescartar} disabled={saving}
+            className="px-3 py-1 rounded-md text-xs font-semibold bg-white/10 hover:bg-white/20 disabled:opacity-50">
+            Descartar
+          </button>
+          <button onClick={handleGuardar} disabled={saving}
+            className="px-3 py-1 rounded-md text-xs font-semibold bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </button>
         </div>
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-pine-900 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-pine-900 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">
           {toast}
         </div>
       )}
