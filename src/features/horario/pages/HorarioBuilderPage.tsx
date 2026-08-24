@@ -32,7 +32,7 @@ interface CalEvent {
   backgroundColor: string
   borderColor: string
   textColor: string
-  extendedProps: { grupoId: number; roster: Alumno[]; profesor: string; aula: string; marca: Marca }
+  extendedProps: { grupoId: number; roster: Alumno[]; profesorNombre: string | null; aula: string; marca: Marca }
 }
 
 function initials(name: string) {
@@ -132,7 +132,7 @@ export default function HorarioBuilderPage() {
       backgroundColor: pal.bg,
       borderColor: pal.border,
       textColor: pal.text,
-      extendedProps: { grupoId: g.id, roster, profesor: g.profesor, aula: g.aula, marca: g.marca },
+      extendedProps: { grupoId: g.id, roster, profesorNombre: g.profesor_nombre ?? null, aula: g.aula, marca: g.marca },
     }))
   }), [visibleGrupos, rosterByGrupo])
 
@@ -173,21 +173,29 @@ export default function HorarioBuilderPage() {
   }, [toast])
 
   function renderEventContent(arg: EventContentArg) {
-    const { roster, profesor, marca } = arg.event.extendedProps as CalEvent["extendedProps"]
-    const brand = BRAND_META[marca]
+    // FullCalendar's external-drag "mirror" preview reuses this same renderer
+    // for a plain title-only event with no extendedProps at all — guard every
+    // field instead of assuming a real CalEvent, or the drag crashes mid-drop.
+    const props = arg.event.extendedProps as Partial<CalEvent["extendedProps"]>
+    const { roster, profesorNombre, marca } = props
+    const brand = marca ? BRAND_META[marca] : null
     return (
-      <div className="px-1 py-[1px] overflow-hidden h-full leading-none relative" data-grupo-id={String(arg.event.extendedProps.grupoId)}>
-        <span
-          className="absolute top-[1px] right-[1px] text-[7px] font-bold leading-none px-[3px] py-[1px] rounded-sm"
-          style={{ background: brand.bg, color: brand.text }}
-          title={brand.label}
-        >
-          {brand.tag}
-        </span>
+      <div className="px-1 py-[1px] overflow-hidden h-full leading-none relative" data-grupo-id={props.grupoId != null ? String(props.grupoId) : undefined}>
+        {brand && (
+          <span
+            className="absolute top-[1px] right-[1px] text-[7px] font-bold leading-none px-[3px] py-[1px] rounded-sm"
+            style={{ background: brand.bg, color: brand.text }}
+            title={brand.label}
+          >
+            {brand.tag}
+          </span>
+        )}
         <div className="font-head text-[11px] leading-tight truncate pr-6">{arg.event.title}</div>
-        <div className="text-[9px] leading-tight opacity-80 truncate">
-          {arg.timeText}{profesor ? ` · ${profesor}` : ""} · {roster.length}/{MAX_PER_CLASS}
-        </div>
+        {roster && (
+          <div className="text-[9px] leading-tight opacity-80 truncate">
+            {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {roster.length}/{MAX_PER_CLASS}
+          </div>
+        )}
       </div>
     )
   }
@@ -300,7 +308,7 @@ export default function HorarioBuilderPage() {
                   </span>
                 </p>
                 <p className="text-xs text-pine-600 mt-0.5">
-                  {selectedGrupo.profesor ? `Prof. ${selectedGrupo.profesor} · ` : ""}
+                  {selectedGrupo.profesor_nombre ? `Prof. ${selectedGrupo.profesor_nombre} · ` : ""}
                   {(selectedGrupo.horarios ?? []).map((h, i) => (
                     <span key={i}>{DAY_LABELS[h.dia]?.slice(0, 3)} {h.ini}–{h.fin}{i < (selectedGrupo.horarios.length - 1) ? " · " : ""}</span>
                   ))}

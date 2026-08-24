@@ -168,7 +168,7 @@ export default function CalendarioPage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-pine-900 truncate">{grupo.nombre}</p>
                         <p className="text-xs text-pine-600">
-                          {horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}{grupo.profesor ? ` · 🧑‍🏫 ${grupo.profesor}` : ""}
+                          {horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}{grupo.profesor_nombre ? ` · 🧑‍🏫 ${grupo.profesor_nombre}` : ""}
                         </p>
                       </div>
                     </button>

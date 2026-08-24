@@ -6,15 +6,16 @@ import { DIAS, PALETTE } from "../palette"
 import type { Grupo } from "@/types"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
+import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
 
 interface HorarioSlot { dia: number; ini: string; fin: string }
 interface GrupoForm {
-  nombre: string; nivel: string; profesor: string; tarifa: number
+  nombre: string; nivel: string; profesor: number | null; tarifa: number
   aula: string; color_idx: number; horarios: HorarioSlot[]
 }
 
 const emptyForm = (nextColorIdx = 0): GrupoForm => ({
-  nombre: "", nivel: "", profesor: "", tarifa: 0, aula: "", color_idx: nextColorIdx, horarios: [],
+  nombre: "", nivel: "", profesor: null, tarifa: 0, aula: "", color_idx: nextColorIdx, horarios: [],
 })
 
 export default function GruposPage() {
@@ -61,7 +62,7 @@ export default function GruposPage() {
   function openEdit(g: Grupo) {
     setEditing(g)
     setForm({
-      nombre: g.nombre, nivel: g.nivel ?? "", profesor: g.profesor ?? "", tarifa: g.tarifa,
+      nombre: g.nombre, nivel: g.nivel ?? "", profesor: g.profesor ?? null, tarifa: g.tarifa,
       aula: g.aula ?? "", color_idx: g.color_idx ?? 0,
       horarios: g.horarios ?? [],
     })
@@ -148,7 +149,7 @@ export default function GruposPage() {
                     )}
                     <span className="text-xs text-pine-800">👥 {g.alumnos_count} alumnos</span>
                     {g.aula && <span className="text-xs text-pine-800">📍 {g.aula}</span>}
-                    {g.profesor && <span className="text-xs text-pine-800">🧑‍🏫 {g.profesor}</span>}
+                    {g.profesor_nombre && <span className="text-xs text-pine-800">🧑‍🏫 {g.profesor_nombre}</span>}
                     {g.tarifa > 0 && (
                       <span className="text-xs font-semibold text-pine-700">
                         {Number(g.tarifa).toFixed(2)} €/mes
@@ -234,8 +235,7 @@ export default function GruposPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-pine-800 mb-1">Profesor/a</label>
-                  <input type="text" value={form.profesor} placeholder="Nombre del profesor"
-                    onChange={e => setForm(f => ({ ...f, profesor: e.target.value }))}
+                  <ProfesorSelect value={form.profesor} onChange={v => setForm(f => ({ ...f, profesor: v }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 </div>
                 <div>
