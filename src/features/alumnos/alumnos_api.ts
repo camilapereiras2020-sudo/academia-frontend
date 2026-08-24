@@ -24,4 +24,12 @@ export const alumnosApi = {
     api.get(`/alumnos/cumpleanos/${dias ? `?dias=${dias}` : ""}`),
   enviarEmail: (id: number, asunto: string, cuerpo: string) =>
     api.post<{ ok: boolean; id: string }>(`/alumnos/${id}/enviar-email/`, { asunto, cuerpo }),
+  // A student can be enrolled in more than one class at once — these two are
+  // additive/subtractive single-membership ops (not a replace-all PATCH), so
+  // the Horario builder can assign/unassign one class without touching the
+  // student's other classes.
+  agregarGrupo: (id: number, grupoId: number) =>
+    api.post<Alumno>(`/alumnos/${id}/agregar-grupo/`, { grupo_id: grupoId }),
+  quitarGrupo: (id: number, grupoId: number) =>
+    api.post<Alumno>(`/alumnos/${id}/quitar-grupo/`, { grupo_id: grupoId }),
 }

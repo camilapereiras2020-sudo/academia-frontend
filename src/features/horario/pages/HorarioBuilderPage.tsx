@@ -66,8 +66,12 @@ function ageGroupOf(a: Alumno): AgeGroup {
   return "adults"
 }
 
-function committedGrupoOf(a: Alumno): number | null {
-  return a.grupos_detalle?.[0]?.grupo ?? null
+function committedGruposOf(a: Alumno): Set<number> {
+  return new Set((a.grupos_detalle ?? []).map(g => g.grupo))
+}
+
+function draftKey(alumnoId: number, grupoId: number) {
+  return `${alumnoId}:${grupoId}`
 }
 
 export default function HorarioBuilderPage() {
@@ -76,10 +80,13 @@ export default function HorarioBuilderPage() {
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null)
   const [toast, setToast] = useState("")
-  // Placements staged locally, not yet saved — lets you try out arrangements
-  // (drag students in and out repeatedly) without committing on every move.
-  // Keyed by alumnoId -> target grupoId (null = unassign).
-  const [draft, setDraft] = useState<Map<number, number | null>>(new Map())
+  // A student can be enrolled in more than one class at once (2-3x/week is
+  // normal), so placements are tracked as individual membership toggles, not
+  // "the one grupo this alumno is in". Staged locally, not yet saved — lets
+  // you try out arrangements (drag students in and out repeatedly) without
+  // committing on every move. Keyed by "alumnoId:grupoId" -> "add" (stage a
+  // new membership) or "remove" (stage dropping an existing one).
+  const [draft, setDraft] = useState<Map<string, "add" | "remove">>(new Map())
   const [saving, setSaving] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const drawerRosterRef = useRef<HTMLDivElement>(null)
@@ -117,9 +124,11 @@ export default function HorarioBuilderPage() {
   }
 
   const guardarMut = useMutation({
-    mutationFn: async (entries: [number, number | null][]) => {
-      for (const [alumnoId, grupoId] of entries) {
-        await alumnosApi.update(alumnoId, { grupo: grupoId })
+    mutationFn: async (entries: [string, "add" | "remove"][]) => {
+      for (const [key, action] of entries) {
+        const [alumnoId, grupoId] = key.split(":").map(Number)
+        if (action === "add") await alumnosApi.agregarGrupo(alumnoId, grupoId)
+        else await alumnosApi.quitarGrupo(alumnoId, grupoId)
       }
     },
     onSuccess: () => {
@@ -130,23 +139,59 @@ export default function HorarioBuilderPage() {
     onError: () => setToast("Error al guardar. Los cambios sin guardar siguen aquí — inténtalo de nuevo."),
   })
 
-  function effectiveGrupoOf(a: Alumno): number | null {
-    return draft.has(a.id) ? draft.get(a.id)! : committedGrupoOf(a)
+  // Draft entries regrouped by alumno so effective-membership lookups don't
+  // have to scan the whole draft map for every alumno on every render.
+  const draftByAlumno = useMemo(() => {
+    const map = new Map<number, Map<number, "add" | "remove">>()
+    draft.forEach((action, key) => {
+      const [alumnoId, grupoId] = key.split(":").map(Number)
+      if (!map.has(alumnoId)) map.set(alumnoId, new Map())
+      map.get(alumnoId)!.set(grupoId, action)
+    })
+    return map
+  }, [draft])
+
+  function effectiveGruposOf(a: Alumno): Set<number> {
+    const committed = committedGruposOf(a)
+    const overrides = draftByAlumno.get(a.id)
+    if (!overrides) return committed
+    const result = new Set(committed)
+    overrides.forEach((action, grupoId) => {
+      if (action === "add") result.add(grupoId)
+      else result.delete(grupoId)
+    })
+    return result
   }
 
-  function stage(alumnoId: number, grupoId: number | null) {
+  // Stage adding alumnoId to grupoId (no-op if they're already effectively in
+  // it). Does NOT touch any of their other memberships.
+  function stageAdd(alumnoId: number, grupoId: number) {
     const alumno = alumnos.find(a => a.id === alumnoId)
     if (!alumno) return
+    const key = draftKey(alumnoId, grupoId)
     setDraft(prev => {
       const next = new Map(prev)
-      if (grupoId === committedGrupoOf(alumno)) next.delete(alumnoId)
-      else next.set(alumnoId, grupoId)
+      if (committedGruposOf(alumno).has(grupoId)) next.delete(key) // already committed — nothing to stage
+      else next.set(key, "add")
+      return next
+    })
+  }
+
+  // Stage removing alumnoId from grupoId.
+  function stageRemove(alumnoId: number, grupoId: number) {
+    const alumno = alumnos.find(a => a.id === alumnoId)
+    if (!alumno) return
+    const key = draftKey(alumnoId, grupoId)
+    setDraft(prev => {
+      const next = new Map(prev)
+      if (committedGruposOf(alumno).has(grupoId)) next.set(key, "remove")
+      else next.delete(key) // was only staged as an add — cancel it
       return next
     })
   }
 
   const unassignedByAge = useMemo(() => {
-    let list = alumnos.filter(a => effectiveGrupoOf(a) == null)
+    let list = alumnos.filter(a => effectiveGruposOf(a).size === 0)
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -161,13 +206,25 @@ export default function HorarioBuilderPage() {
 
   const unassignedCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + unassignedByAge[g].length, 0)
 
+  // When searching, also surface already-assigned students matching the
+  // query — a student already in one class is still a valid drag source for
+  // adding a second or third class (that's the whole point of multi-class).
+  const searchMatches = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+    let list = alumnos.filter(a => a.nombre.toLowerCase().includes(q) && effectiveGruposOf(a).size > 0)
+    if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
+    return list.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumnos, search, marcaFilter, draft])
+
   const rosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
     alumnos.forEach(a => {
-      const gid = effectiveGrupoOf(a)
-      if (gid == null) return
-      if (!map.has(gid)) map.set(gid, [])
-      map.get(gid)!.push(a)
+      effectiveGruposOf(a).forEach(gid => {
+        if (!map.has(gid)) map.set(gid, [])
+        map.get(gid)!.push(a)
+      })
     })
     return map
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,10 +233,10 @@ export default function HorarioBuilderPage() {
   const committedRosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
     alumnos.forEach(a => {
-      const gid = committedGrupoOf(a)
-      if (gid == null) return
-      if (!map.has(gid)) map.set(gid, [])
-      map.get(gid)!.push(a)
+      committedGruposOf(a).forEach(gid => {
+        if (!map.has(gid)) map.set(gid, [])
+        map.get(gid)!.push(a)
+      })
     })
     return map
   }, [alumnos])
@@ -219,7 +276,7 @@ export default function HorarioBuilderPage() {
       eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
     })
     return () => d.destroy()
-  }, [unassignedByAge])
+  }, [unassignedByAge, searchMatches])
 
   useEffect(() => {
     if (!drawerRosterRef.current) return
@@ -245,23 +302,32 @@ export default function HorarioBuilderPage() {
     return match ? match.extendedProps.grupoId : null
   }
 
-  function handleDrop(alumnoId: number, alumnoNombre: string, dropDate: Date) {
+  // sourceGrupoId is set when the drag started from an already-open class
+  // drawer (a "roster-pill") — that's a reassign/move (drop out of the
+  // source class, into the target). A drag from the sidebar (unassigned or
+  // search results, no specific source class) is always additive: it adds
+  // this class on top of whatever the student is already enrolled in,
+  // exactly what "2 or 3 classes a week" needs.
+  function handleDrop(alumnoId: number, alumnoNombre: string, dropDate: Date, sourceGrupoId?: number) {
     const grupoId = grupoIdAtDropDate(dropDate)
     if (!grupoId) return
     const grupo = grupos.find(g => g.id === grupoId)
     const alumno = alumnos.find(a => a.id === alumnoId)
-    const currentRoster = rosterByGrupo.get(grupoId) ?? []
     if (!grupo || !alumno) return
-    if (effectiveGrupoOf(alumno) === grupoId) return
+    if (effectiveGruposOf(alumno).has(grupoId)) return // already in this class
     if (alumno.marca !== grupo.marca) {
       setToast(`${alumnoNombre} es de ${BRAND_META[alumno.marca].label} — "${grupo.nombre}" es de ${BRAND_META[grupo.marca].label}.`)
       return
     }
+    const currentRoster = rosterByGrupo.get(grupoId) ?? []
     if (currentRoster.length >= MAX_PER_CLASS) {
       setToast(`"${grupo.nombre}" ya tiene ${MAX_PER_CLASS} alumnos (máximo por clase).`)
       return
     }
-    stage(alumnoId, grupoId)
+    if (sourceGrupoId != null && sourceGrupoId !== grupoId) {
+      stageRemove(alumnoId, sourceGrupoId)
+    }
+    stageAdd(alumnoId, grupoId)
     setToast(`${alumnoNombre} → ${grupo.nombre} (sin guardar todavía).`)
   }
 
@@ -315,6 +381,14 @@ export default function HorarioBuilderPage() {
         {roster && (
           <div className="text-[9px] leading-tight opacity-80 truncate">
             {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {roster.length}/{MAX_PER_CLASS}
+          </div>
+        )}
+        {/* Names right on the block, not just a count — so an assignment
+            never looks like it "disappeared" after a drag; you can see who's
+            in the class without opening the drawer. */}
+        {roster && roster.length > 0 && (
+          <div className="text-[9px] leading-tight font-semibold truncate">
+            {roster.map(a => initials(a.nombre)).join(" · ")}
           </div>
         )}
       </div>
@@ -371,11 +445,33 @@ export default function HorarioBuilderPage() {
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
         <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
-          Sin asignar ({unassignedCount})
+          {search.trim() ? "Resultados" : `Sin asignar (${unassignedCount})`}
         </p>
         <div ref={sidebarRef} className="flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
           {loadingAlumnos ? (
             <p className="text-xs text-pine-600">Cargando…</p>
+          ) : search.trim() ? (
+            // Searching shows EVERY matching student, including ones already
+            // in a class — dragging one onto another slot adds that second
+            // (or third) class without touching their existing ones.
+            searchMatches.length === 0 ? (
+              <p className="text-xs text-pine-600 italic">Sin resultados.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {searchMatches.map(a => {
+                  const n = effectiveGruposOf(a).size
+                  return (
+                    <span key={a.id}
+                      className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
+                      data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
+                      {a.nombre}
+                      <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
+                    </span>
+                  )
+                })}
+              </div>
+            )
           ) : unassignedCount === 0 ? (
             <p className="text-xs text-pine-600 italic">Todo el mundo está asignado ✓</p>
           ) : (
@@ -436,7 +532,9 @@ export default function HorarioBuilderPage() {
               drop={(info) => {
                 const alumnoId = Number(info.draggedEl.getAttribute("data-alumno-id"))
                 const nombre = info.draggedEl.getAttribute("data-name") ?? ""
-                handleDrop(alumnoId, nombre, info.date)
+                const sourceAttr = info.draggedEl.getAttribute("data-source-grupo-id")
+                const sourceGrupoId = sourceAttr ? Number(sourceAttr) : undefined
+                handleDrop(alumnoId, nombre, info.date, sourceGrupoId)
               }}
               eventReceive={(info) => info.revert()}
             />
@@ -480,14 +578,14 @@ export default function HorarioBuilderPage() {
                   {selectedRoster.map(a => (
                     <div key={a.id}
                       className="roster-pill flex items-center justify-between bg-khaki-100 rounded-lg px-3 py-2 text-sm cursor-grab select-none"
-                      data-name={a.nombre} data-alumno-id={a.id}>
+                      data-name={a.nombre} data-alumno-id={a.id} data-source-grupo-id={selectedGrupoId ?? undefined}>
                       <span className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
                           {initials(a.nombre)}
                         </span>
                         {a.nombre}
                       </span>
-                      <button onClick={() => stage(a.id, null)}
+                      <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)}
                         className="text-red-400 hover:text-red-600 text-xs">✕</button>
                     </div>
                   ))}

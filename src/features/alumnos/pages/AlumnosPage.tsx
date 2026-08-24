@@ -40,14 +40,13 @@ interface FormState {
   marca: Marca | ""
   pagador: number | null; pagadorDraft: PagadorDraft
   es_adulto: boolean; aviso_cumple_dias: number | null
-  grupo: number | null
 }
 
 const emptyForm = (): FormState => ({
   nombre: "", fnac: "", telefono: "", email: "", dni: "", notas: "",
   marca: "",
   pagador: null, pagadorDraft: emptyPagadorDraft(),
-  es_adulto: false, aviso_cumple_dias: null, grupo: null,
+  es_adulto: false, aviso_cumple_dias: null,
 })
 
 export default function AlumnosPage() {
@@ -108,7 +107,7 @@ export default function AlumnosPage() {
       const payload: Record<string, unknown> = {
         nombre: f.nombre, fnac: f.fnac || null, telefono: f.telefono,
         email: f.email, dni: f.dni, notas: f.notas, es_adulto: f.es_adulto,
-        marca: f.marca as Marca, grupo: f.grupo,
+        marca: f.marca as Marca,
         aviso_cumple_dias: f.aviso_cumple_dias,
       }
       // Adult self-pay: deliberately omit `pagador` — the backend auto-
@@ -152,7 +151,6 @@ export default function AlumnosPage() {
         ? { telefono: linkedPagador.telefono, email: linkedPagador.email, direccion: linkedPagador.direccion, nif: linkedPagador.nif }
         : emptyPagadorDraft(),
       es_adulto: a.es_adulto ?? false, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
-      grupo: a.grupos_detalle?.[0]?.grupo ?? null,
     })
     setFormError(""); setShowModal(true)
   }
