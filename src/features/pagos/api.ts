@@ -38,3 +38,18 @@ export const documentosApi = {
     api.post("/documentos/generar/", { pago_id }),
   delete: (id: number) => api.delete(`/documentos/${id}/`),
 }
+
+// One row per brand's issuing/legal entity (Cami&Co, Rangers Academy) — the
+// actual source of truth invoice generation reads from, distinct from the
+// (unrelated, legacy) single-tenant academia_* fields on the user profile.
+export interface Emisor {
+  id: number; slug: string
+  nombre: string; autonoma: string; nif: string
+  direccion: string; ciudad: string; telefono: string; email: string; iban: string
+  factura_prefix: string; recibo_prefix: string; activo: boolean
+}
+
+export const emisoresApi = {
+  list: () => api.get<Emisor[]>("/documentos/emisores/"),
+  update: (id: number, data: Partial<Emisor>) => api.patch<Emisor>(`/documentos/emisores/${id}/`, data),
+}

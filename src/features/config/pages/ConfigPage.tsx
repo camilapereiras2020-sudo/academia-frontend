@@ -1,50 +1,10 @@
-import { useState, useEffect } from "react"
-import { useMutation } from "@tanstack/react-query"
 import { useAuthStore } from "@/store/authStore"
-import { authApi } from "@/features/auth/api"
 import NivelesConfigSection from "@/features/niveles/NivelesConfigSection"
 import ProfesoresConfigSection from "@/features/profesores/ProfesoresConfigSection"
+import EmisoresConfigSection from "@/features/pagos/EmisoresConfigSection"
 
 export default function ConfigPage() {
-  const { user, setUser } = useAuthStore()
-  const [form, setForm] = useState({
-    academia_nombre: "", academia_nif: "", academia_dir: "", academia_tel: "",
-  })
-  const [saveState, setSaveState] = useState<"idle" | "saved" | "error">("idle")
-
-  useEffect(() => {
-    if (user) {
-      setForm({
-        academia_nombre: user.academia_nombre ?? "",
-        academia_nif:    user.academia_nif    ?? "",
-        academia_dir:    user.academia_dir    ?? "",
-        academia_tel:    user.academia_tel    ?? "",
-      })
-    }
-  }, [user])
-
-  const saveMut = useMutation({
-    mutationFn: () => authApi.updateProfile(form),
-    onSuccess: (res) => {
-      setUser(res.data)
-      setSaveState("saved")
-      setTimeout(() => setSaveState("idle"), 3000)
-    },
-    onError: () => { setSaveState("error"); setTimeout(() => setSaveState("idle"), 4000) },
-  })
-
-  const field = (key: keyof typeof form, label: string, placeholder = "") => (
-    <div key={key}>
-      <label className="block text-xs font-semibold text-pine-700 mb-1">{label}</label>
-      <input
-        type="text"
-        value={form[key]}
-        placeholder={placeholder}
-        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
-      />
-    </div>
-  )
+  const { user } = useAuthStore()
 
   return (
     <div className="max-w-lg">
@@ -61,40 +21,11 @@ export default function ConfigPage() {
         </div>
       </div>
 
-      {/* Academy settings */}
-      <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
-        <p className="text-xs font-bold uppercase tracking-widest text-pine-600">Datos de la academia</p>
-
-        {field("academia_nombre", "Nombre de la academia", "Mi Academia de Inglés")}
-        {field("academia_nif",    "NIF / CIF",             "B12345678")}
-        {field("academia_dir",    "Dirección",             "C/ Mayor 1, Madrid")}
-        {field("academia_tel",    "Teléfono",              "912 345 678")}
-
-        <div>
-          <label className="block text-xs font-semibold text-pine-700 mb-1">Email (no editable)</label>
-          <input
-            type="text"
-            value={user?.email ?? ""}
-            disabled
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-khaki-100 text-pine-600 cursor-not-allowed"
-          />
-        </div>
-
-        <div className="flex items-center justify-end gap-3 pt-1">
-          {saveState === "saved" && (
-            <span className="text-green-600 text-sm font-medium">✓ Guardado</span>
-          )}
-          {saveState === "error" && (
-            <span className="text-red-600 text-sm">Error al guardar.</span>
-          )}
-          <button
-            onClick={() => { setSaveState("idle"); saveMut.mutate() }}
-            disabled={saveMut.isPending}
-            className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
-            {saveMut.isPending ? "Guardando..." : "Guardar cambios"}
-          </button>
-        </div>
-      </div>
+      {/* Billing/legal data — one section per brand (Cami&Co, Rangers
+          Academy), since they're two separate fiscal identities. This
+          replaced the old single "Datos de la academia" fields, which were
+          never actually read by invoice generation. */}
+      <EmisoresConfigSection />
 
       <NivelesConfigSection />
 
