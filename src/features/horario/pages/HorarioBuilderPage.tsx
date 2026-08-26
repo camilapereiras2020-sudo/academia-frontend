@@ -71,6 +71,20 @@ function committedGruposOf(a: Alumno): Set<number> {
   return new Set((a.grupos_detalle ?? []).map(g => g.grupo))
 }
 
+// A student's personal time within a class — null/null means "the full
+// class session" (Grupo.horarios as-is). Falls back to horarios[0] as the
+// class's reference window; every seeded Grupo meets once a week so this
+// hasn't been a real limitation, but a grupo meeting more than once a week
+// would need a per-day override to do this properly.
+function horarioPersonalFor(a: Alumno, grupoId: number, grupo: Grupo | undefined) {
+  const gd = (a.grupos_detalle ?? []).find(x => x.grupo === grupoId)
+  const claseIni = grupo?.horarios?.[0]?.ini ?? ""
+  const claseFin = grupo?.horarios?.[0]?.fin ?? ""
+  const ini = gd?.hora_inicio ?? claseIni
+  const fin = gd?.hora_fin ?? claseFin
+  return { ini, fin, personalizado: !!(gd?.hora_inicio || gd?.hora_fin) }
+}
+
 function draftKey(alumnoId: number, grupoId: number) {
   return `${alumnoId}:${grupoId}`
 }
@@ -140,6 +154,32 @@ export default function HorarioBuilderPage() {
     },
     onError: () => setToast("Error al guardar. Los cambios sin guardar siguen aquí — inténtalo de nuevo."),
   })
+
+  // Personal time window (a student who joins late / leaves early) is saved
+  // immediately, independent of the placement draft/save-bar above — it edits
+  // an existing membership rather than staging a new one.
+  const horarioPersonalMut = useMutation({
+    mutationFn: ({ alumnoId, grupoId, hora_inicio, hora_fin }: {
+      alumnoId: number; grupoId: number; hora_inicio: string | null; hora_fin: string | null
+    }) => alumnosApi.horarioPersonal(alumnoId, grupoId, hora_inicio, hora_fin),
+    onSuccess: (_res, vars) => {
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      setTimeEdits(prev => {
+        const next = { ...prev }
+        delete next[vars.alumnoId]
+        return next
+      })
+      setToast("Horario personal guardado.")
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      setToast(msg || "Error al guardar el horario personal.")
+    },
+  })
+  // Locally-edited (not-yet-saved) time inputs, keyed by alumnoId — separate
+  // from the alumno's actual saved hora_inicio/hora_fin so typing doesn't
+  // fire a save on every keystroke.
+  const [timeEdits, setTimeEdits] = useState<Record<number, { ini: string; fin: string }>>({})
 
   // Draft entries regrouped by alumno so effective-membership lookups don't
   // have to scan the whole draft map for every alumno on every render.
@@ -387,10 +427,16 @@ export default function HorarioBuilderPage() {
         )}
         {/* Names right on the block, not just a count — so an assignment
             never looks like it "disappeared" after a drag; you can see who's
-            in the class without opening the drawer. */}
+            in the class without opening the drawer. A student with a
+            personal (partial) window also shows their actual time range,
+            not just the class's — that's the whole point of the feature. */}
         {roster && roster.length > 0 && (
           <div className="text-[9px] leading-tight font-semibold truncate">
-            {roster.map(a => initials(a.nombre)).join(" · ")}
+            {roster.map(a => {
+              const grupo = props.grupoId != null ? grupos.find(g => g.id === props.grupoId) : undefined
+              const hp = props.grupoId != null ? horarioPersonalFor(a, props.grupoId, grupo) : null
+              return hp?.personalizado ? `${initials(a.nombre)} ${hp.ini}–${hp.fin}` : initials(a.nombre)
+            }).join(" · ")}
           </div>
         )}
       </div>
@@ -580,25 +626,61 @@ export default function HorarioBuilderPage() {
               {selectedRoster.length === 0 ? (
                 <p className="text-xs text-pine-600 italic">Sin alumnos todavía. Arrastra desde la izquierda.</p>
               ) : (
-                <div ref={drawerRosterRef} className="space-y-1.5">
-                  {selectedRoster.map(a => (
-                    <div key={a.id}
-                      className="roster-pill flex items-center justify-between bg-khaki-100 rounded-lg px-3 py-2 text-sm cursor-grab select-none"
-                      data-name={a.nombre} data-alumno-id={a.id} data-source-grupo-id={selectedGrupoId ?? undefined}>
-                      <span className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
-                          {initials(a.nombre)}
-                        </span>
-                        {a.nombre}
-                      </span>
-                      <span className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                          className="text-pine-400 hover:text-brass-700 text-xs">↗</button>
-                        <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)}
-                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                      </span>
-                    </div>
-                  ))}
+                <div ref={drawerRosterRef} className="space-y-2">
+                  {selectedRoster.map(a => {
+                    const hp = horarioPersonalFor(a, selectedGrupoId!, selectedGrupo ?? undefined)
+                    const edit = timeEdits[a.id] ?? { ini: hp.ini, fin: hp.fin }
+                    const dirtyTime = edit.ini !== hp.ini || edit.fin !== hp.fin
+                    return (
+                      <div key={a.id} className="bg-khaki-100 rounded-lg px-3 py-2">
+                        <div
+                          className="roster-pill flex items-center justify-between text-sm cursor-grab select-none"
+                          data-name={a.nombre} data-alumno-id={a.id} data-source-grupo-id={selectedGrupoId ?? undefined}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                              {initials(a.nombre)}
+                            </span>
+                            {a.nombre}
+                          </span>
+                          <span className="flex items-center gap-2 flex-shrink-0">
+                            <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
+                              className="text-pine-400 hover:text-brass-700 text-xs">↗</button>
+                            <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)}
+                              className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                          </span>
+                        </div>
+                        {/* Personal window — a student who comes for part of
+                            the session (e.g. class runs 17:00–19:00 but this
+                            one only stays 17:00–18:00). Blank = full class. */}
+                        <div className="flex items-center gap-1.5 mt-1.5 pl-7">
+                          <input type="time" value={edit.ini}
+                            onChange={e => setTimeEdits(prev => ({ ...prev, [a.id]: { ini: e.target.value, fin: edit.fin } }))}
+                            className="text-[11px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
+                          <span className="text-[10px] text-pine-500">–</span>
+                          <input type="time" value={edit.fin}
+                            onChange={e => setTimeEdits(prev => ({ ...prev, [a.id]: { ini: edit.ini, fin: e.target.value } }))}
+                            className="text-[11px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
+                          {dirtyTime && (
+                            <button
+                              onClick={() => horarioPersonalMut.mutate({ alumnoId: a.id, grupoId: selectedGrupoId!, hora_inicio: edit.ini, hora_fin: edit.fin })}
+                              disabled={horarioPersonalMut.isPending}
+                              className="text-[10px] font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded px-1.5 py-0.5 disabled:opacity-50">
+                              Guardar
+                            </button>
+                          )}
+                          {!dirtyTime && hp.personalizado && (
+                            <button
+                              onClick={() => horarioPersonalMut.mutate({ alumnoId: a.id, grupoId: selectedGrupoId!, hora_inicio: null, hora_fin: null })}
+                              disabled={horarioPersonalMut.isPending}
+                              title="Volver al horario completo de la clase"
+                              className="text-[10px] text-pine-500 hover:text-pine-700 underline disabled:opacity-50">
+                              horario completo
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

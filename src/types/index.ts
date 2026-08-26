@@ -19,6 +19,9 @@ export interface Profesor {
 
 export interface AlumnoGrupo {
   grupo: number; grupo_nombre: string; horarios: { dia: number; ini: string; fin: string }[]
+  // Personal window within the class's own session — null means "the full
+  // session" (a student who arrives late / leaves early gets a narrower one).
+  hora_inicio: string | null; hora_fin: string | null
 }
 
 export type Marca = "cami_and_co" | "rangers_academy"

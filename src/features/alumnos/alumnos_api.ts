@@ -28,8 +28,13 @@ export const alumnosApi = {
   // additive/subtractive single-membership ops (not a replace-all PATCH), so
   // the Horario builder can assign/unassign one class without touching the
   // student's other classes.
-  agregarGrupo: (id: number, grupoId: number) =>
-    api.post<Alumno>(`/alumnos/${id}/agregar-grupo/`, { grupo_id: grupoId }),
+  agregarGrupo: (id: number, grupoId: number, horario?: { hora_inicio: string | null; hora_fin: string | null }) =>
+    api.post<Alumno>(`/alumnos/${id}/agregar-grupo/`, { grupo_id: grupoId, ...horario }),
   quitarGrupo: (id: number, grupoId: number) =>
     api.post<Alumno>(`/alumnos/${id}/quitar-grupo/`, { grupo_id: grupoId }),
+  // Sets/resets one membership's personal window within the class (a
+  // student who doesn't stay the full session) — pass nulls for both to
+  // reset back to the class's own full schedule.
+  horarioPersonal: (id: number, grupoId: number, hora_inicio: string | null, hora_fin: string | null) =>
+    api.post<Alumno>(`/alumnos/${id}/horario-personal/`, { grupo_id: grupoId, hora_inicio, hora_fin }),
 }
