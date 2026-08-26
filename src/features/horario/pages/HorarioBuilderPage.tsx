@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import FullCalendar from "@fullcalendar/react"
 import timeGridPlugin from "@fullcalendar/timegrid"
-import resourcePlugin from "@fullcalendar/resource"
-import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid"
 import interactionPlugin, { Draggable } from "@fullcalendar/interaction"
 import esLocale from "@fullcalendar/core/locales/es"
 import type { EventContentArg } from "@fullcalendar/core"
@@ -15,8 +13,6 @@ import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
 import { PALETTE } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import type { Alumno, Grupo, Marca, Profesor } from "@/types"
-
-const SIN_PROFESOR_RESOURCE_ID = "none"
 
 const MAX_PER_CLASS = 6
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
@@ -40,7 +36,6 @@ interface CalEvent {
   backgroundColor: string
   borderColor: string
   textColor: string
-  resourceId: string
   extendedProps: {
     grupoId: number; roster: Alumno[]; profesorId: number | null; profesorNombre: string | null
     aula: string; marca: Marca
@@ -352,9 +347,6 @@ export default function HorarioBuilderPage() {
       backgroundColor: pal.bg,
       borderColor: pal.border,
       textColor: pal.text,
-      // Only actually used by the "Por profesor" resource view — ignored by
-      // the regular day-column view, harmless to always set.
-      resourceId: g.profesor != null ? String(g.profesor) : SIN_PROFESOR_RESOURCE_ID,
       extendedProps: {
         grupoId: g.id, roster, profesorId: g.profesor ?? null, profesorNombre: g.profesor_nombre ?? null,
         aula: g.aula, marca: g.marca, dirty,
@@ -363,14 +355,10 @@ export default function HorarioBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [visibleGrupos, rosterByGrupo, committedRosterByGrupo, profesorColor])
 
-  // "Por profesor" view splits each day's column into one sub-column per
-  // teacher, so Candela's and Camila's Wednesday-7pm slots sit side by side
-  // instead of stacking as overlapping events in one shared column.
+  // "Por profesor" view renders one calendar per teacher side by side (plus
+  // a "Sin profe" bucket), so Candela's and Camila's Wednesday-7pm slots line
+  // up directly for comparison instead of sharing one column.
   const [vistaProfesor, setVistaProfesor] = useState(false)
-  const resources = useMemo(() => [
-    ...profesores.filter(p => p.activo).map(p => ({ id: String(p.id), title: p.nombre })),
-    { id: SIN_PROFESOR_RESOURCE_ID, title: "Sin profe" },
-  ], [profesores])
 
   // External drag sources: unassigned pills in the sidebar, and already-assigned
   // pills inside the open class drawer (so a student can be dragged straight
@@ -536,6 +524,68 @@ export default function HorarioBuilderPage() {
   const selectedGrupo = grupos.find(g => g.id === selectedGrupoId) ?? null
   const selectedRoster = selectedGrupoId != null ? (rosterByGrupo.get(selectedGrupoId) ?? []) : []
   const profesoresActivos = profesores.filter(p => p.activo)
+  // "Por profesor" columns: one per active teacher, plus a bucket for classes
+  // with nobody assigned.
+  const teacherColumns: { id: number | null; nombre: string }[] = [
+    ...profesoresActivos.map(p => ({ id: p.id, nombre: p.nombre })),
+    { id: null, nombre: "Sin profe" },
+  ]
+
+  // filterProfesorId narrows which events this particular calendar shows
+  // (undefined = show everything, used by the single week view). dropColumnProfesorId
+  // is what a drop onto THIS calendar's empty cells should be attributed to
+  // — each "Por profesor" column already knows its own teacher, no need to
+  // detect it from the drop itself.
+  function renderCalendar(opts: { filterProfesorId?: number | null; dropColumnProfesorId?: number | null; calKey: string }) {
+    const filteredEvents = opts.filterProfesorId === undefined
+      ? events
+      : events.filter(e => e.extendedProps.profesorId === opts.filterProfesorId)
+    return (
+      <FullCalendar
+        key={opts.calKey}
+        plugins={[timeGridPlugin, interactionPlugin]}
+        initialView="timeGridWeek"
+        headerToolbar={false}
+        allDaySlot={false}
+        weekends={false}
+        height="100%"
+        slotMinTime="09:00:00"
+        slotMaxTime="21:30:00"
+        slotDuration="00:30:00"
+        // Grid lines every 30 min for readability, but a drag can still land
+        // on any 5-minute mark — otherwise a drop snaps to the slot's start
+        // (effectively whole hours/half-hours only), while the time inputs
+        // elsewhere on this page accept anything. This keeps drag-and-drop
+        // just as flexible as typing a time in directly.
+        snapDuration="00:05:00"
+        slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+        eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+        dayHeaderFormat={{ weekday: "long" }}
+        locale={esLocale}
+        firstDay={1}
+        events={filteredEvents}
+        eventContent={renderEventContent}
+        eventClick={(info) => {
+          const grupoId = Number(info.event.extendedProps.grupoId)
+          if (Number.isFinite(grupoId) && grupoId > 0) setSelectedGrupoId(grupoId)
+        }}
+        // Deliberately NOT `droppable` — that flag makes FullCalendar auto-add
+        // the dropped element as its own internal calendar event (a ghost
+        // event outside our `events` state, with no grupoId, unremovable and
+        // uneditable). `drop` alone already fires for every external-drag
+        // drop and is all we need — real assignment happens through
+        // `events` (our state) once `stage()`/the API call updates it.
+        drop={(info) => {
+          const alumnoId = Number(info.draggedEl.getAttribute("data-alumno-id"))
+          const nombre = info.draggedEl.getAttribute("data-name") ?? ""
+          const sourceAttr = info.draggedEl.getAttribute("data-source-grupo-id")
+          const sourceGrupoId = sourceAttr ? Number(sourceAttr) : undefined
+          handleDrop(alumnoId, nombre, info.date, sourceGrupoId, opts.dropColumnProfesorId)
+        }}
+        eventReceive={(info) => info.revert()}
+      />
+    )
+  }
 
   return (
     <div className="flex gap-5 h-[calc(100vh-140px)]">
@@ -654,53 +704,22 @@ export default function HorarioBuilderPage() {
       <div className="flex-1 min-w-0 flex flex-col">
         {loadingGrupos ? (
           <p className="text-sm text-pine-600">Cargando…</p>
+        ) : vistaProfesor ? (
+          <div className="flex-1 min-h-0 overflow-x-auto">
+            <div className="flex gap-3 h-full" style={{ minWidth: `${teacherColumns.length * 380}px` }}>
+              {teacherColumns.map(t => (
+                <div key={t.id ?? "none"} className="flex flex-col flex-shrink-0" style={{ width: 380 }}>
+                  <p className="text-xs font-bold uppercase tracking-wide text-pine-700 mb-1 text-center">{t.nombre}</p>
+                  <div className="fc-horario flex-1 min-h-0">
+                    {renderCalendar({ filterProfesorId: t.id, dropColumnProfesorId: t.id, calKey: `prof-${t.id ?? "none"}` })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="fc-horario flex-1 min-h-0">
-            <FullCalendar
-              // Remounted on view toggle (key) — simpler and safe at this
-              // data scale than driving FullCalendar's imperative API.
-              key={vistaProfesor ? "byProfesor" : "byDay"}
-              plugins={[timeGridPlugin, resourcePlugin, resourceTimeGridPlugin, interactionPlugin]}
-              initialView={vistaProfesor ? "resourceTimeGridWeek" : "timeGridWeek"}
-              resources={vistaProfesor ? resources : undefined}
-              headerToolbar={false}
-              allDaySlot={false}
-              weekends={false}
-              height="100%"
-              slotMinTime="09:00:00"
-              slotMaxTime="21:30:00"
-              slotDuration="00:30:00"
-              slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-              eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-              dayHeaderFormat={{ weekday: "long" }}
-              locale={esLocale}
-              firstDay={1}
-              events={events}
-              eventContent={renderEventContent}
-              eventClick={(info) => {
-                const grupoId = Number(info.event.extendedProps.grupoId)
-                if (Number.isFinite(grupoId) && grupoId > 0) setSelectedGrupoId(grupoId)
-              }}
-              // Deliberately NOT `droppable` — that flag makes FullCalendar auto-add
-              // the dropped element as its own internal calendar event (a ghost
-              // event outside our `events` state, with no grupoId, unremovable and
-              // uneditable). `drop` alone already fires for every external-drag
-              // drop and is all we need — real assignment happens through
-              // `events` (our state) once `stage()`/the API call updates it.
-              drop={(info) => {
-                const alumnoId = Number(info.draggedEl.getAttribute("data-alumno-id"))
-                const nombre = info.draggedEl.getAttribute("data-name") ?? ""
-                const sourceAttr = info.draggedEl.getAttribute("data-source-grupo-id")
-                const sourceGrupoId = sourceAttr ? Number(sourceAttr) : undefined
-                // Only present in the "Por profesor" resource view — tells us
-                // which teacher's column the student was dropped into.
-                const resourceId = (info as unknown as { resource?: { id: string } }).resource?.id
-                const resourceProfesorId = resourceId == null ? undefined
-                  : resourceId === SIN_PROFESOR_RESOURCE_ID ? null : Number(resourceId)
-                handleDrop(alumnoId, nombre, info.date, sourceGrupoId, resourceProfesorId)
-              }}
-              eventReceive={(info) => info.revert()}
-            />
+            {renderCalendar({ filterProfesorId: undefined, dropColumnProfesorId: undefined, calKey: "week" })}
           </div>
         )}
       </div>
