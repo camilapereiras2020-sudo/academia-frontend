@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import FullCalendar from "@fullcalendar/react"
 import timeGridPlugin from "@fullcalendar/timegrid"
@@ -76,6 +77,7 @@ function draftKey(alumnoId: number, grupoId: number) {
 
 export default function HorarioBuilderPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState("")
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null)
@@ -467,6 +469,8 @@ export default function HorarioBuilderPage() {
                       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                       {a.nombre}
                       <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
+                      <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
+                        className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
                     </span>
                   )
                 })}
@@ -487,6 +491,8 @@ export default function HorarioBuilderPage() {
                       data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
                       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                       {a.nombre}
+                      <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
+                        className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
                     </span>
                   ))}
                 </div>
@@ -585,8 +591,12 @@ export default function HorarioBuilderPage() {
                         </span>
                         {a.nombre}
                       </span>
-                      <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)}
-                        className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      <span className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
+                          className="text-pine-400 hover:text-brass-700 text-xs">↗</button>
+                        <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)}
+                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      </span>
                     </div>
                   ))}
                 </div>

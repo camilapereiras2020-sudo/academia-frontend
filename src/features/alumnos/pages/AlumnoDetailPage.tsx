@@ -14,6 +14,7 @@ import { api } from "@/lib/axios"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
 import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo } from "@/types"
 
+const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const NIVELES: NivelObjetivo[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
 const EXAMENES: ExamenObjetivo[] = ["KET", "PET", "FCE", "CAE", "CPE", "ninguno"]
 
@@ -233,7 +234,8 @@ export default function AlumnoDetailPage() {
   if (loadingAlumno) return <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Cargando...</p>
   if (!alumno) return <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Alumno no encontrado.</p>
 
-  const grupoDetalle = alumno.grupos_detalle?.[0] ?? null
+  const gruposDetalle = alumno.grupos_detalle ?? []
+  const grupoDetalle = gruposDetalle[0] ?? null // used only for the WhatsApp-reply modal's context line
   const yearsOld = age(alumno.fnac)
   const pagos = resumen?.pagos ?? []
   const fechas = resumen?.fechas_importantes ?? []
@@ -273,7 +275,7 @@ export default function AlumnoDetailPage() {
         <div style={{ flex: 1, minWidth: "12rem" }}>
           <h1 className="page-title">{alumno.nombre}</h1>
           <p className="page-subtitle">
-            {[alumno.marca_display, grupoDetalle?.grupo_nombre, yearsOld !== null ? `${yearsOld} años` : null]
+            {[alumno.marca_display, yearsOld !== null ? `${yearsOld} años` : null]
               .filter(Boolean).join(" · ") || "Sin datos adicionales"}
           </p>
         </div>
@@ -287,6 +289,32 @@ export default function AlumnoDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Horario — a student can be in more than one class a week now, so this
+          lists every current membership, not just a "primary" one. */}
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+            Horario ({gruposDetalle.length})
+          </h2>
+          <button className="btn-ghost" onClick={() => navigate("/horario")}>Editar en Horario →</button>
+        </div>
+        {!gruposDetalle.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin clases asignadas todavía.</p>}
+        {!!gruposDetalle.length && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {gruposDetalle.map(g => (
+              <div key={g.grupo} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)" }}>{g.grupo_nombre}</span>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
+                  {g.horarios.length
+                    ? g.horarios.map((h, i) => <span key={i}>{i > 0 ? " · " : ""}{DIA_LABELS[h.dia]} {h.ini}–{h.fin}</span>)
+                    : "Sin horario configurado"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Datos generales */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>

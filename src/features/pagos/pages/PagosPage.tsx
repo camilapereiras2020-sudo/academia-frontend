@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
@@ -361,7 +361,13 @@ export default function PagosPage() {
             <tbody className="divide-y divide-khaki-100">
               {pagos.map(p => (
                 <tr key={p.id} onClick={() => setSelectedPago(p)} className="hover:bg-khaki-100 cursor-pointer">
-                  <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
+                  <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">
+                    {p.alumno && p.alumno_nombre ? (
+                      <Link to={`/alumnos/${p.alumno}`} onClick={e => e.stopPropagation()} className="hover:text-brass-700 hover:underline">
+                        {p.alumno_nombre}
+                      </Link>
+                    ) : (p.alumno_nombre ?? "—")}
+                  </td>
                   <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
                   <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
                   <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>

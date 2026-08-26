@@ -917,7 +917,7 @@ export default function CRMPage() {
                 className="flex-1 px-4 py-2 border rounded-lg text-sm text-pine-600 hover:bg-khaki-100">
                 Cerrar
               </button>
-              <button onClick={() => navigate(`/alumnos?openId=${matriculaResult.alumno_id}`)}
+              <button onClick={() => navigate(`/alumnos/${matriculaResult.alumno_id}`)}
                 className="flex-1 px-4 py-2 bg-pine-900 text-white rounded-lg text-sm font-medium hover:bg-pine-700">
                 Ver perfil del alumno
               </button>

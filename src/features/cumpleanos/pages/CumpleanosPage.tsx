@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 
@@ -103,7 +104,8 @@ function BirthdayCard({ c }: { c: Cumpleanos }) {
     : null
 
   return (
-    <div className={`rounded-xl border-l-4 shadow-sm p-4 flex items-center gap-4 ${urgencyClass(c.dias_para_cumpleanos)}`}>
+    <Link to={`/alumnos/${c.id}`}
+      className={`rounded-xl border-l-4 shadow-sm p-4 flex items-center gap-4 hover:brightness-95 transition ${urgencyClass(c.dias_para_cumpleanos)}`}>
       <div className="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center text-xl flex-shrink-0">
         🎂
       </div>
@@ -117,6 +119,6 @@ function BirthdayCard({ c }: { c: Cumpleanos }) {
       <div className="flex-shrink-0">
         {urgencyLabel(c.dias_para_cumpleanos)}
       </div>
-    </div>
+    </Link>
   )
 }

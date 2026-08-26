@@ -202,7 +202,9 @@ function OwnerDashboard() {
                 <tbody>
                   {recientes.map(p => (
                     <tr key={p.id}>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-pine-800 whitespace-nowrap">{p.alumno_nombre}</td>
+                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-pine-800 whitespace-nowrap">
+                        {p.alumno ? <Link to={`/alumnos/${p.alumno}`} className="hover:text-brass-700 hover:underline">{p.alumno_nombre}</Link> : p.alumno_nombre}
+                      </td>
                       <td className="px-3.5 py-3 border-b border-khaki-300 text-pine-700 whitespace-nowrap">{p.pagador_nombre}</td>
                       <td className="px-3.5 py-3 border-b border-khaki-300 text-pine-700 whitespace-nowrap">{formatMonth(p.periodo)}</td>
                       <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-pine-900 whitespace-nowrap">{formatEur(Number(p.total))}</td>
@@ -257,7 +259,7 @@ function OwnerDashboard() {
               <div className="flex flex-col gap-2">
                 {cumples.slice(0, 6).map((c: any) => (
                   <div key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
-                    <span className="text-pine-900 font-semibold truncate">{c.nombre}</span>
+                    <Link to={`/alumnos/${c.id}`} className="text-pine-900 font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
                     <span className="text-pine-700 flex-shrink-0">
                       {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos}d`}
                     </span>

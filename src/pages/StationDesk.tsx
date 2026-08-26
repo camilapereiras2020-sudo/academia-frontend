@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import './station-desk-theme.css';
 import crest from '../assets/rangers-crest.png';
@@ -153,12 +154,14 @@ export default function StationDesk() {
   const PAYMENTS = (pagos ?? []).slice(0, 6).map((p) => ({
     invoice: p.num_doc,
     student: p.alumno_nombre ?? '—',
+    alumnoId: p.alumno,
     method: p.metodo,
     amount: eur(Number(p.total)),
     status: ESTADO_LABEL[p.estado] ?? p.estado,
   }));
 
   const BIRTHDAYS = (reception?.cumpleanos ?? []).map((b) => ({
+    id: b.id,
     name: b.nombre,
     date: b.dias_para_cumpleanos === 0 ? 'Today' : `in ${b.dias_para_cumpleanos}d`,
   }));
@@ -414,7 +417,11 @@ export default function StationDesk() {
                       return (
                         <tr key={p.invoice}>
                           <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', fontWeight: 700, color: 'var(--pine-800)' }}>{p.invoice}</td>
-                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>{p.student}</td>
+                          <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>
+                            {p.alumnoId ? (
+                              <Link to={`/alumnos/${p.alumnoId}`} style={{ color: 'var(--pine-800)' }}>{p.student}</Link>
+                            ) : p.student}
+                          </td>
                           <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', color: 'var(--ink-soft)' }}>{p.method}</td>
                           <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)', fontWeight: 700 }}>{p.amount}</td>
                           <td style={{ padding: '13px 14px', fontSize: 14.5, borderBottom: '1px solid var(--paper-line)' }}>
@@ -546,7 +553,13 @@ export default function StationDesk() {
                 ) : (
                   <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
                     {BIRTHDAYS.map((b, i) => (
-                      <div key={i}>{b.name} — {b.date}</div>
+                      <div key={i}>
+                        <Link to={`/alumnos/${b.id}`} style={{ color: 'inherit', textDecoration: 'none' }}
+                          onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                          onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}>
+                          {b.name}
+                        </Link> — {b.date}
+                      </div>
                     ))}
                   </div>
                 )}

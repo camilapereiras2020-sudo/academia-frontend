@@ -202,7 +202,7 @@ export default function GrupoDetailPage() {
         {!roster.length && <p className="text-pine-700 text-sm">Sin alumnos asignados.</p>}
         <div className="flex flex-wrap gap-2">
           {roster.map(a => (
-            <Link key={a.id} to={`/alumnos?openId=${a.id}`}
+            <Link key={a.id} to={`/alumnos/${a.id}`}
               className="text-sm px-3 py-1.5 rounded-lg border hover:bg-khaki-100 text-pine-800">
               {a.nombre}
             </Link>
