@@ -1,8 +1,11 @@
+import { useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { pagosApi } from "@/features/pagos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { gruposApi } from "@/features/grupos/api"
+import { PALETTE } from "@/features/grupos/palette"
 import { formatEur, formatMonth } from "@/lib/utils"
 import { useAuthStore } from "@/store/authStore"
 import ReceptionSummary from "../components/ReceptionSummary"
@@ -14,14 +17,26 @@ const ESTADO_CLS: Record<string, string> = {
   parcial:  "bg-amber-100 text-amber-800",
 }
 
-function buildCalendar() {
-  const now = new Date()
-  const year = now.getFullYear(), month = now.getMonth(), today = now.getDate()
-  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7
+const MESES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+
+function capitalizeFirst(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// 0=Monday..6=Sunday, matching Grupo.horarios.dia (0-5, Mon-Sat; no Sunday classes)
+function dow(year: number, month: number, day: number) {
+  return (new Date(year, month, day).getDay() + 6) % 7
+}
+
+function buildMonthCells(year: number, month: number) {
+  const firstDow = dow(year, month, 1)
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const cells: { num: number | null; isToday: boolean }[] = []
-  for (let i = 0; i < firstDow; i++) cells.push({ num: null, isToday: false })
-  for (let d = 1; d <= daysInMonth; d++) cells.push({ num: d, isToday: d === today })
+  const cells: { day: number | null }[] = []
+  for (let i = 0; i < firstDow; i++) cells.push({ day: null })
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d })
   return cells
 }
 
@@ -47,9 +62,14 @@ export default function DashboardPage() {
 
 function OwnerDashboard() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const mesAct = new Date().toISOString().slice(0, 7)
   const today = new Date()
   const todayDow = (today.getDay() + 6) % 7 // 0=Monday, matching Grupo.horarios.dia
+
+  const [calYear, setCalYear] = useState(today.getFullYear())
+  const [calMonth, setCalMonth] = useState(today.getMonth())
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   const { data: pagosRaw } = useQuery({
     queryKey: ["pagos"],
@@ -94,7 +114,29 @@ function OwnerDashboard() {
     .flatMap(g => g.horarios.filter(h => h.dia === todayDow).map(h => ({ grupo: g, horario: h })))
     .sort((a, b) => a.horario.ini.localeCompare(b.horario.ini))
 
-  const calendarDays = buildCalendar()
+  const calendarDays = useMemo(() => buildMonthCells(calYear, calMonth), [calYear, calMonth])
+
+  function clasesForDay(day: number) {
+    const d = dow(calYear, calMonth, day)
+    return grupos
+      .flatMap(g => g.horarios.filter(h => h.dia === d).map(h => ({ grupo: g, horario: h })))
+      .sort((a, b) => a.horario.ini.localeCompare(b.horario.ini))
+  }
+
+  function prevMonth() {
+    setCalMonth(m => { if (m === 0) { setCalYear(y => y - 1); return 11 } return m - 1 })
+  }
+  function nextMonth() {
+    setCalMonth(m => { if (m === 11) { setCalYear(y => y + 1); return 0 } return m + 1 })
+  }
+  function goToday() {
+    setCalYear(today.getFullYear())
+    setCalMonth(today.getMonth())
+  }
+
+  const isCurrentCalMonth = calYear === today.getFullYear() && calMonth === today.getMonth()
+  const selectedDate = selectedDay != null ? new Date(calYear, calMonth, selectedDay) : null
+  const selectedClases = selectedDay != null ? clasesForDay(selectedDay) : []
 
   return (
     <div className="flex flex-col gap-7">
@@ -124,58 +166,123 @@ function OwnerDashboard() {
         <StatItem label="Grupos activos" value={String(grupos.length)} sub="en curso" />
       </div>
 
-      {/* Trail Log calendar + Today's timetable */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5">
+      {/* Trail Log calendar (full monthly view, compact) + Today's Timetable
+          side by side again, sharing one footprint — the grid row stretches
+          both to the taller one's height, and the timetable scrolls
+          internally instead of growing past it. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5 items-stretch">
 
-        <div className="relative bg-pine-800 border-2 border-pine-800 rounded-md p-5 pb-4.5 overflow-hidden">
-          <svg viewBox="0 0 200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.08]">
-            <circle cx="100" cy="80" r="20" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-            <circle cx="100" cy="80" r="40" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-            <circle cx="100" cy="80" r="60" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-            <circle cx="100" cy="80" r="80" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-          </svg>
-          <div className="relative text-[11px] font-bold text-brass-300 uppercase tracking-[0.05em] mb-2">🧭 Trail Log</div>
-          <div className="relative flex items-baseline justify-between mb-3.5">
-            <div className="font-head text-[16px] text-khaki-100">
-              {today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-            </div>
-          </div>
-          <div className="relative grid grid-cols-7 gap-1.5 text-[10.5px] font-extrabold uppercase text-khaki-300 text-center mb-2">
-            {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => <div key={i}>{d}</div>)}
-          </div>
-          <div className="relative grid grid-cols-7 gap-1.5">
-            {calendarDays.map((d, i) => (
-              <div
-                key={i}
-                className={`aspect-square flex items-center justify-center text-[12.5px] rounded-full ${
-                  d.isToday ? "bg-brass-500 text-pine-900 font-extrabold" : d.num !== null ? "text-khaki-100 font-medium border border-white/10" : ""
-                }`}
-              >
-                {d.num ?? ""}
-              </div>
-            ))}
+      <div className="relative bg-pine-800 border-2 border-pine-800 rounded-md p-4 pb-3 overflow-hidden">
+        <svg viewBox="0 0 200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.08]">
+          <circle cx="100" cy="80" r="20" fill="none" stroke="#F6F1E7" strokeWidth="2" />
+          <circle cx="100" cy="80" r="40" fill="none" stroke="#F6F1E7" strokeWidth="2" />
+          <circle cx="100" cy="80" r="60" fill="none" stroke="#F6F1E7" strokeWidth="2" />
+          <circle cx="100" cy="80" r="80" fill="none" stroke="#F6F1E7" strokeWidth="2" />
+        </svg>
+        <div className="relative flex items-center justify-between flex-wrap gap-2 mb-2">
+          <div className="text-[11px] font-bold text-brass-300 uppercase tracking-[0.05em]">🧭 Trail Log</div>
+          <div className="flex items-center gap-2">
+            <button onClick={goToday}
+              className="px-2 py-0.5 rounded-md border border-white/20 text-[10.5px] font-semibold text-khaki-100 hover:bg-white/10">
+              Hoy
+            </button>
+            <button onClick={prevMonth} aria-label="Mes anterior"
+              className="w-6 h-6 rounded-md border border-white/20 text-khaki-100 hover:bg-white/10 text-[13px]">‹</button>
+            <span className="font-head text-[13.5px] text-khaki-100 w-32 text-center">
+              {capitalizeFirst(MESES[calMonth])} {calYear}
+            </span>
+            <button onClick={nextMonth} aria-label="Mes siguiente"
+              className="w-6 h-6 rounded-md border border-white/20 text-khaki-100 hover:bg-white/10 text-[13px]">›</button>
           </div>
         </div>
-
-        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
-          <div className="px-5 py-4 bg-pine-800 font-head text-[16px] text-khaki-100">🧭 Today's Timetable</div>
-          <div className="px-5 py-2 pb-4">
-            {!timetableHoy.length && (
-              <p className="text-sm text-pine-700 py-4 text-center">Sin clases programadas hoy.</p>
-            )}
-            {timetableHoy.map(({ grupo, horario }, i) => (
-              <div key={`${grupo.id}-${i}`} className="flex items-center gap-3.5 py-2.5 border-b border-khaki-300 last:border-b-0">
-                <div className="font-head text-[15px] text-pine-700 w-16 flex-shrink-0">{horario.ini}</div>
-                <div className="w-2 h-2 rounded-full flex-shrink-0 bg-brass-500" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-pine-900 truncate">{grupo.nombre}</div>
-                  <div className="text-xs text-pine-700">{grupo.aula || "Sin aula asignada"}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="relative grid grid-cols-7 gap-1 text-[9.5px] font-extrabold uppercase text-khaki-300 text-center mb-1">
+          {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => <div key={i}>{d}</div>)}
+        </div>
+        <div className="relative grid grid-cols-7 gap-1">
+          {calendarDays.map((d, i) => {
+            const isToday = isCurrentCalMonth && d.day === today.getDate()
+            const clases = d.day != null ? clasesForDay(d.day) : []
+            return (
+              <button
+                key={i}
+                type="button"
+                disabled={d.day == null}
+                onClick={() => d.day != null && setSelectedDay(d.day)}
+                title={clases.length ? `${clases.length} clase${clases.length === 1 ? "" : "s"}` : undefined}
+                className={`h-7 rounded-md text-[11px] flex items-center justify-center gap-0.5 transition-colors ${
+                  d.day == null ? "cursor-default" : "cursor-pointer hover:bg-white/10"
+                } ${isToday ? "bg-brass-500 text-pine-900 font-extrabold" : "text-khaki-100"}`}
+              >
+                <span>{d.day ?? ""}</span>
+                {clases.slice(0, 3).map((c, ci) => (
+                  <span key={ci} className="w-1 h-1 rounded-full flex-shrink-0"
+                    style={{ background: isToday ? "#1E3A2E" : PALETTE[c.grupo.color_idx % PALETTE.length].accent }} />
+                ))}
+              </button>
+            )
+          })}
         </div>
       </div>
+
+      <div className="bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden flex flex-col">
+        <div className="px-5 py-4 bg-pine-800 font-head text-[16px] text-khaki-100 flex-shrink-0">🧭 Today's Timetable</div>
+        <div className="px-5 py-2 pb-4 overflow-y-auto flex-1 min-h-0">
+          {!timetableHoy.length && (
+            <p className="text-sm text-pine-700 py-4 text-center">Sin clases programadas hoy.</p>
+          )}
+          {timetableHoy.map(({ grupo, horario }, i) => (
+            <div key={`${grupo.id}-${i}`} className="flex items-center gap-3.5 py-2.5 border-b border-khaki-300 last:border-b-0">
+              <div className="font-head text-[15px] text-pine-700 w-16 flex-shrink-0">{horario.ini}</div>
+              <div className="w-2 h-2 rounded-full flex-shrink-0 bg-brass-500" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-pine-900 truncate">{grupo.nombre}</div>
+                <div className="text-xs text-pine-700">{grupo.aula || "Sin aula asignada"}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      </div>
+
+      {/* Day detail — clicking a calendar cell opens this instead of jumping
+          away to /calendario, so a quick look doesn't lose dashboard context. */}
+      {selectedDate && createPortal(
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null) }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
+            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head font-normal text-lg text-pine-900">
+                {capitalizeFirst(selectedDate.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }))}
+              </h2>
+              <button onClick={() => setSelectedDay(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-2">
+              {selectedClases.length === 0 ? (
+                <p className="text-sm text-pine-600">Sin clases programadas este día.</p>
+              ) : (
+                selectedClases.map(({ grupo, horario }, i) => {
+                  const palette = PALETTE[grupo.color_idx % PALETTE.length]
+                  return (
+                    <button key={i} onClick={() => navigate(`/grupos/${grupo.id}`)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border text-left hover:bg-khaki-100 transition-colors"
+                      style={{ borderColor: palette.border }}>
+                      <span className="w-2 h-10 rounded-full flex-shrink-0" style={{ background: palette.accent }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-pine-900 truncate">{grupo.nombre}</p>
+                        <p className="text-xs text-pine-600">
+                          {horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}{grupo.profesor_nombre ? ` · 🧑‍🏫 ${grupo.profesor_nombre}` : ""}
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Ledger + side panels */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">

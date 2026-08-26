@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import './station-desk-theme.css';
 import crest from '../assets/rangers-crest.png';
@@ -74,25 +74,32 @@ const NAV_SECTIONS: { label: string; items: string[] }[] = [
 
 type RollStatus = 'present' | 'absent' | null;
 
-function buildCalendarDays() {
+// hasEvent is driven by real class schedules: a cell's column index (0=Mon
+// ..6=Sun) matches Grupo.horarios.dia directly since the grid is built
+// Monday-first, so any grupo meeting on that weekday marks every cell in
+// that column, not just one specific date (classes recur weekly).
+function buildCalendarDays(year: number, month: number, gruposConHorario: Grupo[]) {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
   const today = now.getDate();
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const eventDays = [3, 7, 12, 18, 22, 27];
 
-  const cells: { num: number | ''; isToday: boolean; hasEvent: boolean }[] = [];
-  for (let i = 0; i < firstDow; i++) cells.push({ num: '', isToday: false, hasEvent: false });
+  const cells: { num: number | ''; isToday: boolean; hasEvent: boolean; dow: number }[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push({ num: '', isToday: false, hasEvent: false, dow: i });
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ num: d, isToday: d === today, hasEvent: eventDays.includes(d) });
+    const dow = (firstDow + d - 1) % 7;
+    const hasEvent = gruposConHorario.some((g) => g.horarios.some((h) => h.dia === dow));
+    cells.push({ num: d, isToday: isCurrentMonth && d === today, hasEvent, dow });
   }
   return cells;
 }
 
 export default function StationDesk() {
+  const navigate = useNavigate();
   const [clock, setClock] = useState(() => new Date());
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [roll, setRoll] = useState<Record<string, RollStatus>>({
     'Marcos Vidal': 'present',
     'Sofía Lago': 'present',
@@ -109,11 +116,17 @@ export default function StationDesk() {
     setRoll((s) => ({ ...s, [name]: s[name] === status ? null : status }));
   };
 
-  const calendarDays = buildCalendarDays();
   const weekdayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const today = clock.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-  const calendarMonth = clock.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const calendarMonth = new Date(calYear, calMonth, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   const clockTime = clock.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  function prevMonth() {
+    setCalMonth((m) => { if (m === 0) { setCalYear((y) => y - 1); return 11; } return m - 1; });
+  }
+  function nextMonth() {
+    setCalMonth((m) => { if (m === 11) { setCalYear((y) => y + 1); return 0; } return m + 1; });
+  }
 
   // ── live data ────────────────────────────────────────────────────────────
 
@@ -139,6 +152,8 @@ export default function StationDesk() {
 
   const statsLoading = alumnosLoading || gruposLoading || pagosLoading;
   const statsError = alumnosError || gruposError || pagosError;
+
+  const calendarDays = buildCalendarDays(calYear, calMonth, grupos ?? []);
 
   const revenue = (pagos ?? []).filter((p) => p.estado === 'pagado').reduce((sum, p) => sum + Number(p.total), 0);
   const outstanding = (pagos ?? []).filter((p) => p.estado !== 'pagado').reduce((sum, p) => sum + Number(p.total), 0);
@@ -321,8 +336,10 @@ export default function StationDesk() {
                   {calendarMonth}
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 3, color: 'var(--khaki-200)', fontSize: 13, cursor: 'pointer' }}>‹</span>
-                  <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 3, color: 'var(--khaki-200)', fontSize: 13, cursor: 'pointer' }}>›</span>
+                  <button type="button" onClick={prevMonth} aria-label="Previous month"
+                    style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 3, color: 'var(--khaki-200)', fontSize: 13, cursor: 'pointer', background: 'transparent' }}>‹</button>
+                  <button type="button" onClick={nextMonth} aria-label="Next month"
+                    style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 3, color: 'var(--khaki-200)', fontSize: 13, cursor: 'pointer', background: 'transparent' }}>›</button>
                 </div>
               </div>
               <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: 'var(--khaki-300)', textAlign: 'center', marginBottom: 8 }}>
@@ -330,8 +347,12 @@ export default function StationDesk() {
               </div>
               <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
                 {calendarDays.map((d, i) => (
-                  <div
+                  <button
                     key={i}
+                    type="button"
+                    disabled={d.num === ''}
+                    onClick={() => navigate('/calendario')}
+                    title={d.hasEvent ? 'View classes on this day' : undefined}
                     style={{
                       aspectRatio: '1',
                       display: 'flex',
@@ -344,6 +365,8 @@ export default function StationDesk() {
                       fontWeight: d.isToday ? 800 : 500,
                       border: d.num === '' || d.isToday ? 'none' : '1px solid rgba(255,255,255,0.12)',
                       position: 'relative',
+                      cursor: d.num === '' ? 'default' : 'pointer',
+                      padding: 0,
                     }}
                   >
                     {d.num}
@@ -357,7 +380,7 @@ export default function StationDesk() {
                         background: d.hasEvent && !d.isToday ? 'var(--brass-300)' : 'transparent',
                       }}
                     />
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
