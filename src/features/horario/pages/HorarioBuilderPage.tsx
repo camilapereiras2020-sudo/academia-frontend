@@ -3,15 +3,20 @@ import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import FullCalendar from "@fullcalendar/react"
 import timeGridPlugin from "@fullcalendar/timegrid"
+import resourcePlugin from "@fullcalendar/resource"
+import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid"
 import interactionPlugin, { Draggable } from "@fullcalendar/interaction"
 import esLocale from "@fullcalendar/core/locales/es"
 import type { EventContentArg } from "@fullcalendar/core"
 import { gruposApi } from "@/features/grupos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { profesoresApi } from "@/features/profesores/api"
+import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
 import { PALETTE } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import type { Alumno, Grupo, Marca, Profesor } from "@/types"
+
+const SIN_PROFESOR_RESOURCE_ID = "none"
 
 const MAX_PER_CLASS = 6
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
@@ -35,8 +40,10 @@ interface CalEvent {
   backgroundColor: string
   borderColor: string
   textColor: string
+  resourceId: string
   extendedProps: {
-    grupoId: number; roster: Alumno[]; profesorNombre: string | null; aula: string; marca: Marca
+    grupoId: number; roster: Alumno[]; profesorId: number | null; profesorNombre: string | null
+    aula: string; marca: Marca
     dirty: boolean
   }
 }
@@ -181,6 +188,48 @@ export default function HorarioBuilderPage() {
   // fire a save on every keystroke.
   const [timeEdits, setTimeEdits] = useState<Record<number, { ini: string; fin: string }>>({})
 
+  // Dropping a student onto an empty cell (no class meets there yet) offers
+  // to create a brand-new class right there, with this student as its first
+  // enrollment — a normal class like any other, others can be added later.
+  const [pendingCreate, setPendingCreate] = useState<{
+    alumnoId: number; alumnoNombre: string; dia: number; horaInicio: string; horaFin: string
+    profesorId: number | null; aula: string; nombre: string; marca: Marca
+  } | null>(null)
+  const [pendingCreateError, setPendingCreateError] = useState("")
+
+  const crearClaseMut = useMutation({
+    mutationFn: async (form: NonNullable<typeof pendingCreate>) => {
+      const grupoRes = await gruposApi.create({
+        nombre: form.nombre.trim(),
+        marca: form.marca,
+        profesor: form.profesorId,
+        aula: form.aula.trim(),
+        color_idx: grupos.length % PALETTE.length,
+        horarios: [{ dia: form.dia, ini: form.horaInicio, fin: form.horaFin }],
+      })
+      await alumnosApi.agregarGrupo(form.alumnoId, grupoRes.data.id)
+      return { grupo: grupoRes.data, alumnoNombre: form.alumnoNombre }
+    },
+    onSuccess: ({ grupo, alumnoNombre }) => {
+      qc.invalidateQueries({ queryKey: ["grupos"] })
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      setPendingCreate(null)
+      setPendingCreateError("")
+      setToast(`"${grupo.nombre}" creada con ${alumnoNombre}.`)
+    },
+    onError: () => setPendingCreateError("Error al crear la clase. Revisa los datos e inténtalo de nuevo."),
+  })
+
+  function handleCrearClase() {
+    if (!pendingCreate) return
+    if (!pendingCreate.nombre.trim()) { setPendingCreateError("Ponle un nombre a la clase."); return }
+    if (!pendingCreate.profesorId) { setPendingCreateError("Elige un profesor/a."); return }
+    if (!pendingCreate.aula.trim()) { setPendingCreateError("Indica el aula."); return }
+    if (pendingCreate.horaFin <= pendingCreate.horaInicio) { setPendingCreateError("La hora de fin debe ser posterior a la de inicio."); return }
+    setPendingCreateError("")
+    crearClaseMut.mutate(pendingCreate)
+  }
+
   // Draft entries regrouped by alumno so effective-membership lookups don't
   // have to scan the whole draft map for every alumno on every render.
   const draftByAlumno = useMemo(() => {
@@ -303,10 +352,25 @@ export default function HorarioBuilderPage() {
       backgroundColor: pal.bg,
       borderColor: pal.border,
       textColor: pal.text,
-      extendedProps: { grupoId: g.id, roster, profesorNombre: g.profesor_nombre ?? null, aula: g.aula, marca: g.marca, dirty },
+      // Only actually used by the "Por profesor" resource view — ignored by
+      // the regular day-column view, harmless to always set.
+      resourceId: g.profesor != null ? String(g.profesor) : SIN_PROFESOR_RESOURCE_ID,
+      extendedProps: {
+        grupoId: g.id, roster, profesorId: g.profesor ?? null, profesorNombre: g.profesor_nombre ?? null,
+        aula: g.aula, marca: g.marca, dirty,
+      },
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [visibleGrupos, rosterByGrupo, committedRosterByGrupo, profesorColor])
+
+  // "Por profesor" view splits each day's column into one sub-column per
+  // teacher, so Candela's and Camila's Wednesday-7pm slots sit side by side
+  // instead of stacking as overlapping events in one shared column.
+  const [vistaProfesor, setVistaProfesor] = useState(false)
+  const resources = useMemo(() => [
+    ...profesores.filter(p => p.activo).map(p => ({ id: String(p.id), title: p.nombre })),
+    { id: SIN_PROFESOR_RESOURCE_ID, title: "Sin profe" },
+  ], [profesores])
 
   // External drag sources: unassigned pills in the sidebar, and already-assigned
   // pills inside the open class drawer (so a student can be dragged straight
@@ -335,12 +399,17 @@ export default function HorarioBuilderPage() {
   // drop time, making elementFromPoint miss the real event underneath and
   // silently no-op the whole drop. The drop's date/time from FullCalendar
   // itself is reliable regardless of what's visually on top.
-  function grupoIdAtDropDate(date: Date): number | null {
+  // resourceProfesorId is only meaningful in the "Por profesor" view (comes
+  // from the column the drop landed in) — in the regular day view it's
+  // undefined and every event at that day/time is a candidate regardless of
+  // who teaches it, same as before this feature existed.
+  function grupoIdAtDropDate(date: Date, resourceProfesorId?: number | null): number | null {
     const dow = date.getDay() // matches CalEvent.daysOfWeek (0=Sun..6=Sat)
     const hh = String(date.getHours()).padStart(2, "0")
     const mm = String(date.getMinutes()).padStart(2, "0")
     const t = `${hh}:${mm}`
-    const match = events.find(e => e.daysOfWeek.includes(dow) && t >= e.startTime && t < e.endTime)
+    const match = events.find(e => e.daysOfWeek.includes(dow) && t >= e.startTime && t < e.endTime &&
+      (resourceProfesorId === undefined || e.extendedProps.profesorId === resourceProfesorId))
     return match ? match.extendedProps.grupoId : null
   }
 
@@ -350,9 +419,30 @@ export default function HorarioBuilderPage() {
   // search results, no specific source class) is always additive: it adds
   // this class on top of whatever the student is already enrolled in,
   // exactly what "2 or 3 classes a week" needs.
-  function handleDrop(alumnoId: number, alumnoNombre: string, dropDate: Date, sourceGrupoId?: number) {
-    const grupoId = grupoIdAtDropDate(dropDate)
-    if (!grupoId) return
+  function handleDrop(
+    alumnoId: number, alumnoNombre: string, dropDate: Date, sourceGrupoId?: number,
+    resourceProfesorId?: number | null
+  ) {
+    const grupoId = grupoIdAtDropDate(dropDate, resourceProfesorId)
+    if (!grupoId) {
+      // Empty cell — no class meets here yet. Rather than no-op, offer to
+      // create one on the spot with this student as its first enrollment.
+      const alumno = alumnos.find(a => a.id === alumnoId)
+      if (!alumno) return
+      const dow = dropDate.getDay()
+      const dia = dow - 1
+      if (dia < 0 || dia > 5) return
+      const horaInicio = `${String(dropDate.getHours()).padStart(2, "0")}:${String(dropDate.getMinutes()).padStart(2, "0")}`
+      const finDate = new Date(dropDate.getTime() + 60 * 60 * 1000)
+      const horaFin = `${String(finDate.getHours()).padStart(2, "0")}:${String(finDate.getMinutes()).padStart(2, "0")}`
+      setPendingCreate({
+        alumnoId, alumnoNombre, dia, horaInicio, horaFin,
+        profesorId: resourceProfesorId ?? null,
+        aula: "", nombre: `${DAY_LABELS[dia]} ${horaInicio} — ${alumno.nombre}`,
+        marca: alumno.marca,
+      })
+      return
+    }
     const grupo = grupos.find(g => g.id === grupoId)
     const alumno = alumnos.find(a => a.id === alumnoId)
     if (!grupo || !alumno) return
@@ -490,6 +580,18 @@ export default function HorarioBuilderPage() {
           ))}
         </div>
 
+        <div className="flex rounded-lg border border-khaki-300 overflow-hidden text-xs font-semibold">
+          <button onClick={() => setVistaProfesor(false)}
+            className={`flex-1 px-2 py-1.5 ${!vistaProfesor ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
+            Vista semana
+          </button>
+          <button onClick={() => setVistaProfesor(true)}
+            className={`flex-1 px-2 py-1.5 border-l border-khaki-300 ${vistaProfesor ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}
+            title="Cada día se divide en una columna por profesor/a">
+            Por profesor
+          </button>
+        </div>
+
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
         <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
@@ -555,8 +657,12 @@ export default function HorarioBuilderPage() {
         ) : (
           <div className="fc-horario flex-1 min-h-0">
             <FullCalendar
-              plugins={[timeGridPlugin, interactionPlugin]}
-              initialView="timeGridWeek"
+              // Remounted on view toggle (key) — simpler and safe at this
+              // data scale than driving FullCalendar's imperative API.
+              key={vistaProfesor ? "byProfesor" : "byDay"}
+              plugins={[timeGridPlugin, resourcePlugin, resourceTimeGridPlugin, interactionPlugin]}
+              initialView={vistaProfesor ? "resourceTimeGridWeek" : "timeGridWeek"}
+              resources={vistaProfesor ? resources : undefined}
               headerToolbar={false}
               allDaySlot={false}
               weekends={false}
@@ -586,7 +692,12 @@ export default function HorarioBuilderPage() {
                 const nombre = info.draggedEl.getAttribute("data-name") ?? ""
                 const sourceAttr = info.draggedEl.getAttribute("data-source-grupo-id")
                 const sourceGrupoId = sourceAttr ? Number(sourceAttr) : undefined
-                handleDrop(alumnoId, nombre, info.date, sourceGrupoId)
+                // Only present in the "Por profesor" resource view — tells us
+                // which teacher's column the student was dropped into.
+                const resourceId = (info as unknown as { resource?: { id: string } }).resource?.id
+                const resourceProfesorId = resourceId == null ? undefined
+                  : resourceId === SIN_PROFESOR_RESOURCE_ID ? null : Number(resourceId)
+                handleDrop(alumnoId, nombre, info.date, sourceGrupoId, resourceProfesorId)
               }}
               eventReceive={(info) => info.revert()}
             />
@@ -699,6 +810,80 @@ export default function HorarioBuilderPage() {
             className="px-3 py-1 rounded-md text-xs font-semibold bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Guardar cambios"}
           </button>
+        </div>
+      )}
+
+      {/* Dropped a student onto an empty cell — offer to create a class right
+          there, prefilled with the day/time (and teacher, if dropped into a
+          "Por profesor" column). A real modal (backdrop) since it needs
+          undivided attention before it can save anything. */}
+      {pendingCreate && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+          onClick={e => { if (e.target === e.currentTarget && !crearClaseMut.isPending) setPendingCreate(null) }}>
+          <div className="bg-white rounded-xl shadow-xl w-96 p-5 space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="font-head text-lg text-pine-900">Nueva clase</h2>
+                <p className="text-xs text-pine-600">
+                  {DAY_LABELS[pendingCreate.dia]} {pendingCreate.horaInicio}–{pendingCreate.horaFin} · {pendingCreate.alumnoNombre} · {BRAND_META[pendingCreate.marca].label}
+                </p>
+              </div>
+              <button onClick={() => setPendingCreate(null)} disabled={crearClaseMut.isPending}
+                className="text-khaki-400 hover:text-pine-600 text-xl leading-none disabled:opacity-50">✕</button>
+            </div>
+
+            {pendingCreateError && (
+              <p className="text-red-600 text-xs bg-red-50 border border-red-200 p-2 rounded-lg">{pendingCreateError}</p>
+            )}
+
+            <div>
+              <label className="text-xs font-semibold text-pine-700">Nombre</label>
+              <input type="text" value={pendingCreate.nombre}
+                onChange={e => setPendingCreate(p => p && { ...p, nombre: e.target.value })}
+                className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Profesor/a</label>
+                <ProfesorSelect value={pendingCreate.profesorId}
+                  onChange={v => setPendingCreate(p => p && { ...p, profesorId: v })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Aula</label>
+                <input type="text" value={pendingCreate.aula} placeholder="Aula 1, Online…"
+                  onChange={e => setPendingCreate(p => p && { ...p, aula: e.target.value })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Hora inicio</label>
+                <input type="time" value={pendingCreate.horaInicio}
+                  onChange={e => setPendingCreate(p => p && { ...p, horaInicio: e.target.value })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Hora fin</label>
+                <input type="time" value={pendingCreate.horaFin}
+                  onChange={e => setPendingCreate(p => p && { ...p, horaFin: e.target.value })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setPendingCreate(null)} disabled={crearClaseMut.isPending}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-pine-600 hover:bg-khaki-100 disabled:opacity-50">
+                Cancelar
+              </button>
+              <button onClick={handleCrearClase} disabled={crearClaseMut.isPending}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
+                {crearClaseMut.isPending ? "Creando…" : "Crear clase"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
