@@ -276,8 +276,14 @@ export default function HorarioBuilderPage() {
     })
   }
 
-  const unassignedByAge = useMemo(() => {
-    let list = alumnos.filter(a => effectiveGruposOf(a).size === 0)
+  // Every student is listed here, grouped by age — including ones already in
+  // a class, since a student with a class is still a valid drag source for
+  // adding a second or third (2-3x/week is normal). This used to only list
+  // unassigned students, and finding an already-assigned one required
+  // knowing to type their name into search — that trick is now redundant
+  // (search still narrows this same list by name) but no longer required.
+  const alumnosByAge = useMemo(() => {
+    let list = alumnos.slice()
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -290,19 +296,16 @@ export default function HorarioBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alumnos, search, marcaFilter, draft])
 
-  const unassignedCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + unassignedByAge[g].length, 0)
+  const visibleCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + alumnosByAge[g].length, 0)
 
-  // When searching, also surface already-assigned students matching the
-  // query — a student already in one class is still a valid drag source for
-  // adding a second or third class (that's the whole point of multi-class).
-  const searchMatches = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return []
-    let list = alumnos.filter(a => a.nombre.toLowerCase().includes(q) && effectiveGruposOf(a).size > 0)
+  // Kept separate from visibleCount (which follows the search box) so the
+  // "N sin asignar" hint in the header stays meaningful even mid-search.
+  const unassignedCount = useMemo(() => {
+    let list = alumnos.filter(a => effectiveGruposOf(a).size === 0)
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
-    return list.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    return list.length
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [alumnos, search, marcaFilter, draft])
+  }, [alumnos, marcaFilter, draft])
 
   const rosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
@@ -370,7 +373,7 @@ export default function HorarioBuilderPage() {
       eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
     })
     return () => d.destroy()
-  }, [unassignedByAge, searchMatches])
+  }, [alumnosByAge])
 
   useEffect(() => {
     if (!drawerRosterRef.current) return
@@ -645,54 +648,39 @@ export default function HorarioBuilderPage() {
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
         <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
-          {search.trim() ? "Resultados" : `Sin asignar (${unassignedCount})`}
+          Alumnos ({visibleCount})
+          <span className="font-normal normal-case text-khaki-400"> · {unassignedCount} sin asignar</span>
         </p>
         <div ref={sidebarRef} className="flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
           {loadingAlumnos ? (
             <p className="text-xs text-pine-600">Cargando…</p>
-          ) : search.trim() ? (
-            // Searching shows EVERY matching student, including ones already
-            // in a class — dragging one onto another slot adds that second
-            // (or third) class without touching their existing ones.
-            searchMatches.length === 0 ? (
-              <p className="text-xs text-pine-600 italic">Sin resultados.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {searchMatches.map(a => {
-                  const n = effectiveGruposOf(a).size
-                  return (
-                    <span key={a.id}
-                      className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
-                      data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
-                      {a.nombre}
-                      <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
-                      <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                        className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
-                    </span>
-                  )
-                })}
-              </div>
-            )
-          ) : unassignedCount === 0 ? (
-            <p className="text-xs text-pine-600 italic">Todo el mundo está asignado ✓</p>
+          ) : visibleCount === 0 ? (
+            <p className="text-xs text-pine-600 italic">{search.trim() ? "Sin resultados." : "Sin alumnos."}</p>
           ) : (
-            AGE_GROUP_ORDER.filter(g => unassignedByAge[g].length > 0).map(g => (
+            // Every student shows here, grouped by age — arrastra a un
+            // hueco para añadir una clase más, tenga ya alguna o no.
+            AGE_GROUP_ORDER.filter(g => alumnosByAge[g].length > 0).map(g => (
               <div key={g}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-khaki-400 mb-1">
-                  {AGE_GROUP_LABELS[g]} ({unassignedByAge[g].length})
+                  {AGE_GROUP_LABELS[g]} ({alumnosByAge[g].length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {unassignedByAge[g].map(a => (
-                    <span key={a.id}
-                      className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
-                      data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
-                      {a.nombre}
-                      <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                        className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
-                    </span>
-                  ))}
+                  {alumnosByAge[g].map(a => {
+                    const n = effectiveGruposOf(a).size
+                    return (
+                      <span key={a.id}
+                        className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
+                        data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
+                        {a.nombre}
+                        {n > 0 && (
+                          <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
+                        )}
+                        <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
+                          className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             ))
