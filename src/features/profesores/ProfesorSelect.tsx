@@ -22,7 +22,9 @@ export function ProfesorSelect({ value, onChange, className, disabled }: {
       <option value="">— Sin profesor/a —</option>
       {currentUnknown && <option value={value!}>(inactivo)</option>}
       {profesores.map(p => (
-        <option key={p.id} value={p.id}>{p.nombre}{p.es_suplente ? " (suplente)" : ""}</option>
+        <option key={p.id} value={p.id}>
+          {p.codigo ? `${p.codigo} · ` : ""}{p.nombre}{p.es_suplente ? " (suplente)" : ""}
+        </option>
       ))}
     </select>
   )

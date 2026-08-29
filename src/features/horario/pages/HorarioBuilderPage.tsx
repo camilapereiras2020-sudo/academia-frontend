@@ -10,11 +10,16 @@ import { gruposApi } from "@/features/grupos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { profesoresApi } from "@/features/profesores/api"
 import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
+import AulaCombobox from "@/features/aulas/AulaCombobox"
 import { PALETTE } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import type { Alumno, Grupo, Marca, Profesor } from "@/types"
 
-const MAX_PER_CLASS = 6
+// 5 is the normal target size; a 6th fits but asks for confirmation first
+// (the playful "eh eh" pop-up) rather than being silently allowed or
+// silently blocked. 6 is the hard ceiling — no override past that.
+const SOFT_MAX_PER_CLASS = 5
+const HARD_MAX_PER_CLASS = 6
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const SIN_PROFESOR_COLOR = { bg: "#e7e3d8", text: "#57534e", border: "#d6d0bf", accent: "#a8a29e" }
 
@@ -185,12 +190,27 @@ export default function HorarioBuilderPage() {
 
   // Dropping a student onto an empty cell (no class meets there yet) offers
   // to create a brand-new class right there, with this student as its first
-  // enrollment — a normal class like any other, others can be added later.
+  // enrollment. The "+ Nueva clase" button opens the same modal with
+  // alumnoId null — an empty class, students added to it afterward.
   const [pendingCreate, setPendingCreate] = useState<{
-    alumnoId: number; alumnoNombre: string; dia: number; horaInicio: string; horaFin: string
+    alumnoId: number | null; alumnoNombre: string; dia: number; horaInicio: string; horaFin: string
     profesorId: number | null; aula: string; nombre: string; marca: Marca
   } | null>(null)
   const [pendingCreateError, setPendingCreateError] = useState("")
+
+  function openNuevaClase() {
+    setPendingCreate({
+      alumnoId: null, alumnoNombre: "", dia: 0, horaInicio: "16:00", horaFin: "17:00",
+      profesorId: null, aula: "", nombre: "", marca: marcaFilter || "rangers_academy",
+    })
+    setPendingCreateError("")
+  }
+
+  // A 6th student fits (HARD_MAX_PER_CLASS) but isn't added silently past the
+  // normal 5 — the drop is held here until the "eh eh" pop-up is confirmed.
+  const [pendingOverflow, setPendingOverflow] = useState<{
+    alumnoId: number; alumnoNombre: string; grupoId: number; grupoNombre: string; sourceGrupoId?: number
+  } | null>(null)
 
   const crearClaseMut = useMutation({
     mutationFn: async (form: NonNullable<typeof pendingCreate>) => {
@@ -202,7 +222,7 @@ export default function HorarioBuilderPage() {
         color_idx: grupos.length % PALETTE.length,
         horarios: [{ dia: form.dia, ini: form.horaInicio, fin: form.horaFin }],
       })
-      await alumnosApi.agregarGrupo(form.alumnoId, grupoRes.data.id)
+      if (form.alumnoId != null) await alumnosApi.agregarGrupo(form.alumnoId, grupoRes.data.id)
       return { grupo: grupoRes.data, alumnoNombre: form.alumnoNombre }
     },
     onSuccess: ({ grupo, alumnoNombre }) => {
@@ -210,7 +230,7 @@ export default function HorarioBuilderPage() {
       qc.invalidateQueries({ queryKey: ["alumnos"] })
       setPendingCreate(null)
       setPendingCreateError("")
-      setToast(`"${grupo.nombre}" creada con ${alumnoNombre}.`)
+      setToast(alumnoNombre ? `"${grupo.nombre}" creada con ${alumnoNombre}.` : `"${grupo.nombre}" creada.`)
     },
     onError: () => setPendingCreateError("Error al crear la clase. Revisa los datos e inténtalo de nuevo."),
   })
@@ -276,8 +296,14 @@ export default function HorarioBuilderPage() {
     })
   }
 
-  const unassignedByAge = useMemo(() => {
-    let list = alumnos.filter(a => effectiveGruposOf(a).size === 0)
+  // Every student is listed here, grouped by age — including ones already in
+  // a class, since a student with a class is still a valid drag source for
+  // adding a second or third (2-3x/week is normal). This used to only list
+  // unassigned students, and finding an already-assigned one required
+  // knowing to type their name into search — that trick is now redundant
+  // (search still narrows this same list by name) but no longer required.
+  const alumnosByAge = useMemo(() => {
+    let list = alumnos.slice()
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -290,19 +316,16 @@ export default function HorarioBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alumnos, search, marcaFilter, draft])
 
-  const unassignedCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + unassignedByAge[g].length, 0)
+  const visibleCount = AGE_GROUP_ORDER.reduce((sum, g) => sum + alumnosByAge[g].length, 0)
 
-  // When searching, also surface already-assigned students matching the
-  // query — a student already in one class is still a valid drag source for
-  // adding a second or third class (that's the whole point of multi-class).
-  const searchMatches = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return []
-    let list = alumnos.filter(a => a.nombre.toLowerCase().includes(q) && effectiveGruposOf(a).size > 0)
+  // Kept separate from visibleCount (which follows the search box) so the
+  // "N sin asignar" hint in the header stays meaningful even mid-search.
+  const unassignedCount = useMemo(() => {
+    let list = alumnos.filter(a => effectiveGruposOf(a).size === 0)
     if (marcaFilter) list = list.filter(a => a.marca === marcaFilter)
-    return list.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    return list.length
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [alumnos, search, marcaFilter, draft])
+  }, [alumnos, marcaFilter, draft])
 
   const rosterByGrupo = useMemo(() => {
     const map = new Map<number, Alumno[]>()
@@ -370,7 +393,7 @@ export default function HorarioBuilderPage() {
       eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
     })
     return () => d.destroy()
-  }, [unassignedByAge, searchMatches])
+  }, [alumnosByAge])
 
   useEffect(() => {
     if (!drawerRosterRef.current) return
@@ -440,8 +463,13 @@ export default function HorarioBuilderPage() {
       return
     }
     const currentRoster = rosterByGrupo.get(grupoId) ?? []
-    if (currentRoster.length >= MAX_PER_CLASS) {
-      setToast(`"${grupo.nombre}" ya tiene ${MAX_PER_CLASS} alumnos (máximo por clase).`)
+    if (currentRoster.length >= HARD_MAX_PER_CLASS) {
+      setToast(`"${grupo.nombre}" ya tiene ${HARD_MAX_PER_CLASS} alumnos (tope máximo).`)
+      return
+    }
+    if (currentRoster.length >= SOFT_MAX_PER_CLASS) {
+      // Would be the 6th — hold the drop and ask first instead of just doing it.
+      setPendingOverflow({ alumnoId, alumnoNombre, grupoId, grupoNombre: grupo.nombre, sourceGrupoId })
       return
     }
     if (sourceGrupoId != null && sourceGrupoId !== grupoId) {
@@ -449,6 +477,17 @@ export default function HorarioBuilderPage() {
     }
     stageAdd(alumnoId, grupoId)
     setToast(`${alumnoNombre} → ${grupo.nombre} (sin guardar todavía).`)
+  }
+
+  function confirmOverflow() {
+    if (!pendingOverflow) return
+    const { alumnoId, alumnoNombre, grupoId, grupoNombre, sourceGrupoId } = pendingOverflow
+    if (sourceGrupoId != null && sourceGrupoId !== grupoId) {
+      stageRemove(alumnoId, sourceGrupoId)
+    }
+    stageAdd(alumnoId, grupoId)
+    setToast(`${alumnoNombre} → ${grupoNombre} (sin guardar todavía).`)
+    setPendingOverflow(null)
   }
 
   useEffect(() => {
@@ -500,7 +539,7 @@ export default function HorarioBuilderPage() {
         <div className="font-head text-[11px] leading-tight truncate pr-6">{arg.event.title}</div>
         {roster && (
           <div className="text-[9px] leading-tight opacity-80 truncate">
-            {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {roster.length}/{MAX_PER_CLASS}
+            {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {roster.length}/{HARD_MAX_PER_CLASS}
           </div>
         )}
         {/* Names right on the block, not just a count — so an assignment
@@ -592,9 +631,15 @@ export default function HorarioBuilderPage() {
       {/* Roster sidebar */}
       <aside className="w-64 flex-shrink-0 flex flex-col gap-3">
         <div>
-          <h1 className="font-head font-normal text-xl text-pine-900">Horario</h1>
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="font-head font-normal text-xl text-pine-900">Horario</h1>
+            <button onClick={openNuevaClase}
+              className="text-xs font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded-lg px-2.5 py-1 flex-shrink-0">
+              + Nueva clase
+            </button>
+          </div>
           <p className="text-xs text-pine-600 mt-0.5">
-            Arrastra alumnos para probar huecos. Nada se guarda hasta que pulses "Guardar cambios".
+            Arrastra alumnos para probar huecos, o crea una clase vacía directamente. Nada se guarda hasta que pulses "Guardar cambios".
           </p>
         </div>
 
@@ -645,54 +690,39 @@ export default function HorarioBuilderPage() {
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
         <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
-          {search.trim() ? "Resultados" : `Sin asignar (${unassignedCount})`}
+          Alumnos ({visibleCount})
+          <span className="font-normal normal-case text-khaki-400"> · {unassignedCount} sin asignar</span>
         </p>
         <div ref={sidebarRef} className="flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
           {loadingAlumnos ? (
             <p className="text-xs text-pine-600">Cargando…</p>
-          ) : search.trim() ? (
-            // Searching shows EVERY matching student, including ones already
-            // in a class — dragging one onto another slot adds that second
-            // (or third) class without touching their existing ones.
-            searchMatches.length === 0 ? (
-              <p className="text-xs text-pine-600 italic">Sin resultados.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {searchMatches.map(a => {
-                  const n = effectiveGruposOf(a).size
-                  return (
-                    <span key={a.id}
-                      className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
-                      data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
-                      {a.nombre}
-                      <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
-                      <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                        className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
-                    </span>
-                  )
-                })}
-              </div>
-            )
-          ) : unassignedCount === 0 ? (
-            <p className="text-xs text-pine-600 italic">Todo el mundo está asignado ✓</p>
+          ) : visibleCount === 0 ? (
+            <p className="text-xs text-pine-600 italic">{search.trim() ? "Sin resultados." : "Sin alumnos."}</p>
           ) : (
-            AGE_GROUP_ORDER.filter(g => unassignedByAge[g].length > 0).map(g => (
+            // Every student shows here, grouped by age — arrastra a un
+            // hueco para añadir una clase más, tenga ya alguna o no.
+            AGE_GROUP_ORDER.filter(g => alumnosByAge[g].length > 0).map(g => (
               <div key={g}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-khaki-400 mb-1">
-                  {AGE_GROUP_LABELS[g]} ({unassignedByAge[g].length})
+                  {AGE_GROUP_LABELS[g]} ({alumnosByAge[g].length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {unassignedByAge[g].map(a => (
-                    <span key={a.id}
-                      className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
-                      data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
-                      {a.nombre}
-                      <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                        className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
-                    </span>
-                  ))}
+                  {alumnosByAge[g].map(a => {
+                    const n = effectiveGruposOf(a).size
+                    return (
+                      <span key={a.id}
+                        className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
+                        data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
+                        {a.nombre}
+                        {n > 0 && (
+                          <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
+                        )}
+                        <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
+                          className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             ))
@@ -750,7 +780,7 @@ export default function HorarioBuilderPage() {
             </div>
             <div className="p-5 overflow-y-auto flex-1">
               <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600 mb-2">
-                Alumnos ({selectedRoster.length}/{MAX_PER_CLASS})
+                Alumnos ({selectedRoster.length}/{HARD_MAX_PER_CLASS})
               </p>
               <p className="text-[11px] text-pine-600 mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
               {selectedRoster.length === 0 ? (
@@ -844,7 +874,9 @@ export default function HorarioBuilderPage() {
               <div>
                 <h2 className="font-head text-lg text-pine-900">Nueva clase</h2>
                 <p className="text-xs text-pine-600">
-                  {DAY_LABELS[pendingCreate.dia]} {pendingCreate.horaInicio}–{pendingCreate.horaFin} · {pendingCreate.alumnoNombre} · {BRAND_META[pendingCreate.marca].label}
+                  {DAY_LABELS[pendingCreate.dia]} {pendingCreate.horaInicio}–{pendingCreate.horaFin}
+                  {pendingCreate.alumnoNombre ? ` · ${pendingCreate.alumnoNombre}` : " · sin alumnos todavía"}
+                  {" · "}{BRAND_META[pendingCreate.marca].label}
                 </p>
               </div>
               <button onClick={() => setPendingCreate(null)} disabled={crearClaseMut.isPending}
@@ -857,9 +889,30 @@ export default function HorarioBuilderPage() {
 
             <div>
               <label className="text-xs font-semibold text-pine-700">Nombre</label>
-              <input type="text" value={pendingCreate.nombre}
+              <input type="text" value={pendingCreate.nombre} placeholder="Clase B1 (Eco Rangers)…"
                 onChange={e => setPendingCreate(p => p && { ...p, nombre: e.target.value })}
                 className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+            </div>
+
+            {/* Marca only matters here (not on the drag-created path) because
+                there's no dropped alumno to infer it from. */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Marca</label>
+                <select value={pendingCreate.marca}
+                  onChange={e => setPendingCreate(p => p && { ...p, marca: e.target.value as Marca })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Día</label>
+                <select value={pendingCreate.dia}
+                  onChange={e => setPendingCreate(p => p && { ...p, dia: Number(e.target.value) })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  {DAY_LABELS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -871,8 +924,8 @@ export default function HorarioBuilderPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-pine-700">Aula</label>
-                <input type="text" value={pendingCreate.aula} placeholder="Aula 1, Online…"
-                  onChange={e => setPendingCreate(p => p && { ...p, aula: e.target.value })}
+                <AulaCombobox value={pendingCreate.aula}
+                  onChange={v => setPendingCreate(p => p && { ...p, aula: v })}
                   className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
               </div>
             </div>
@@ -900,6 +953,28 @@ export default function HorarioBuilderPage() {
               <button onClick={handleCrearClase} disabled={crearClaseMut.isPending}
                 className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
                 {crearClaseMut.isPending ? "Creando…" : "Crear clase"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingOverflow && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+          onClick={e => { if (e.target === e.currentTarget) setPendingOverflow(null) }}>
+          <div className="bg-white rounded-xl shadow-xl w-80 p-5 text-center space-y-3">
+            <p className="text-3xl">😏</p>
+            <p className="text-sm text-pine-800">
+              La clase está completa, pero sabes que entra uno más… eh eh <span className="whitespace-nowrap">;)</span>
+            </p>
+            <div className="flex justify-center gap-2 pt-1">
+              <button onClick={() => setPendingOverflow(null)}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-pine-600 hover:bg-khaki-100">
+                Mejor no
+              </button>
+              <button onClick={confirmOverflow}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700">
+                Que entre
               </button>
             </div>
           </div>
