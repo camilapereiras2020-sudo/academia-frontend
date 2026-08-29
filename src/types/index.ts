@@ -13,8 +13,12 @@ export interface Grupo {
 }
 
 export interface Profesor {
-  id: number; nombre: string; es_suplente: boolean
+  id: number; nombre: string; codigo: string; es_suplente: boolean
   orden: number; activo: boolean; created_at: string
+}
+
+export interface Aula {
+  id: number; nombre: string; codigo: string; activo: boolean; created_at: string
 }
 
 export interface AlumnoGrupo {
