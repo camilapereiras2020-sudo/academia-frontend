@@ -84,7 +84,10 @@ export default function AlumnoDetailPage() {
   const [saludEditing, setSaludEditing] = useState(false)
   const [periodoFilter, setPeriodoFilter] = useState("")
   const [generalEditing, setGeneralEditing] = useState(false)
-  const [generalForm, setGeneralForm] = useState({ nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false })
+  const [generalForm, setGeneralForm] = useState({
+    nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false,
+    colegio_origen: "", idioma_nativo: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
+  })
   const [pagadorDraft, setPagadorDraft] = useState<PagadorDraft>(emptyPagadorDraft())
 
   const { data: alumno, isLoading: loadingAlumno } = useQuery({
@@ -146,6 +149,9 @@ export default function AlumnoDetailPage() {
       setGeneralForm({
         nombre: alumno.nombre, telefono: alumno.telefono ?? "", email: alumno.email ?? "",
         dni: alumno.dni ?? "", notas: alumno.notas ?? "", es_adulto: alumno.es_adulto ?? false,
+        colegio_origen: alumno.colegio_origen ?? "", idioma_nativo: alumno.idioma_nativo ?? "",
+        contacto_emergencia_nombre: alumno.contacto_emergencia_nombre ?? "",
+        contacto_emergencia_telefono: alumno.contacto_emergencia_telefono ?? "",
       })
     }
     setGeneralEditing(true)
@@ -332,6 +338,10 @@ export default function AlumnoDetailPage() {
               <TextInput label="DNI" value={generalForm.dni} onChange={v => setGeneralForm(f => ({ ...f, dni: v }))} />
               <TextInput label="Teléfono" value={generalForm.telefono} onChange={v => setGeneralForm(f => ({ ...f, telefono: v }))} />
               <TextInput label="Email" value={generalForm.email} onChange={v => setGeneralForm(f => ({ ...f, email: v }))} />
+              <TextInput label="Colegio de origen" value={generalForm.colegio_origen} onChange={v => setGeneralForm(f => ({ ...f, colegio_origen: v }))} />
+              <TextInput label="Idioma nativo" value={generalForm.idioma_nativo} onChange={v => setGeneralForm(f => ({ ...f, idioma_nativo: v }))} />
+              <TextInput label="Contacto de emergencia (nombre)" value={generalForm.contacto_emergencia_nombre} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_nombre: v }))} />
+              <TextInput label="Contacto de emergencia (teléfono)" value={generalForm.contacto_emergencia_telefono} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_telefono: v }))} />
             </div>
             <Textarea label="Notas" value={generalForm.notas} onChange={v => setGeneralForm(f => ({ ...f, notas: v }))} />
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text)", cursor: "pointer" }}>
