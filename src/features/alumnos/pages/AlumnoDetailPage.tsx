@@ -89,6 +89,8 @@ export default function AlumnoDetailPage() {
     colegio_origen: "", idioma_nativo: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
   })
   const [pagadorDraft, setPagadorDraft] = useState<PagadorDraft>(emptyPagadorDraft())
+  const [downloadingDocId, setDownloadingDocId] = useState<number | null>(null)
+  const [downloadDocError, setDownloadDocError] = useState("")
 
   const { data: alumno, isLoading: loadingAlumno } = useQuery({
     queryKey: ["alumno", alumnoId],
@@ -124,6 +126,28 @@ export default function AlumnoDetailPage() {
     enabled: !!alumnoId,
   })
   const documentos: Documento[] = Array.isArray(documentosRaw) ? documentosRaw : []
+
+  async function handleDescargarDoc(d: Documento) {
+    setDownloadingDocId(d.id)
+    setDownloadDocError("")
+    try {
+      const res = await api.get(`/documentos/${d.id}/descargar/`, { responseType: "blob" })
+      const url = window.URL.createObjectURL(res.data as Blob)
+      const cliente = d.pago_info?.alumno || d.pago_info?.pagador || ""
+      const filename = `${d.num_doc || d.nombre}${cliente ? " " + cliente : ""}.pdf`.replace(/[\\/:*?"<>|]/g, "")
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+    } catch {
+      setDownloadDocError("No se pudo descargar el documento.")
+    } finally {
+      setDownloadingDocId(null)
+    }
+  }
 
   const pagador = pagadores.find(p => p.id === alumno?.pagador) ?? null
 
@@ -462,11 +486,14 @@ export default function AlumnoDetailPage() {
         <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
           Facturas y recibos
         </h2>
+        {downloadDocError && (
+          <p style={{ fontSize: "0.8rem", color: "var(--terracotta)", marginBottom: "0.75rem" }}>{downloadDocError}</p>
+        )}
         {!documentos.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin documentos generados.</p>}
         {!!documentos.length && (
           <div style={{ overflowX: "auto" }}>
             <table className="data-table">
-              <thead><tr>{["Nº doc", "Tipo", "Fecha de emisión", "Estado"].map(h => <th key={h}>{h}</th>)}</tr></thead>
+              <thead><tr>{["Nº doc", "Tipo", "Fecha de emisión", "Estado", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {documentos.map(d => (
                   <tr key={d.id}>
@@ -477,6 +504,12 @@ export default function AlumnoDetailPage() {
                       <span className="badge" style={d.estado === "anulada" ? { background: "var(--terracotta-muted)", color: "var(--terracotta)" } : { background: "var(--sage-muted)", color: "var(--sage)" }}>
                         {d.estado}
                       </span>
+                    </td>
+                    <td>
+                      <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
+                        disabled={downloadingDocId === d.id} onClick={() => handleDescargarDoc(d)}>
+                        {downloadingDocId === d.id ? "..." : "Abrir / descargar"}
+                      </button>
                     </td>
                   </tr>
                 ))}
