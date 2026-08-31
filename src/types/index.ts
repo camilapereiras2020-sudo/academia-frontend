@@ -45,6 +45,9 @@ export interface Alumno {
   fnac: string | null; telefono: string; email: string; dni: string; nivel: string
   notas: string; aviso_cumple_dias: number | null; pagador: number | null
   es_adulto: boolean
+  activo: boolean
+  motivo_baja: string
+  fecha_baja: string | null
   grupos_detalle: AlumnoGrupo[]; created_at: string
   foto_url: string
   nivel_objetivo: NivelObjetivo | ""
@@ -74,7 +77,7 @@ export interface DatoSalud {
   alergias: string; condiciones_medicas: string; medicacion: string
 }
 
-export type TipoConsentimiento = "autorizacion_imagen" | "proteccion_datos" | "matricula"
+export type TipoConsentimiento = "autorizacion_imagen" | "proteccion_datos" | "matricula" | "politica_cancelacion"
 
 export interface ConsentimientoAlumno {
   id: number; alumno: number

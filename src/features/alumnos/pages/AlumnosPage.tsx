@@ -82,9 +82,14 @@ export default function AlumnosPage() {
   }, [alumnos, searchParams])
 
   const soloIncompletos = searchParams.get("incompletos") === "1"
-  const alumnosFiltrados = soloIncompletos
+  // Ex-alumnos (activo: false) are hidden by default — they're not deleted,
+  // just kept out of the everyday list. This checkbox is the only way back
+  // to them from here (or the "Reactivar" button on their own ficha).
+  const [mostrarExAlumnos, setMostrarExAlumnos] = useState(false)
+  const alumnosFiltrados = (soloIncompletos
     ? alumnos.filter(a => !a.telefono || !a.email)
     : alumnos
+  ).filter(a => mostrarExAlumnos || a.activo !== false)
 
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(pagadoresRaw) ? pagadoresRaw : []
@@ -224,6 +229,10 @@ export default function AlumnosPage() {
             </button>
           ))}
         </div>
+        <label className="flex items-center gap-1.5 text-sm text-pine-700 cursor-pointer select-none">
+          <input type="checkbox" checked={mostrarExAlumnos} onChange={e => setMostrarExAlumnos(e.target.checked)} />
+          Mostrar ex-alumnos
+        </label>
       </div>
 
       {soloIncompletos && (
@@ -269,6 +278,11 @@ export default function AlumnosPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="font-semibold text-pine-900">{a.nombre}</span>
+                  {a.activo === false && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-khaki-200 text-pine-600">
+                      Ex-alumno
+                    </span>
+                  )}
                   {yearsOld !== null && (
                     <span className="text-xs text-pine-600">{yearsOld} años</span>
                   )}
