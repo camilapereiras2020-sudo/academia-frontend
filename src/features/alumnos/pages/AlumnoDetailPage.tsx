@@ -25,6 +25,7 @@ type Documento = {
   num_doc: string
   emitida_at: string | null
   estado: string
+  drive_url?: string | null
   pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
 }
 const DOC_TIPO_LABEL: Record<string, string> = {
@@ -55,8 +56,13 @@ const TIPO_CONSENTIMIENTO_LABELS: Record<TipoConsentimiento, string> = {
   autorizacion_imagen: "Autorización de imagen",
   proteccion_datos: "Protección de datos",
   matricula: "Matrícula",
+  politica_cancelacion: "Política de cancelación",
 }
 const CONSENTIMIENTO_TIPOS = Object.keys(TIPO_CONSENTIMIENTO_LABELS) as TipoConsentimiento[]
+// Tipos con PDF autorrellenable (backend: AlumnoViewSet.documento_legal). Los
+// otros dos (proteccion_datos, matricula) todavía no tienen un renderer —
+// solo se marca la casilla a mano cuando vuelve el papel firmado.
+const TIPOS_CON_PDF: TipoConsentimiento[] = ["autorizacion_imagen", "politica_cancelacion"]
 
 function age(fnac: string | null) {
   if (!fnac) return null
@@ -84,6 +90,8 @@ export default function AlumnoDetailPage() {
   const [saludEditing, setSaludEditing] = useState(false)
   const [periodoFilter, setPeriodoFilter] = useState("")
   const [generalEditing, setGeneralEditing] = useState(false)
+  const [imprimiendoTipo, setImprimiendoTipo] = useState<TipoConsentimiento | null>(null)
+  const [imprimirError, setImprimirError] = useState("")
   const [generalForm, setGeneralForm] = useState({
     nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false,
     colegio_origen: "", idioma_nativo: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
@@ -210,6 +218,37 @@ export default function AlumnoDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }),
   })
 
+  // Ex-alumno toggle — soft flag, nothing is deleted. A deactivated student
+  // stays fully in the system (invoices, history, notes) but drops out of
+  // the default Alumnos list and off the active roster; reactivating needs
+  // no confirmation since it's harmless to undo.
+  const [confirmExAlumno, setConfirmExAlumno] = useState(false)
+  const [motivoBaja, setMotivoBaja] = useState("")
+
+  const marcarExAlumnoMut = useMutation({
+    mutationFn: async (motivo: string) => {
+      // Unenroll from every class first (same op the Horario roster's ✕
+      // uses) so they drop off the schedule, then flag the alumno itself.
+      for (const g of alumno?.grupos_detalle ?? []) {
+        await alumnosApi.quitarGrupo(alumnoId, g.grupo)
+      }
+      return alumnosApi.update(alumnoId, {
+        activo: false, motivo_baja: motivo.trim(), fecha_baja: new Date().toISOString().slice(0, 10),
+      })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["grupos"] })
+      setConfirmExAlumno(false)
+      setMotivoBaja("")
+    },
+  })
+
+  const reactivarMut = useMutation({
+    mutationFn: () => alumnosApi.update(alumnoId, { activo: true, motivo_baja: "", fecha_baja: null }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }),
+  })
+
   const pagadorFieldsMut = useMutation({
     mutationFn: () => {
       if (!pagador) return Promise.resolve(null)
@@ -254,6 +293,35 @@ export default function AlumnoDetailPage() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["consentimientos-alumno", alumnoId] }),
   })
+
+  // Abre en una pestaña nueva el PDF autorrellenado (nombre, fecha de
+  // nacimiento, grupo, pagador, datos reales de la marca) listo para
+  // imprimir y firmar a mano — mismo patrón fetch+blob que
+  // DocumentosPage.handleDescargar, porque el endpoint exige el Bearer
+  // token y un <a href> plano no lo manda.
+  async function handleImprimirDocumento(tipo: TipoConsentimiento) {
+    setImprimirError("")
+    setImprimiendoTipo(tipo)
+    const nuevaVentana = window.open("", "_blank")
+    try {
+      const token = localStorage.getItem("access_token")
+      const base = import.meta.env.VITE_API_URL ?? "/api/v1"
+      const res = await fetch(`${base}/alumnos/${alumnoId}/documento-legal/${tipo}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(`No se pudo generar el documento (código ${res.status}).`)
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      if (nuevaVentana) nuevaVentana.location.href = url
+      else window.open(url, "_blank")
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000)
+    } catch (err) {
+      nuevaVentana?.close()
+      setImprimirError(err instanceof Error ? err.message : "Error al generar el documento.")
+    } finally {
+      setImprimiendoTipo(null)
+    }
+  }
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -303,11 +371,27 @@ export default function AlumnoDetailPage() {
         <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFotoChange} style={{ display: "none" }} />
 
         <div style={{ flex: 1, minWidth: "12rem" }}>
-          <h1 className="page-title">{alumno.nombre}</h1>
+          <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            {alumno.nombre}
+            {alumno.activo === false && (
+              <span style={{
+                fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+                padding: "0.15rem 0.5rem", borderRadius: "999px", background: "#f1e4d0", color: "#7a5a2c",
+              }}>
+                Ex-alumno
+              </span>
+            )}
+          </h1>
           <p className="page-subtitle">
             {[alumno.marca_display, yearsOld !== null ? `${yearsOld} años` : null]
               .filter(Boolean).join(" · ") || "Sin datos adicionales"}
           </p>
+          {alumno.activo === false && (
+            <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "0.25rem" }}>
+              Baja{alumno.fecha_baja ? ` el ${new Date(alumno.fecha_baja).toLocaleDateString("es-ES")}` : ""}
+              {alumno.motivo_baja ? ` — ${alumno.motivo_baja}` : ""}
+            </p>
+          )}
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -317,8 +401,47 @@ export default function AlumnoDetailPage() {
           <button className="btn-ghost" onClick={() => setShowWhatsappModal(true)}>
             Generar respuesta WhatsApp
           </button>
+          {alumno.activo === false ? (
+            <button className="btn-ghost" disabled={reactivarMut.isPending} onClick={() => reactivarMut.mutate()}>
+              Reactivar alumno
+            </button>
+          ) : (
+            <button className="btn-ghost" disabled={marcarExAlumnoMut.isPending} onClick={() => setConfirmExAlumno(true)}>
+              Marcar como ex-alumno
+            </button>
+          )}
         </div>
       </div>
+
+      {confirmExAlumno && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-pine-900 mb-1">Marcar como ex-alumno</h3>
+            <p className="text-sm text-pine-800 mb-3">
+              {alumno.nombre} se dará de baja de {gruposDetalle.length
+                ? `sus ${gruposDetalle.length} clase${gruposDetalle.length === 1 ? "" : "s"}`
+                : "el horario"} y dejará de aparecer en la lista de alumnos activos por defecto. Sus datos,
+              facturas e historial se conservan tal cual — podés reactivarlo cuando quieras.
+            </p>
+            <label style={{ fontSize: "0.8rem", color: "var(--text-dim)", display: "block", marginBottom: "0.3rem" }}>
+              Motivo (opcional)
+            </label>
+            <textarea value={motivoBaja} onChange={e => setMotivoBaja(e.target.value)} rows={3}
+              placeholder="Se muda de ciudad, cambia de academia, termina el curso..."
+              className="w-full border border-khaki-300 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brass-500" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setConfirmExAlumno(false); setMotivoBaja("") }}
+                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
+                Cancelar
+              </button>
+              <button onClick={() => marcarExAlumnoMut.mutate(motivoBaja)} disabled={marcarExAlumnoMut.isPending}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                {marcarExAlumnoMut.isPending ? "Guardando…" : "Marcar como ex-alumno"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Horario — a student can be in more than one class a week now, so this
           lists every current membership, not just a "primary" one. */}
@@ -505,11 +628,17 @@ export default function AlumnoDetailPage() {
                         {d.estado}
                       </span>
                     </td>
-                    <td>
+                    <td style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                       <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
                         disabled={downloadingDocId === d.id} onClick={() => handleDescargarDoc(d)}>
-                        {downloadingDocId === d.id ? "..." : "Abrir / descargar"}
+                        {downloadingDocId === d.id ? "..." : "Descargar"}
                       </button>
+                      {d.drive_url && (
+                        <a className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
+                          href={d.drive_url} target="_blank" rel="noopener noreferrer">
+                          Ver en Drive
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -611,6 +740,16 @@ export default function AlumnoDetailPage() {
                   <input type="checkbox" checked={firmado} onChange={e => consentMut.mutate({ tipo, firmado: e.target.checked })} />
                   <span style={{ fontSize: "0.875rem", color: "var(--text)" }}>{TIPO_CONSENTIMIENTO_LABELS[tipo]}</span>
                   {c?.documento_url && <a href={c.documento_url} target="_blank" rel="noreferrer" style={{ fontSize: "0.75rem", color: "var(--gold)" }}>Ver documento</a>}
+                  {TIPOS_CON_PDF.includes(tipo) && (
+                    <button
+                      className="btn-ghost"
+                      style={{ fontSize: "0.75rem", padding: "0.15rem 0.5rem" }}
+                      disabled={imprimiendoTipo === tipo}
+                      onClick={() => handleImprimirDocumento(tipo)}
+                    >
+                      {imprimiendoTipo === tipo ? "Generando…" : "Imprimir"}
+                    </button>
+                  )}
                 </div>
                 <span className="badge" style={firmado ? { background: "var(--sage-muted)", color: "var(--sage)" } : { background: "var(--terracotta-muted)", color: "var(--terracotta)" }}>
                   {firmado ? `Firmado${c?.fecha_firma ? " · " + formatDate(c.fecha_firma) : ""}` : "Pendiente"}
@@ -619,6 +758,9 @@ export default function AlumnoDetailPage() {
             )
           })}
         </div>
+        {imprimirError && (
+          <p style={{ fontSize: "0.8rem", color: "var(--terracotta)", marginTop: "0.6rem" }}>{imprimirError}</p>
+        )}
       </section>
 
       {/* Salud — never rendered for reception */}
