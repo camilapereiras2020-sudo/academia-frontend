@@ -198,6 +198,77 @@ export default function HorarioBuilderPage() {
   } | null>(null)
   const [pendingCreateError, setPendingCreateError] = useState("")
 
+  // Editing/deleting the class currently open in the roster drawer. Mirrors
+  // pendingCreate's shape/modal so it feels like the same form — but only
+  // touches horarios[0]; a class meeting more than once a week still needs
+  // the Grupos page to edit its other slots (see editarClaseMut below).
+  const [editingClase, setEditingClase] = useState<{
+    nombre: string; marca: Marca; profesorId: number | null; aula: string
+    dia: number; horaInicio: string; horaFin: string
+  } | null>(null)
+  const [editingClaseError, setEditingClaseError] = useState("")
+  const [confirmDeleteClase, setConfirmDeleteClase] = useState<Grupo | null>(null)
+  const [deleteClaseError, setDeleteClaseError] = useState("")
+
+  function openEditarClase() {
+    if (!selectedGrupo) return
+    const primerHorario = (selectedGrupo.horarios ?? [])[0]
+    setEditingClase({
+      nombre: selectedGrupo.nombre,
+      marca: selectedGrupo.marca,
+      profesorId: selectedGrupo.profesor ?? null,
+      aula: selectedGrupo.aula ?? "",
+      dia: primerHorario?.dia ?? 0,
+      horaInicio: primerHorario?.ini ?? "16:00",
+      horaFin: primerHorario?.fin ?? "17:00",
+    })
+    setEditingClaseError("")
+  }
+
+  const editarClaseMut = useMutation({
+    mutationFn: async (form: NonNullable<typeof editingClase>) => {
+      if (!selectedGrupo) throw new Error("no grupo")
+      const restoHorarios = (selectedGrupo.horarios ?? []).slice(1)
+      return gruposApi.update(selectedGrupo.id, {
+        nombre: form.nombre.trim(),
+        marca: form.marca,
+        profesor: form.profesorId,
+        aula: form.aula.trim(),
+        horarios: [{ dia: form.dia, ini: form.horaInicio, fin: form.horaFin }, ...restoHorarios],
+      })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grupos"] })
+      setEditingClase(null)
+      setEditingClaseError("")
+      setToast("Clase actualizada.")
+    },
+    onError: () => setEditingClaseError("Error al guardar los cambios. Revisa los datos e inténtalo de nuevo."),
+  })
+
+  function handleGuardarClase() {
+    if (!editingClase) return
+    if (!editingClase.nombre.trim()) { setEditingClaseError("Ponle un nombre a la clase."); return }
+    if (!editingClase.profesorId) { setEditingClaseError("Elige un profesor/a."); return }
+    if (!editingClase.aula.trim()) { setEditingClaseError("Indica el aula."); return }
+    if (editingClase.horaFin <= editingClase.horaInicio) { setEditingClaseError("La hora de fin debe ser posterior a la de inicio."); return }
+    setEditingClaseError("")
+    editarClaseMut.mutate(editingClase)
+  }
+
+  const eliminarClaseMut = useMutation({
+    mutationFn: (id: number) => gruposApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grupos"] })
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      setConfirmDeleteClase(null)
+      setDeleteClaseError("")
+      setSelectedGrupoId(null)
+      setToast("Clase eliminada.")
+    },
+    onError: (err: any) => setDeleteClaseError(err.response?.data?.error ?? "Error al eliminar la clase."),
+  })
+
   function openNuevaClase() {
     setPendingCreate({
       alumnoId: null, alumnoNombre: "", dia: 0, horaInicio: "16:00", horaFin: "17:00",
@@ -386,11 +457,16 @@ export default function HorarioBuilderPage() {
   // External drag sources: unassigned pills in the sidebar, and already-assigned
   // pills inside the open class drawer (so a student can be dragged straight
   // from one class to another without unassigning first).
+  // longPressDelay: touch needs a deliberate hold before a drag starts (the
+  // default is tuned for FullCalendar's internal event dragging, not this
+  // external-pill case) — 250ms is enough to tell a drag from a scroll swipe
+  // without feeling sluggish on a tablet.
   useEffect(() => {
     if (!sidebarRef.current) return
     const d = new Draggable(sidebarRef.current, {
       itemSelector: ".student-pill",
       eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
+      longPressDelay: 250,
     })
     return () => d.destroy()
   }, [alumnosByAge])
@@ -400,6 +476,7 @@ export default function HorarioBuilderPage() {
     const d = new Draggable(drawerRosterRef.current, {
       itemSelector: ".roster-pill",
       eventData: (el) => ({ title: el.getAttribute("data-name") ?? "" }),
+      longPressDelay: 250,
     })
     return () => d.destroy()
   }, [selectedGrupoId, rosterByGrupo])
@@ -591,6 +668,7 @@ export default function HorarioBuilderPage() {
         slotMinTime="09:00:00"
         slotMaxTime="21:30:00"
         slotDuration="00:30:00"
+        longPressDelay={250}
         // Grid lines every 30 min for readability, but a drag can still land
         // on any 5-minute mark — otherwise a drop snaps to the slot's start
         // (effectively whole hours/half-hours only), while the time inputs
@@ -627,9 +705,13 @@ export default function HorarioBuilderPage() {
   }
 
   return (
-    <div className="flex gap-5 h-[calc(100vh-140px)]">
+    // Below `lg` (1024px — iPad portrait and phones) the roster panel and
+    // calendar stack instead of sitting side by side; there isn't enough
+    // width to keep both usable at once. `lg` and up (iPad landscape,
+    // desktop) keeps the original side-by-side layout.
+    <div className="flex flex-col lg:flex-row gap-5 lg:h-[calc(100vh-140px)]">
       {/* Roster sidebar */}
-      <aside className="w-64 flex-shrink-0 flex flex-col gap-3">
+      <aside className="w-full lg:w-64 lg:flex-shrink-0 flex flex-col gap-3">
         <div>
           <div className="flex items-start justify-between gap-2">
             <h1 className="font-head font-normal text-xl text-pine-900">Horario</h1>
@@ -693,7 +775,7 @@ export default function HorarioBuilderPage() {
           Alumnos ({visibleCount})
           <span className="font-normal normal-case text-khaki-400"> · {unassignedCount} sin asignar</span>
         </p>
-        <div ref={sidebarRef} className="flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
+        <div ref={sidebarRef} className="max-h-[220px] lg:max-h-none lg:flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
           {loadingAlumnos ? (
             <p className="text-xs text-pine-600">Cargando…</p>
           ) : visibleCount === 0 ? (
@@ -711,7 +793,7 @@ export default function HorarioBuilderPage() {
                     const n = effectiveGruposOf(a).size
                     return (
                       <span key={a.id}
-                        className="student-pill flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
+                        className="student-pill touch-none flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
                         data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
                         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                         {a.nombre}
@@ -730,8 +812,13 @@ export default function HorarioBuilderPage() {
         </div>
       </aside>
 
-      {/* Calendar */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      {/* Calendar — below `lg` the outer container is a column with no fixed
+          viewport height (the roster panel stacks above it), so this needs
+          its own explicit height there; `lg` and up falls back to filling
+          the row via flex-1 as before. The inner min-width + overflow-x-auto
+          keeps the 6 day columns at a legible width on a narrow tablet
+          instead of squeezing illegibly — you scroll sideways instead. */}
+      <div className="flex-1 min-w-0 flex flex-col h-[70vh] lg:h-auto">
         {loadingGrupos ? (
           <p className="text-sm text-pine-600">Cargando…</p>
         ) : vistaProfesor ? (
@@ -748,8 +835,10 @@ export default function HorarioBuilderPage() {
             </div>
           </div>
         ) : (
-          <div className="fc-horario flex-1 min-h-0">
-            {renderCalendar({ filterProfesorId: undefined, dropColumnProfesorId: undefined, calKey: "week" })}
+          <div className="flex-1 min-h-0 overflow-x-auto">
+            <div className="fc-horario h-full" style={{ minWidth: "700px" }}>
+              {renderCalendar({ filterProfesorId: undefined, dropColumnProfesorId: undefined, calKey: "week" })}
+            </div>
           </div>
         )}
       </div>
@@ -776,7 +865,13 @@ export default function HorarioBuilderPage() {
                   ))}
                 </p>
               </div>
-              <button onClick={() => setSelectedGrupoId(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={openEditarClase} title="Editar clase"
+                  className="text-pine-400 hover:text-brass-700 text-sm leading-none">✎</button>
+                <button onClick={() => selectedGrupo && setConfirmDeleteClase(selectedGrupo)} title="Eliminar clase"
+                  className="text-red-400 hover:text-red-600 text-sm leading-none">🗑</button>
+                <button onClick={() => setSelectedGrupoId(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+              </div>
             </div>
             <div className="p-5 overflow-y-auto flex-1">
               <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600 mb-2">
@@ -794,7 +889,7 @@ export default function HorarioBuilderPage() {
                     return (
                       <div key={a.id} className="bg-khaki-100 rounded-lg px-3 py-2">
                         <div
-                          className="roster-pill flex items-center justify-between text-sm cursor-grab select-none"
+                          className="roster-pill touch-none flex items-center justify-between text-sm cursor-grab select-none"
                           data-name={a.nombre} data-alumno-id={a.id} data-source-grupo-id={selectedGrupoId ?? undefined}>
                           <span className="flex items-center gap-2">
                             <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
@@ -953,6 +1048,128 @@ export default function HorarioBuilderPage() {
               <button onClick={handleCrearClase} disabled={crearClaseMut.isPending}
                 className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
                 {crearClaseMut.isPending ? "Creando…" : "Crear clase"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editar clase — mismo formulario que "Nueva clase", precargado desde
+          selectedGrupo. Solo toca horarios[0] (ver nota en editarClaseMut). */}
+      {editingClase && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+          onClick={e => { if (e.target === e.currentTarget && !editarClaseMut.isPending) setEditingClase(null) }}>
+          <div className="bg-white rounded-xl shadow-xl w-96 p-5 space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="font-head text-lg text-pine-900">Editar clase</h2>
+                {(selectedGrupo?.horarios?.length ?? 0) > 1 && (
+                  <p className="text-xs text-brass-700">
+                    Esta clase tiene más de un horario semanal — aquí solo se edita el primero. Los demás se editan desde Grupos.
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setEditingClase(null)} disabled={editarClaseMut.isPending}
+                className="text-khaki-400 hover:text-pine-600 text-xl leading-none disabled:opacity-50">✕</button>
+            </div>
+
+            {editingClaseError && (
+              <p className="text-red-600 text-xs bg-red-50 border border-red-200 p-2 rounded-lg">{editingClaseError}</p>
+            )}
+
+            <div>
+              <label className="text-xs font-semibold text-pine-700">Nombre</label>
+              <input type="text" value={editingClase.nombre}
+                onChange={e => setEditingClase(p => p && { ...p, nombre: e.target.value })}
+                className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Marca</label>
+                <select value={editingClase.marca}
+                  onChange={e => setEditingClase(p => p && { ...p, marca: e.target.value as Marca })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Día</label>
+                <select value={editingClase.dia}
+                  onChange={e => setEditingClase(p => p && { ...p, dia: Number(e.target.value) })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  {DAY_LABELS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Profesor/a</label>
+                <ProfesorSelect value={editingClase.profesorId}
+                  onChange={v => setEditingClase(p => p && { ...p, profesorId: v })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Aula</label>
+                <AulaCombobox value={editingClase.aula}
+                  onChange={v => setEditingClase(p => p && { ...p, aula: v })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Hora inicio</label>
+                <input type="time" value={editingClase.horaInicio}
+                  onChange={e => setEditingClase(p => p && { ...p, horaInicio: e.target.value })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-pine-700">Hora fin</label>
+                <input type="time" value={editingClase.horaFin}
+                  onChange={e => setEditingClase(p => p && { ...p, horaFin: e.target.value })}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setEditingClase(null)} disabled={editarClaseMut.isPending}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-pine-600 hover:bg-khaki-100 disabled:opacity-50">
+                Cancelar
+              </button>
+              <button onClick={handleGuardarClase} disabled={editarClaseMut.isPending}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
+                {editarClaseMut.isPending ? "Guardando…" : "Guardar cambios"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Eliminar clase — mismo patrón que GruposPage: los alumnos no se
+          eliminan, pierden la asignación (Inscripcion cae en cascada). */}
+      {confirmDeleteClase && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-pine-900 mb-1">Eliminar clase</h3>
+            <p className="text-sm text-pine-800 mb-1">
+              ¿Eliminar <strong>{confirmDeleteClase.nombre}</strong>?
+            </p>
+            <p className="text-xs text-pine-700 mb-4">
+              {selectedRoster.length > 0
+                ? `${selectedRoster.length} alumno${selectedRoster.length === 1 ? "" : "s"} perderá${selectedRoster.length === 1 ? "" : "n"} la asignación a esta clase (no se elimina al alumno). Esto no se puede deshacer.`
+                : "Esto no se puede deshacer."}
+            </p>
+            {deleteClaseError && <p className="text-red-600 text-xs mb-3">{deleteClaseError}</p>}
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setConfirmDeleteClase(null); setDeleteClaseError("") }}
+                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
+                Cancelar
+              </button>
+              <button onClick={() => eliminarClaseMut.mutate(confirmDeleteClase.id)} disabled={eliminarClaseMut.isPending}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                {eliminarClaseMut.isPending ? "Eliminando…" : "Eliminar"}
               </button>
             </div>
           </div>
