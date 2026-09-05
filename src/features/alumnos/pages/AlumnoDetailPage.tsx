@@ -12,11 +12,44 @@ import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
-import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo } from "@/types"
+import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso } from "@/types"
 
 const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const NIVELES: NivelObjetivo[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
 const EXAMENES: ExamenObjetivo[] = ["KET", "PET", "FCE", "CAE", "CPE", "ninguno"]
+const CURSOS: { value: Curso; label: string }[] = [
+  { value: "infantil_3", label: "Infantil 3 años" }, { value: "infantil_4", label: "Infantil 4 años" },
+  { value: "infantil_5", label: "Infantil 5 años" },
+  { value: "primaria_1", label: "1º Primaria" }, { value: "primaria_2", label: "2º Primaria" },
+  { value: "primaria_3", label: "3º Primaria" }, { value: "primaria_4", label: "4º Primaria" },
+  { value: "primaria_5", label: "5º Primaria" }, { value: "primaria_6", label: "6º Primaria" },
+  { value: "eso_1", label: "1º ESO" }, { value: "eso_2", label: "2º ESO" },
+  { value: "eso_3", label: "3º ESO" }, { value: "eso_4", label: "4º ESO" },
+  { value: "bach_1", label: "1º Bachillerato" }, { value: "bach_2", label: "2º Bachillerato" },
+  { value: "fp", label: "Formación Profesional" }, { value: "adulto", label: "Adulto" }, { value: "otro", label: "Otro" },
+]
+// Público/concertado/privado en Pontevedra y Poio — recopilado a mano
+// (paxinasgalegas.es, agosto 2026), puede faltar algún centro nuevo o de
+// otro ayuntamiento cercano. Por eso "Colegio de origen" sigue siendo texto
+// libre con estas como sugerencias (datalist), nunca un desplegable cerrado.
+const COLEGIOS_SUGERIDOS = [
+  // Pontevedra — público
+  "CEIP A Carballeira", "CEIP A Xunqueira Nº 1", "CEIP A Xunqueira Nº 2", "CEIP Álvarez Limeses",
+  "CEIP Daría González García", "CEIP de Cabanas", "CEIP de Marcón", "CEIP Froebel",
+  "CEIP Manuel Vidal Portela", "CEIP Parada-Campañó", "CEIP Pontesampaio", "CEIP Pza. Barcelos",
+  "CEIP San Benito de Lérez", "CEIP San Martiño", "CEIP Santo André de Xeve", "CEIP Vilaverde-Mourente",
+  "CEP Campolongo", "CEP Marcos da Portela", "CEE Amencer", "CEE Juan XXIII",
+  // Pontevedra — concertado
+  "CPR Calasancio", "CPR Nuestra Señora de los Dolores (Doroteas)", "CPR Sagrado Corazón de Jesús",
+  "CPR Sagrado Corazón de Placeres", "CPR San José",
+  // Pontevedra — privado
+  "Colegio Santa Apolonia", "Colegio Juan Sebastián Elcano", "Colegio Los Sauces",
+  // Poio — público
+  "CEIP de Espedregada", "CEIP de Lourido", "CEIP de Viñas", "CEIP Isidora Riestra",
+  "CEIP Plurilingüe de Chancelas", "IES de Poio",
+  // Poio — privado
+  "CPR Sek Atlántico",
+]
 
 type Documento = {
   id: number
@@ -95,6 +128,7 @@ export default function AlumnoDetailPage() {
   const [generalForm, setGeneralForm] = useState({
     nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false,
     colegio_origen: "", idioma_nativo: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
+    nivel: "", nivel_objetivo: "" as NivelObjetivo | "", examen_objetivo: "" as ExamenObjetivo | "", curso: "" as Curso | "",
   })
   const [pagadorDraft, setPagadorDraft] = useState<PagadorDraft>(emptyPagadorDraft())
   const [downloadingDocId, setDownloadingDocId] = useState<number | null>(null)
@@ -184,6 +218,8 @@ export default function AlumnoDetailPage() {
         colegio_origen: alumno.colegio_origen ?? "", idioma_nativo: alumno.idioma_nativo ?? "",
         contacto_emergencia_nombre: alumno.contacto_emergencia_nombre ?? "",
         contacto_emergencia_telefono: alumno.contacto_emergencia_telefono ?? "",
+        nivel: alumno.nivel ?? "", nivel_objetivo: alumno.nivel_objetivo ?? "",
+        examen_objetivo: alumno.examen_objetivo ?? "", curso: alumno.curso ?? "",
       })
     }
     setGeneralEditing(true)
@@ -485,10 +521,44 @@ export default function AlumnoDetailPage() {
               <TextInput label="DNI" value={generalForm.dni} onChange={v => setGeneralForm(f => ({ ...f, dni: v }))} />
               <TextInput label="Teléfono" value={generalForm.telefono} onChange={v => setGeneralForm(f => ({ ...f, telefono: v }))} />
               <TextInput label="Email" value={generalForm.email} onChange={v => setGeneralForm(f => ({ ...f, email: v }))} />
-              <TextInput label="Colegio de origen" value={generalForm.colegio_origen} onChange={v => setGeneralForm(f => ({ ...f, colegio_origen: v }))} />
+              <div>
+                <TextInput label="Colegio de origen" value={generalForm.colegio_origen}
+                  onChange={v => setGeneralForm(f => ({ ...f, colegio_origen: v }))} listId="colegios-sugeridos" />
+                <datalist id="colegios-sugeridos">
+                  {COLEGIOS_SUGERIDOS.map(c => <option key={c} value={c} />)}
+                </datalist>
+              </div>
+              <div>
+                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Curso</p>
+                <select className="input" value={generalForm.curso}
+                  onChange={e => setGeneralForm(f => ({ ...f, curso: e.target.value as Curso }))}>
+                  <option value="">—</option>
+                  {CURSOS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
               <TextInput label="Idioma nativo" value={generalForm.idioma_nativo} onChange={v => setGeneralForm(f => ({ ...f, idioma_nativo: v }))} />
               <TextInput label="Contacto de emergencia (nombre)" value={generalForm.contacto_emergencia_nombre} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_nombre: v }))} />
               <TextInput label="Contacto de emergencia (teléfono)" value={generalForm.contacto_emergencia_telefono} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_telefono: v }))} />
+              <div>
+                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel actual</p>
+                <NivelSelect className="input" value={generalForm.nivel}
+                  onChange={v => setGeneralForm(f => ({ ...f, nivel: v }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <select className="input" value={generalForm.nivel_objetivo}
+                    onChange={e => setGeneralForm(f => ({ ...f, nivel_objetivo: e.target.value as NivelObjetivo | "" }))}>
+                    <option value="">—</option>
+                    {NIVELES.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  <select className="input" value={generalForm.examen_objetivo}
+                    onChange={e => setGeneralForm(f => ({ ...f, examen_objetivo: e.target.value as ExamenObjetivo | "" }))}>
+                    <option value="">—</option>
+                    {EXAMENES.map(ex => <option key={ex} value={ex}>{ex === "ninguno" ? "Ninguno" : ex}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
             <Textarea label="Notas" value={generalForm.notas} onChange={v => setGeneralForm(f => ({ ...f, notas: v }))} />
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text)", cursor: "pointer" }}>
@@ -509,26 +579,11 @@ export default function AlumnoDetailPage() {
           <Field label="Contacto" value={[alumno.telefono, alumno.email].filter(Boolean).join(" · ") || "—"} />
           <Field label="DNI" value={alumno.dni || "—"} />
           <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
-          <div>
-            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel actual</p>
-            <NivelSelect className="input" value={alumno.nivel}
-              onChange={v => alumnosApi.update(alumnoId, { nivel: v }).then(() => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }))} />
-          </div>
-          <div>
-            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <select className="input" value={alumno.nivel_objetivo}
-                onChange={e => alumnosApi.update(alumnoId, { nivel_objetivo: e.target.value as NivelObjetivo }).then(() => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }))}>
-                <option value="">—</option>
-                {NIVELES.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select className="input" value={alumno.examen_objetivo}
-                onChange={e => alumnosApi.update(alumnoId, { examen_objetivo: e.target.value as ExamenObjetivo }).then(() => qc.invalidateQueries({ queryKey: ["alumno", alumnoId] }))}>
-                <option value="">—</option>
-                {EXAMENES.map(ex => <option key={ex} value={ex}>{ex === "ninguno" ? "Ninguno" : ex}</option>)}
-              </select>
-            </div>
-          </div>
+          <Field label="Nivel actual" value={alumno.nivel || "—"} />
+          <Field label="Nivel / examen objetivo"
+            value={[alumno.nivel_objetivo, alumno.examen_objetivo && alumno.examen_objetivo !== "ninguno" ? alumno.examen_objetivo : null]
+              .filter(Boolean).join(" · ") || "—"} />
+          <Field label="Curso" value={alumno.curso_display || "—"} />
           <Field label="Colegio de origen" value={alumno.colegio_origen || "—"} />
           <Field label="Idioma nativo" value={alumno.idioma_nativo || "—"} />
           <Field label="Contacto de emergencia"
@@ -830,11 +885,11 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
   )
 }
 
-function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function TextInput({ label, value, onChange, listId }: { label: string; value: string; onChange: (v: string) => void; listId?: string }) {
   return (
     <div>
       <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
-      <input type="text" className="input" value={value} onChange={e => onChange(e.target.value)} />
+      <input type="text" className="input" value={value} onChange={e => onChange(e.target.value)} list={listId} />
     </div>
   )
 }

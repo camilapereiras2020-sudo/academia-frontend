@@ -6,7 +6,7 @@ import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, CreditCard, Building2,
   Compass, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
-  Coins, FileText, MessageCircle, Cake, Settings,
+  Coins, FileText, MessageCircle, Cake, Settings, X,
 } from "lucide-react"
 
 const LOGO_SRC = {
@@ -33,7 +33,7 @@ const NAV_SECTIONS = [
       { to: "/calendario", icon: CalendarDays, label: "Calendar" },
       { to: "/horario", icon: CalendarClock, label: "Schedule" },
       { to: "/asistencia", icon: CheckSquare, label: "Attendance" },
-      { to: null, icon: Tag, label: "Rates" },
+      { to: "/precios", icon: Tag, label: "Rates" },
       { to: "/crm", icon: UserSearch, label: "CRM" },
     ]
   },
@@ -48,7 +48,10 @@ const NAV_SECTIONS = [
   },
 ]
 
-export default function Sidebar() {
+// `open`/`onClose` only matter below `xl` — that's when the sidebar is an
+// overlay drawer instead of always-visible. Above `xl` the sidebar renders
+// in flow regardless of `open`, same as before this feature existed.
+export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const activeBrand = useBrandStore((s) => s.activeBrand)
   const brand = activeBrand ?? "cami_and_co"
   const role = useAuthStore((s) => s.user?.role)
@@ -58,7 +61,18 @@ export default function Sidebar() {
     .filter((section) => section.items.length > 0)
 
   return (
-    <aside className="w-[250px] flex-shrink-0 bg-pine-900 flex flex-col h-screen border-r-4 border-brass-500 relative overflow-hidden">
+    <aside className={`
+      w-[250px] flex-shrink-0 bg-pine-900 flex flex-col h-screen border-r-4 border-brass-500 relative overflow-hidden
+      fixed xl:static inset-y-0 left-0 z-50 transition-transform duration-200
+      ${open ? "translate-x-0" : "-translate-x-full"} xl:translate-x-0
+    `}>
+      <button
+        onClick={onClose}
+        aria-label="Cerrar menú"
+        className="xl:hidden absolute top-3 right-3 z-10 text-khaki-100/70 hover:text-khaki-100 p-1"
+      >
+        <X size={20} strokeWidth={2} />
+      </button>
       {/* Logo / crest */}
       <div className="relative px-6 pt-8 pb-10 border-b border-white/10 overflow-hidden">
         <svg viewBox="0 0 250 90" preserveAspectRatio="none" className="pointer-events-none absolute left-0 right-0 bottom-0 w-full h-[82px] opacity-50">
@@ -102,6 +116,7 @@ export default function Sidebar() {
                 <NavLink
                   key={to}
                   to={to}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3.5 py-3 rounded-[7px] font-head text-[16px] mb-2 border-2 transition-colors ${
                       isActive

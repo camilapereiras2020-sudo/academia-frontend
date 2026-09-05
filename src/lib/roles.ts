@@ -23,6 +23,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/whatsapp-respuestas": ALL_ROLES,
   "/empresas": ["owner", "co_manager"],
   "/facturacion": ["reception", "co_manager"],
+  "/precios": ALL_ROLES,
 }
 
 export function canAccess(role: Role | undefined, path: string): boolean {

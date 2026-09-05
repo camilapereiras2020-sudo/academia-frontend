@@ -39,6 +39,12 @@ export interface Nivel {
 
 export type NivelObjetivo = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
 export type ExamenObjetivo = "KET" | "PET" | "FCE" | "CAE" | "CPE" | "ninguno"
+export type Curso =
+  | "infantil_3" | "infantil_4" | "infantil_5"
+  | "primaria_1" | "primaria_2" | "primaria_3" | "primaria_4" | "primaria_5" | "primaria_6"
+  | "eso_1" | "eso_2" | "eso_3" | "eso_4"
+  | "bach_1" | "bach_2"
+  | "fp" | "adulto" | "otro"
 
 export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
@@ -52,6 +58,8 @@ export interface Alumno {
   foto_url: string
   nivel_objetivo: NivelObjetivo | ""
   examen_objetivo: ExamenObjetivo | ""
+  curso: Curso | ""
+  curso_display?: string
   colegio_origen: string
   idioma_nativo: string
   contacto_emergencia_nombre: string
@@ -146,6 +154,23 @@ export interface NotaDificultad {
   id: number; grupo: number; grupo_nombre: string
   alumno: number; alumno_nombre: string
   tema: string; nota: string; fecha: string; sesion: number | null; created_at: string
+}
+
+export interface PagadorCalculoItem {
+  tipo: "clase_grupo" | "bono_familia"
+  alumnos: string[]
+  dias_semana: number
+  duracion_min: number
+  precio: number
+  descuento_pct: number
+}
+
+export interface PagadorCalculo {
+  pagador_id: number
+  pagador_nombre: string
+  items: PagadorCalculoItem[]
+  cuota_mensual_estimada: number
+  avisos: string[]
 }
 
 export interface PaginatedResponse<T> {

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useLocation } from "react-router-dom"
-import { LogOut } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 import { useAuthStore } from "@/store/authStore"
 import { queryClient } from "@/lib/queryClient"
 
@@ -32,7 +32,7 @@ function useClock() {
   return time
 }
 
-export default function Topbar() {
+export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
@@ -52,14 +52,23 @@ export default function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 px-7 py-4 bg-khaki-100 border-b-[3px] border-pine-800 flex-shrink-0 flex-wrap">
-      <div className="min-w-0">
-        <div className="text-[12px] font-extrabold uppercase tracking-[0.06em] text-pine-700 whitespace-nowrap">
-          {today}
+    <header className="flex items-center justify-between gap-4 px-4 sm:px-7 py-4 bg-khaki-100 border-b-[3px] border-pine-800 flex-shrink-0 flex-wrap">
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={onMenuClick}
+          aria-label="Abrir menú"
+          className="xl:hidden text-pine-800 bg-transparent border-none cursor-pointer p-1 -ml-1 flex-shrink-0"
+        >
+          <Menu size={22} strokeWidth={2} />
+        </button>
+        <div className="min-w-0">
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.06em] text-pine-700 whitespace-nowrap">
+            {today}
+          </div>
+          <h1 className="font-head font-normal text-[24px] text-pine-800 mt-1 whitespace-nowrap">
+            {title}
+          </h1>
         </div>
-        <h1 className="font-head font-normal text-[24px] text-pine-800 mt-1 whitespace-nowrap">
-          {title}
-        </h1>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap justify-end">

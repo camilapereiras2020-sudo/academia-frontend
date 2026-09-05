@@ -10,6 +10,7 @@ type Documento = {
   created_at: string
   emitida_at: string | null
   estado: string
+  drive_url?: string | null
   pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
 }
 
@@ -202,6 +203,12 @@ export default function DocumentosPage() {
                 className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
                 {downloadingId === d.id ? "..." : "📥 Descargar"}
               </button>
+              {d.drive_url && (
+                <a href={d.drive_url} target="_blank" rel="noopener noreferrer"
+                  className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium">
+                  🔗 Ver en Drive
+                </a>
+              )}
               {d.estado === "anulada" ? null : d.estado === "borrador" ? (
                 <button
                   onClick={() => { setActionError(""); setConfirmDelete(d) }}
