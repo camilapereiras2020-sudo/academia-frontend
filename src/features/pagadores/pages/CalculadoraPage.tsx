@@ -26,21 +26,55 @@ const GRUPO: Record<60 | 90, Tramo[]> = {
   ],
 }
 
-const FAMILIA: Record<60 | 90, Tramo[]> = {
-  60: [
-    { dias: 1, precio: 95, descuento: 5, horas: "1h" },
-    { dias: 2, precio: 180, descuento: 5, horas: "2h" },
-    { dias: 3, precio: 275, descuento: 5, horas: "3h" },
-    { dias: 4, precio: 350, descuento: 5, horas: "4h" },
-    { dias: 5, precio: 435, descuento: 5, horas: "5h" },
-  ],
-  90: [
-    { dias: 1, precio: 137, descuento: 5, horas: "1h30" },
-    { dias: 2, precio: 266, descuento: 5, horas: "3h" },
-    { dias: 3, precio: 390, descuento: 5, horas: "4h30" },
-    { dias: 4, precio: 509, descuento: 5, horas: "6h" },
-    { dias: 5, precio: 623, descuento: 5, horas: "7h30" },
-  ],
+const FAMILIA: Record<2 | 3 | 4, Record<60 | 90, Tramo[]>> = {
+  2: {
+    60: [
+      { dias: 1, precio: 95, descuento: 5, horas: "1h" },
+      { dias: 2, precio: 180, descuento: 5, horas: "2h" },
+      { dias: 3, precio: 275, descuento: 5, horas: "3h" },
+      { dias: 4, precio: 350, descuento: 5, horas: "4h" },
+      { dias: 5, precio: 435, descuento: 5, horas: "5h" },
+    ],
+    90: [
+      { dias: 1, precio: 137, descuento: 5, horas: "1h30" },
+      { dias: 2, precio: 266, descuento: 5, horas: "3h" },
+      { dias: 3, precio: 390, descuento: 5, horas: "4h30" },
+      { dias: 4, precio: 509, descuento: 5, horas: "6h" },
+      { dias: 5, precio: 623, descuento: 5, horas: "7h30" },
+    ],
+  },
+  3: {
+    60: [
+      { dias: 1, precio: 145, descuento: 5, horas: "1h" },
+      { dias: 2, precio: 270, descuento: 5, horas: "2h" },
+      { dias: 3, precio: 415, descuento: 5, horas: "3h" },
+      { dias: 4, precio: 525, descuento: 5, horas: "4h" },
+      { dias: 5, precio: 655, descuento: 5, horas: "5h" },
+    ],
+    90: [
+      { dias: 1, precio: 205, descuento: 5, horas: "1h30" },
+      { dias: 2, precio: 399, descuento: 5, horas: "3h" },
+      { dias: 3, precio: 584, descuento: 5, horas: "4h30" },
+      { dias: 4, precio: 764, descuento: 5, horas: "6h" },
+      { dias: 5, precio: 935, descuento: 5, horas: "7h30" },
+    ],
+  },
+  4: {
+    60: [
+      { dias: 1, precio: 190, descuento: 5, horas: "1h" },
+      { dias: 2, precio: 360, descuento: 5, horas: "2h" },
+      { dias: 3, precio: 550, descuento: 5, horas: "3h" },
+      { dias: 4, precio: 705, descuento: 5, horas: "4h" },
+      { dias: 5, precio: 875, descuento: 5, horas: "5h" },
+    ],
+    90: [
+      { dias: 1, precio: 274, descuento: 5, horas: "1h30" },
+      { dias: 2, precio: 532, descuento: 5, horas: "3h" },
+      { dias: 3, precio: 779, descuento: 5, horas: "4h30" },
+      { dias: 4, precio: 1018, descuento: 5, horas: "6h" },
+      { dias: 5, precio: 1246, descuento: 5, horas: "7h30" },
+    ],
+  },
 }
 
 const MATRICULA = 20
@@ -56,10 +90,11 @@ export default function CalculadoraPage() {
   const [tipo, setTipo] = useState<Tipo>("grupo")
   const [dias, setDias] = useState(2)
   const [duracion, setDuracion] = useState<60 | 90>(60)
+  const [hermanos, setHermanos] = useState<2 | 3 | 4>(2)
   const [horasSesionPrivada, setHorasSesionPrivada] = useState(1.5)
   const [diasSemanaPrivada, setDiasSemanaPrivada] = useState(1)
 
-  const tabla = tipo === "familia" ? FAMILIA[duracion] : GRUPO[duracion]
+  const tabla = tipo === "familia" ? FAMILIA[hermanos][duracion] : GRUPO[duracion]
   const tramo = useMemo(() => tabla.find((t) => t.dias === dias), [tabla, dias])
 
   return (
@@ -72,7 +107,7 @@ export default function CalculadoraPage() {
         {(
           [
             { id: "grupo", label: "1 alumno" },
-            { id: "familia", label: "2 hermanos (Bono Familia)" },
+            { id: "familia", label: "Hermanos (Bono Familia)" },
             { id: "privada", label: "Clase particular (adulto)" },
           ] as const
         ).map((t) => (
@@ -93,6 +128,26 @@ export default function CalculadoraPage() {
       {tipo !== "privada" ? (
         <>
           <div className="flex flex-wrap gap-6 mb-5">
+            {tipo === "familia" && (
+              <div>
+                <label className="block text-xs font-semibold text-pine-700 mb-1">Nº de hermanos/as</label>
+                <div className="flex gap-1.5">
+                  {([2, 3, 4] as const).map((h) => (
+                    <button
+                      key={h}
+                      onClick={() => setHermanos(h)}
+                      className={`w-9 h-9 rounded-lg text-sm font-semibold border-2 transition-colors ${
+                        hermanos === h
+                          ? "bg-brass-500 border-brass-700 text-pine-900"
+                          : "bg-white border-khaki-200 text-pine-700 hover:border-brass-400"
+                      }`}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-pine-700 mb-1">Días a la semana</label>
               <div className="flex gap-1.5">
@@ -135,7 +190,7 @@ export default function CalculadoraPage() {
             <div className="bg-pine-900 text-white rounded-xl p-5 mb-5 flex items-center justify-between flex-wrap gap-3">
               <div>
                 <p className="text-xs uppercase tracking-widest text-brass-300 font-semibold">
-                  {tipo === "familia" ? "Bono Familia (2 hermanos)" : "Clase Grupo (1 alumno)"}
+                  {tipo === "familia" ? `Bono Familia (${hermanos} hermanos)` : "Clase Grupo (1 alumno)"}
                 </p>
                 <p className="text-sm text-khaki-200 mt-1">
                   {dias} día{dias === 1 ? "" : "s"}/semana · {duracion === 60 ? "1 hora" : "90 min"} · {tramo.horas}/semana

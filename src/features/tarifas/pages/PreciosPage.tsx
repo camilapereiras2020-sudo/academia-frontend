@@ -37,6 +37,34 @@ const FAMILIA_90: FilaPrecio[] = [
   { dias: "4 días", precio: "509€", descuento: "5%", horas: "6h" },
   { dias: "5 días", precio: "623€", descuento: "5%", horas: "7h30" },
 ]
+const FAMILIA_1H_3: FilaPrecio[] = [
+  { dias: "1 día", precio: "145€", descuento: "5%", horas: "1h" },
+  { dias: "2 días", precio: "270€", descuento: "5%", horas: "2h" },
+  { dias: "3 días", precio: "415€", descuento: "5%", horas: "3h" },
+  { dias: "4 días", precio: "525€", descuento: "5%", horas: "4h" },
+  { dias: "5 días", precio: "655€", descuento: "5%", horas: "5h" },
+]
+const FAMILIA_90_3: FilaPrecio[] = [
+  { dias: "1 día", precio: "205€", descuento: "5%", horas: "1h30" },
+  { dias: "2 días", precio: "399€", descuento: "5%", horas: "3h" },
+  { dias: "3 días", precio: "584€", descuento: "5%", horas: "4h30" },
+  { dias: "4 días", precio: "764€", descuento: "5%", horas: "6h" },
+  { dias: "5 días", precio: "935€", descuento: "5%", horas: "7h30" },
+]
+const FAMILIA_1H_4: FilaPrecio[] = [
+  { dias: "1 día", precio: "190€", descuento: "5%", horas: "1h" },
+  { dias: "2 días", precio: "360€", descuento: "5%", horas: "2h" },
+  { dias: "3 días", precio: "550€", descuento: "5%", horas: "3h" },
+  { dias: "4 días", precio: "705€", descuento: "5%", horas: "4h" },
+  { dias: "5 días", precio: "875€", descuento: "5%", horas: "5h" },
+]
+const FAMILIA_90_4: FilaPrecio[] = [
+  { dias: "1 día", precio: "274€", descuento: "5%", horas: "1h30" },
+  { dias: "2 días", precio: "532€", descuento: "5%", horas: "3h" },
+  { dias: "3 días", precio: "779€", descuento: "5%", horas: "4h30" },
+  { dias: "4 días", precio: "1.018€", descuento: "5%", horas: "6h" },
+  { dias: "5 días", precio: "1.246€", descuento: "5%", horas: "7h30" },
+]
 
 function TablaPrecios({ titulo, filas }: { titulo: string; filas: FilaPrecio[] }) {
   return (
@@ -128,7 +156,7 @@ function GuiaDePrecios() {
       <Seccion n={1} titulo="Lo básico">
         <ul className="list-disc list-inside space-y-1.5 text-sm text-pine-800">
           <li><strong>Clases Grupo</strong>: precio por alumno, en grupo reducido.</li>
-          <li><strong>Bono Familia</strong>: precio conjunto para 2 hermanos/as matriculados — siempre un 5% más barato que pagar dos matrículas de Clases Grupo por separado.</li>
+          <li><strong>Bono Familia</strong>: precio conjunto para 2, 3 o 4 hermanos/as matriculados — siempre un 5% más barato que pagar esas matrículas de Clases Grupo por separado.</li>
           <li>Duración de sesión: clases de <strong>1 hora</strong> o de <strong>90 minutos</strong>. El alumno/familia elige una de las dos, no se mezclan.</li>
           <li>Los grupos de 90 minutos casi siempre los da Cami — no es exclusivo, pero si preguntan específicamente por ese formato, lo normal es que sea con ella.</li>
           <li>Matrícula de inscripción: pago único de <strong>20€</strong>, aparte de la cuota mensual.</li>
@@ -157,13 +185,33 @@ function GuiaDePrecios() {
         </div>
       </Seccion>
 
-      <Seccion n={4} titulo="1 hora vs 90 minutos — cómo explicarlo">
+      <Seccion n={4} titulo="Precios — Bono Familia (3 hermanos)">
+        <p className="text-sm text-pine-800 mb-3">
+          Parte siempre del precio de Clases Grupo × 3, con el mismo 5% de descuento fijo por familia.
+        </p>
+        <div className="flex flex-wrap gap-6">
+          <TablaPrecios titulo="Clases de 1 hora" filas={FAMILIA_1H_3} />
+          <TablaPrecios titulo="Clases de 90 minutos" filas={FAMILIA_90_3} />
+        </div>
+      </Seccion>
+
+      <Seccion n={5} titulo="Precios — Bono Familia (4 hermanos)">
+        <p className="text-sm text-pine-800 mb-3">
+          Parte siempre del precio de Clases Grupo × 4, con el mismo 5% de descuento fijo por familia.
+        </p>
+        <div className="flex flex-wrap gap-6">
+          <TablaPrecios titulo="Clases de 1 hora" filas={FAMILIA_1H_4} />
+          <TablaPrecios titulo="Clases de 90 minutos" filas={FAMILIA_90_4} />
+        </div>
+      </Seccion>
+
+      <Seccion n={6} titulo="1 hora vs 90 minutos — cómo explicarlo">
         <p className="text-sm text-pine-800">
           El pack de 90 minutos siempre cuesta más en total al mes (son más horas), pero calculado <strong>por hora de clase</strong> siempre sale más barato que el de 1 hora — los 30 minutos extra no se cobran al precio completo. Buen argumento cuando una familia duda entre las dos duraciones.
         </p>
       </Seccion>
 
-      <Seccion n={5} titulo="Clases particulares para profesionales">
+      <Seccion n={7} titulo="Clases particulares para profesionales">
         <p className="text-sm text-pine-800 mb-2">
           Clases privadas de inglés para adultos, enfocadas en el ámbito profesional del alumno (ingeniería, salud, leyes, etc.), a medida según el sector.
         </p>
