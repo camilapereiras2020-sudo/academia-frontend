@@ -68,12 +68,18 @@ h1, h2, h3, label {
    condensed body font (Barlow Semi Condensed reads narrower/smaller than a
    normal sans at the same size). Rather than hunting down every
    text-[Npx] individually across dozens of files, raise the floor here
-   once, app-wide. 2026-09-09 — "todo se ve cada vez más chico". */
-.text-\[7px\]  { font-size: 9px !important; }
-.text-\[8px\]  { font-size: 9px !important; }
-.text-\[9px\]  { font-size: 10px !important; }
-.text-\[10px\] { font-size: 11px !important; }
-.text-\[11px\] { font-size: 12.5px !important; }
+   once, app-wide. 2026-09-09 — "todo se ve cada vez más chico".
+   Using attribute selectors (not `.text-\[7px\]`-style escaped class
+   selectors) on purpose: the escaped-bracket form is what broke last time
+   — it visually did nothing, most likely eaten by the production
+   minifier — so this avoids that escaping entirely. Also a bigger, more
+   noticeable jump this round: the first attempt (1-2px) didn't read as a
+   real change next to the calendar simply having more room. */
+[class*="text-[7px]"],
+[class*="text-[8px]"] { font-size: 10px !important; line-height: 1.3 !important; }
+[class*="text-[9px]"],
+[class*="text-[10px]"] { font-size: 11px !important; line-height: 1.3 !important; }
+[class*="text-[11px]"] { font-size: 13px !important; line-height: 1.35 !important; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
