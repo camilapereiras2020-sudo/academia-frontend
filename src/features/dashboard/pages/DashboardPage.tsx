@@ -167,10 +167,12 @@ function OwnerDashboard() {
       </div>
 
       {/* Trail Log calendar (full monthly view, compact) + Today's Timetable
-          side by side again, sharing one footprint — the grid row stretches
-          both to the taller one's height, and the timetable scrolls
-          internally instead of growing past it. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5 items-stretch">
+          side by side. `items-start` (not `items-stretch`) so the Trail Log
+          card stays sized to its own content (a fixed 7-row calendar grid)
+          instead of stretching its background down to match whatever height
+          Today's Timetable happens to need — with the bigger fonts that grid
+          could otherwise end up with a lot of empty background below it. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5 items-start">
 
       <div className="relative bg-pine-800 border-2 border-pine-800 rounded-md p-4 pb-3 overflow-hidden">
         <svg viewBox="0 0 200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.08]">
