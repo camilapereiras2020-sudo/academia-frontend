@@ -486,7 +486,7 @@ export default function AlumnoDetailPage() {
           <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
             Horario ({gruposDetalle.length})
           </h2>
-          <button className="btn-ghost" onClick={() => navigate("/horario")}>Editar en Horario →</button>
+          <button className="btn-ghost" onClick={() => navigate(`/horario?alumno=${id}`)}>Editar en Horario →</button>
         </div>
         {!gruposDetalle.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin clases asignadas todavía.</p>}
         {!!gruposDetalle.length && (

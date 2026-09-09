@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import FullCalendar from "@fullcalendar/react"
 import timeGridPlugin from "@fullcalendar/timegrid"
@@ -99,10 +99,32 @@ function draftKey(alumnoId: number, grupoId: number) {
 export default function HorarioBuilderPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null)
   const [toast, setToast] = useState("")
+  // Resalta a un alumno puntual en el calendario (sus clases quedan con un
+  // borde destacado) y abre un panel con su horario en vez del de una clase
+  // — se dispara desde "Editar en Horario" en la ficha del alumno
+  // (?alumno=<id> en la URL) o con doble click sobre su nombre en el listado
+  // de la izquierda.
+  const [highlightAlumnoId, setHighlightAlumnoId] = useState<number | null>(() => {
+    const alumnoParam = searchParams.get("alumno")
+    return alumnoParam ? Number(alumnoParam) : null
+  })
+
+  // Igual que el ?lead= del CRM: se consume el parámetro una sola vez para
+  // que no se re-dispare si luego cierra el panel y el componente re-renderiza.
+  useEffect(() => {
+    if (!searchParams.get("alumno")) return
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete("alumno")
+      return next
+    }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // "+ Agregar alumno" picker inside the roster drawer — an alternative to
   // dragging from the sidebar, for when the student isn't visible/easy to
   // find there. Resets whenever the drawer switches to a different class.
@@ -768,6 +790,15 @@ export default function HorarioBuilderPage() {
         firstDay={1}
         events={filteredEvents}
         eventContent={renderEventContent}
+        // Resalta con un borde grueso cada clase donde está el alumno
+        // elegido en highlightAlumnoId (ver el panel "Horario de <alumno>").
+        eventClassNames={(arg) => {
+          const roster = arg.event.extendedProps.roster as Alumno[] | undefined
+          if (highlightAlumnoId != null && roster?.some(a => a.id === highlightAlumnoId)) {
+            return ["outline", "outline-[3px]", "outline-offset-[-2px]", "outline-brass-500", "z-10"]
+          }
+          return []
+        }}
         eventClick={(info) => {
           const grupoId = Number(info.event.extendedProps.grupoId)
           if (Number.isFinite(grupoId) && grupoId > 0) setSelectedGrupoId(grupoId)
@@ -884,12 +915,15 @@ export default function HorarioBuilderPage() {
                     return (
                       <span key={a.id}
                         className={`student-pill touch-none flex items-center gap-1.5 text-xs font-semibold rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none ${
-                          n === 0
+                          highlightAlumnoId === a.id
+                            ? "bg-brass-50 border-2 border-brass-500 text-brass-900"
+                            : n === 0
                             ? "bg-amber-50 border border-amber-300 text-amber-900"
                             : "bg-white border border-khaki-300 text-pine-800"
                         }`}
                         data-name={a.nombre} data-alumno-id={a.id}
-                        title={n === 0 ? `${BRAND_META[a.marca].label} · sin clase asignada` : BRAND_META[a.marca].label}>
+                        onDoubleClick={() => { setSelectedGrupoId(null); setHighlightAlumnoId(a.id) }}
+                        title={`${n === 0 ? `${BRAND_META[a.marca].label} · sin clase asignada` : BRAND_META[a.marca].label} · doble click para resaltar sus clases`}>
                         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                         {a.nombre}
                         {n > 0 && (
@@ -937,6 +971,61 @@ export default function HorarioBuilderPage() {
           </div>
         )}
       </div>
+
+      {/* Panel "horario de <alumno>" — se muestra en vez del drawer de clase
+          mientras haya un alumno resaltado y ninguna clase seleccionada
+          (elegir una clase, abajo, tiene prioridad; el resaltado en el
+          calendario se mantiene igual). Viene de "Editar en Horario" en la
+          ficha del alumno o de doble click en su nombre en el listado. */}
+      {!selectedGrupo && highlightAlumnoId != null && (() => {
+        const alumnoResaltado = alumnos.find(a => a.id === highlightAlumnoId)
+        if (!alumnoResaltado) return null
+        const susGrupos = Array.from(effectiveGruposOf(alumnoResaltado))
+          .map(gid => grupos.find(g => g.id === gid))
+          .filter((g): g is Grupo => !!g)
+        return (
+          <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-xl flex flex-col z-40 border-l-2 border-brass-500">
+            <div className="px-5 py-4 border-b flex items-start justify-between">
+              <div>
+                <p className="font-head font-normal text-lg text-pine-900">{alumnoResaltado.nombre}</p>
+                <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: BRAND_META[alumnoResaltado.marca].bg, color: BRAND_META[alumnoResaltado.marca].text }}>
+                  {BRAND_META[alumnoResaltado.marca].tag}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => navigate(`/alumnos/${alumnoResaltado.id}`)} title="Ver ficha del alumno"
+                  className="text-pine-400 hover:text-brass-700 text-xs">↗</button>
+                <button onClick={() => setHighlightAlumnoId(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+              </div>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600 mb-2">
+                Sus clases ({susGrupos.length})
+              </p>
+              <p className="text-[11px] text-pine-600 mb-3">Resaltadas en el calendario. Pulsa una para abrirla.</p>
+              {susGrupos.length === 0 ? (
+                <p className="text-xs text-pine-600 italic">Sin clases asignadas todavía.</p>
+              ) : (
+                <div className="space-y-2">
+                  {susGrupos.map(g => (
+                    <button key={g.id} onClick={() => setSelectedGrupoId(g.id)}
+                      className="w-full text-left bg-khaki-100 hover:bg-khaki-200 rounded-lg px-3 py-2">
+                      <p className="text-sm font-semibold text-pine-900">{g.nombre}</p>
+                      <p className="text-xs text-pine-600 mt-0.5">
+                        {g.profesor_nombre ? `Prof. ${g.profesor_nombre} · ` : ""}
+                        {(g.horarios ?? []).map((h, i) => (
+                          <span key={i}>{DAY_LABELS[h.dia]?.slice(0, 3)} {h.ini}–{h.fin}{i < (g.horarios.length - 1) ? " · " : ""}</span>
+                        ))}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Selected-group roster drawer — a docked panel, NOT a modal: no
           full-screen backdrop, so the calendar underneath stays fully
