@@ -161,11 +161,6 @@ export default function CRMPage() {
   // list state
   const [filtroEtapa, setFiltroEtapa] = useState("")
   const [search, setSearch] = useState("")
-  // "Activos" (pipeline en curso) vs "Guardados" (fríos) — antes vivían todos
-  // mezclados en el mismo listado, distinguibles solo por una etiqueta. Ahora
-  // son dos vistas separadas: Guardados solo muestra etapa="frio", Activos
-  // muestra todo lo demás (nunca frío ni archivado).
-  const [vista, setVista] = useState<"activos" | "guardados">("activos")
   // Formulario de "Nueva consulta" reducido a lo esencial por defecto — el
   // resto de campos quedan plegados detrás de "+ Más detalles".
   const [showOptional, setShowOptional] = useState(false)
@@ -229,9 +224,14 @@ export default function CRMPage() {
     queryFn: () => api.get(`/leads/${filtroEtapa ? `?etapa=${filtroEtapa}` : ""}`).then(r => r.data),
   })
   const leadsAll: Lead[] = Array.isArray(leadsRaw) ? leadsRaw : leadsRaw?.results ?? []
-  const leadsPorVista = vista === "guardados"
-    ? leadsAll.filter(l => l.etapa === "frio")
-    : leadsAll.filter(l => l.etapa !== "frio" && l.etapa !== "archivado")
+  // Cada etapa es ahora su propia pestaña (ver ETAPAS + fila de pestañas más
+  // abajo). "Todos" (sin filtro explícito) es la vista de trabajo del día a
+  // día: esconde frío, archivado y matriculado — una vez matriculado, el
+  // alumno ya vive en Alumnos, no tiene sentido que siga ocupando espacio en
+  // el pipeline. Cada uno de esos tres sigue accesible en su propia pestaña.
+  const leadsPorVista = filtroEtapa
+    ? leadsAll
+    : leadsAll.filter(l => l.etapa !== "frio" && l.etapa !== "archivado" && l.etapa !== "matriculado")
   const leads = search
     ? leadsPorVista.filter(l =>
         l.nombre_alumno.toLowerCase().includes(search.toLowerCase()) ||
@@ -463,47 +463,31 @@ export default function CRMPage() {
           </div>
         )}
 
-        {/* Activos vs Guardados — separa a los fríos del pipeline en curso,
-            en vez de mezclarlos en el mismo listado distinguibles solo por
-            una etiqueta. */}
-        <div className="flex gap-1 mb-4 bg-khaki-100 rounded-lg p-1 w-fit">
-          <button onClick={() => { setVista("activos"); setFiltroEtapa("") }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              vista === "activos" ? "bg-white text-pine-900 shadow-sm" : "text-pine-600 hover:text-pine-900"
-            }`}>
-            Activos
-          </button>
-          <button onClick={() => { setVista("guardados"); setFiltroEtapa("") }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              vista === "guardados" ? "bg-white text-pine-900 shadow-sm" : "text-pine-600 hover:text-pine-900"
-            }`}>
-            🗄 Guardados
-          </button>
-        </div>
-
-        {/* Search + etapa filter */}
+        {/* Search + pestañas por etapa — cada etapa vive en su propia
+            pestaña (incluidos Matriculados y Guardados/fríos), en vez de
+            mezclarse todos en un único listado. "Todos" es la vista de
+            trabajo del día a día: no incluye Matriculados ni Guardados,
+            esos tienen la suya propia. */}
         <div className="mb-4 space-y-2">
           <input type="text" placeholder="Buscar por nombre o teléfono…" value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full max-w-xs border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-          {vista === "activos" && (
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={() => setFiltroEtapa("")}
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setFiltroEtapa("")}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                filtroEtapa === "" ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
+              }`}>
+              Todos
+            </button>
+            {ETAPAS.filter(e => e.value !== "archivado").map(e => (
+              <button key={e.value} onClick={() => setFiltroEtapa(e.value)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filtroEtapa === "" ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
+                  filtroEtapa === e.value ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
                 }`}>
-                Todos
+                {e.value === "frio" ? "🗄 Guardados" : e.label}
               </button>
-              {ETAPAS.filter(e => e.value !== "archivado" && e.value !== "frio").map(e => (
-                <button key={e.value} onClick={() => setFiltroEtapa(e.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    filtroEtapa === e.value ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
-                  }`}>
-                  {e.label}
-                </button>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
@@ -511,7 +495,7 @@ export default function CRMPage() {
           <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
             <span className="text-5xl mb-3">📋</span>
             <p className="text-sm">
-              {search ? "Sin resultados." : vista === "guardados" ? "Sin contactos guardados." : "Sin leads. Añade una consulta."}
+              {search ? "Sin resultados." : filtroEtapa === "frio" ? "Sin contactos guardados." : "Sin leads. Añade una consulta."}
             </p>
           </div>
         )}
