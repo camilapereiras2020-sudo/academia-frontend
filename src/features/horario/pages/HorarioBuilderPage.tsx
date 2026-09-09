@@ -11,7 +11,7 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { profesoresApi } from "@/features/profesores/api"
 import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
 import AulaCombobox from "@/features/aulas/AulaCombobox"
-import { PALETTE } from "@/features/grupos/palette"
+import { PALETTE, suggestUniqueGrupoName } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import type { Alumno, Grupo, Marca, Profesor } from "@/types"
 
@@ -103,6 +103,11 @@ export default function HorarioBuilderPage() {
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null)
   const [toast, setToast] = useState("")
+  // "+ Agregar alumno" picker inside the roster drawer — an alternative to
+  // dragging from the sidebar, for when the student isn't visible/easy to
+  // find there. Resets whenever the drawer switches to a different class.
+  const [addAlumnoOpen, setAddAlumnoOpen] = useState(false)
+  const [addAlumnoQuery, setAddAlumnoQuery] = useState("")
   // A student can be enrolled in more than one class at once (2-3x/week is
   // normal), so placements are tracked as individual membership toggles, not
   // "the one grupo this alumno is in". Staged locally, not yet saved — lets
@@ -197,6 +202,7 @@ export default function HorarioBuilderPage() {
     profesorId: number | null; aula: string; nombre: string; marca: Marca
   } | null>(null)
   const [pendingCreateError, setPendingCreateError] = useState("")
+  const [pendingCreateNameAdjusted, setPendingCreateNameAdjusted] = useState(false)
 
   // Editing/deleting the class currently open in the roster drawer. Mirrors
   // pendingCreate's shape/modal so it feels like the same form — but only
@@ -275,6 +281,7 @@ export default function HorarioBuilderPage() {
       profesorId: null, aula: "", nombre: "", marca: marcaFilter || "rangers_academy",
     })
     setPendingCreateError("")
+    setPendingCreateNameAdjusted(false)
   }
 
   // A 6th student fits (HARD_MAX_PER_CLASS) but isn't added silently past the
@@ -306,12 +313,31 @@ export default function HorarioBuilderPage() {
     onError: () => setPendingCreateError("Error al crear la clase. Revisa los datos e inténtalo de nuevo."),
   })
 
+  // Same problem as GruposPage: nothing stops two Grupos from sharing a
+  // nombre (ej. "Mountain Rangers" dado por Cande martes Y jueves con
+  // alumnos distintos), and that's exactly what made a class hard to pick
+  // out from another same-level one. Fires on blur (not every keystroke) —
+  // if the typed name matches an existing grupo, append this class's own
+  // day+start-time so the name itself tells them apart.
+  function handlePendingNombreBlur() {
+    if (!pendingCreate) return
+    const suggested = suggestUniqueGrupoName(pendingCreate.nombre, grupos, pendingCreate.dia, pendingCreate.horaInicio)
+    if (suggested !== pendingCreate.nombre.trim()) {
+      setPendingCreate(p => p && { ...p, nombre: suggested })
+      setPendingCreateNameAdjusted(true)
+    }
+  }
+
   function handleCrearClase() {
     if (!pendingCreate) return
     if (!pendingCreate.nombre.trim()) { setPendingCreateError("Ponle un nombre a la clase."); return }
     if (!pendingCreate.profesorId) { setPendingCreateError("Elige un profesor/a."); return }
     if (!pendingCreate.aula.trim()) { setPendingCreateError("Indica el aula."); return }
     if (pendingCreate.horaFin <= pendingCreate.horaInicio) { setPendingCreateError("La hora de fin debe ser posterior a la de inicio."); return }
+    // Belt-and-suspenders, same as GruposPage — covers pegar el nombre y
+    // apretar "Crear clase" sin pasar el foco por otro campo primero.
+    const clash = grupos.some(g => g.nombre.trim().toLowerCase() === pendingCreate.nombre.trim().toLowerCase())
+    if (clash) { setPendingCreateError("Ya existe una clase con ese nombre y no se pudo diferenciar automáticamente. Cambiá el nombre."); return }
     setPendingCreateError("")
     crearClaseMut.mutate(pendingCreate)
   }
@@ -559,16 +585,27 @@ export default function HorarioBuilderPage() {
         aula: "", nombre: `${DAY_LABELS[dia]} ${horaInicio} — ${alumno.nombre}`,
         marca: alumno.marca,
       })
+      setPendingCreateNameAdjusted(false)
       return
     }
     const grupo = grupos.find(g => g.id === grupoId)
     const alumno = alumnos.find(a => a.id === alumnoId)
     if (!grupo || !alumno) return
+    assignAlumnoToGrupo(alumnoId, alumnoNombre, grupoId, sourceGrupoId)
+  }
+
+  // Shared by the drag-and-drop path (handleDrop above) and the "+ Agregar
+  // alumno" picker in the roster drawer — same capacity rules either way.
+  // Marca (Cami&Co vs Rangers Academy) is deliberately NOT checked here
+  // (2026-09-09, on purpose): while groups are still being formed, mixing
+  // brands within a class is fine — it only matters for facturación later,
+  // not for Horario. Don't reintroduce a marca-match guard here without
+  // checking with Cami first.
+  function assignAlumnoToGrupo(alumnoId: number, alumnoNombre: string, grupoId: number, sourceGrupoId?: number) {
+    const grupo = grupos.find(g => g.id === grupoId)
+    const alumno = alumnos.find(a => a.id === alumnoId)
+    if (!grupo || !alumno) return
     if (effectiveGruposOf(alumno).has(grupoId)) return // already in this class
-    if (alumno.marca !== grupo.marca) {
-      setToast(`${alumnoNombre} es de ${BRAND_META[alumno.marca].label} — "${grupo.nombre}" es de ${BRAND_META[grupo.marca].label}.`)
-      return
-    }
     const currentRoster = rosterByGrupo.get(grupoId) ?? []
     if (currentRoster.length >= HARD_MAX_PER_CLASS) {
       setToast(`"${grupo.nombre}" ya tiene ${HARD_MAX_PER_CLASS} alumnos (tope máximo).`)
@@ -602,6 +639,13 @@ export default function HorarioBuilderPage() {
     const t = setTimeout(() => setToast(""), 2500)
     return () => clearTimeout(t)
   }, [toast])
+
+  // Close/clear the "+ Agregar alumno" picker whenever the drawer switches
+  // to a different class (or closes) — otherwise a stale search stays open.
+  useEffect(() => {
+    setAddAlumnoOpen(false)
+    setAddAlumnoQuery("")
+  }, [selectedGrupoId])
 
   // Warn before leaving the page with staged-but-unsaved placements.
   useEffect(() => {
@@ -669,6 +713,18 @@ export default function HorarioBuilderPage() {
 
   const selectedGrupo = grupos.find(g => g.id === selectedGrupoId) ?? null
   const selectedRoster = selectedGrupoId != null ? (rosterByGrupo.get(selectedGrupoId) ?? []) : []
+
+  // Candidates for the "+ Agregar alumno" picker: anyone not already
+  // (effectively) in the open class, matching the typed search — cross-marca
+  // included on purpose (see assignAlumnoToGrupo). Capped to keep the list short.
+  const addAlumnoCandidates = useMemo(() => {
+    if (selectedGrupoId == null) return []
+    const q = addAlumnoQuery.trim().toLowerCase()
+    return alumnos
+      .filter(a => !effectiveGruposOf(a).has(selectedGrupoId))
+      .filter(a => !q || a.nombre.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [alumnos, selectedGrupoId, addAlumnoQuery, draftByAlumno])
   const profesoresActivos = profesores.filter(p => p.activo)
   // "Por profesor" columns: one per active teacher, plus a bucket for classes
   // with nobody assigned.
@@ -906,12 +962,49 @@ export default function HorarioBuilderPage() {
               </div>
             </div>
             <div className="p-5 overflow-y-auto flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600 mb-2">
-                Alumnos ({selectedRoster.length}/{HARD_MAX_PER_CLASS})
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
+                  Alumnos ({selectedRoster.length}/{HARD_MAX_PER_CLASS})
+                </p>
+                {!addAlumnoOpen && (
+                  <button onClick={() => setAddAlumnoOpen(true)}
+                    className="text-[11px] font-semibold text-brass-700 hover:text-brass-900 flex items-center gap-1 flex-shrink-0">
+                    + Agregar alumno
+                  </button>
+                )}
+              </div>
+              {addAlumnoOpen && (
+                <div className="border border-khaki-300 rounded-lg p-2 bg-khaki-50 mb-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    <input autoFocus type="text" placeholder="Buscar alumno..." value={addAlumnoQuery}
+                      onChange={e => setAddAlumnoQuery(e.target.value)}
+                      className="flex-1 text-xs border border-khaki-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    <button onClick={() => { setAddAlumnoOpen(false); setAddAlumnoQuery("") }} title="Cerrar"
+                      className="text-khaki-400 hover:text-pine-600 text-sm leading-none px-1 flex-shrink-0">✕</button>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {addAlumnoCandidates.length === 0 ? (
+                      <p className="text-[11px] text-pine-500 italic px-1">Sin resultados.</p>
+                    ) : addAlumnoCandidates.map(a => (
+                      <button key={a.id}
+                        onClick={() => selectedGrupoId != null && assignAlumnoToGrupo(a.id, a.nombre, selectedGrupoId)}
+                        className="w-full text-left text-xs flex items-center gap-2 px-2 py-1 rounded hover:bg-white">
+                        <span className="w-4 h-4 rounded-full bg-brass-500 text-white text-[8px] font-bold flex items-center justify-center flex-shrink-0">
+                          {initials(a.nombre)}
+                        </span>
+                        <span className="flex-1 truncate">{a.nombre}</span>
+                        <span className="text-[8px] font-bold px-1 py-0.5 rounded flex-shrink-0"
+                          style={{ background: BRAND_META[a.marca].bg, color: BRAND_META[a.marca].text }}>
+                          {BRAND_META[a.marca].tag}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <p className="text-[11px] text-pine-600 mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
               {selectedRoster.length === 0 ? (
-                <p className="text-xs text-pine-600 italic">Sin alumnos todavía. Arrastra desde la izquierda.</p>
+                <p className="text-xs text-pine-600 italic">Sin alumnos todavía. Arrastra desde la izquierda, o usa "+ Agregar alumno".</p>
               ) : (
                 <div ref={drawerRosterRef} className="space-y-2">
                   {selectedRoster.map(a => {
@@ -1017,8 +1110,14 @@ export default function HorarioBuilderPage() {
             <div>
               <label className="text-xs font-semibold text-pine-700">Nombre</label>
               <input type="text" value={pendingCreate.nombre} placeholder="Clase B1 (Eco Rangers)…"
-                onChange={e => setPendingCreate(p => p && { ...p, nombre: e.target.value })}
+                onChange={e => { setPendingCreate(p => p && { ...p, nombre: e.target.value }); setPendingCreateNameAdjusted(false) }}
+                onBlur={handlePendingNombreBlur}
                 className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+              {pendingCreateNameAdjusted && (
+                <p className="text-[11px] text-brass-700 mt-1">
+                  Ya existe una clase con ese nombre — se agregó el horario para diferenciarla.
+                </p>
+              )}
             </div>
 
             {/* Marca only matters here (not on the drag-created path) because
