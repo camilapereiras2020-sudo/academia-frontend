@@ -62,6 +62,19 @@ h1, h2, h3, label {
   font-weight: 400 !important;
 }
 
+/* Font-size floor — a lot of small UI details across the app (calendar
+   event badges, sub-labels, table fine print) were set with ad-hoc pixel
+   values well below what's comfortably legible, especially on the
+   condensed body font (Barlow Semi Condensed reads narrower/smaller than a
+   normal sans at the same size). Rather than hunting down every
+   text-[Npx] individually across dozens of files, raise the floor here
+   once, app-wide. 2026-09-09 — "todo se ve cada vez más chico". */
+.text-\[7px\]  { font-size: 9px !important; }
+.text-\[8px\]  { font-size: 9px !important; }
+.text-\[9px\]  { font-size: 10px !important; }
+.text-\[10px\] { font-size: 11px !important; }
+.text-\[11px\] { font-size: 12.5px !important; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -233,7 +246,7 @@ body::before {
 
 /* Page header */
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 .page-title {
   font-family: 'Cormorant Garamond', serif;
@@ -314,6 +327,6 @@ body::before {
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 2rem;
+  padding: 1.5rem;
   animation: fadeUp 0.25s ease forwards;
 }
