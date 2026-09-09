@@ -147,8 +147,10 @@ function OwnerDashboard() {
           <h1 className="font-head text-[26px] font-normal text-pine-800">Station Overview</h1>
           <p className="text-[13px] text-pine-700 mt-1">{formatMonth(mesAct)}</p>
         </div>
-        <div className="flex gap-2">
-          <Link to="/asistencia" className="px-4 py-2 rounded-[5px] border-2 border-pine-800/25 text-pine-700 text-sm font-semibold no-underline hover:bg-pine-800/5">
+        <div className="flex items-center gap-4">
+          {/* Secondary action — plain text link, not a boxed button, so it
+              doesn't visually compete with the one primary action. */}
+          <Link to="/asistencia" className="text-pine-700 text-sm font-semibold no-underline hover:text-pine-900 hover:underline">
             Pasar lista
           </Link>
           <Link to="/pagos/nuevo" className="px-4 py-2 rounded-[5px] bg-brass-500 border-2 border-brass-700 text-pine-900 text-sm font-bold no-underline hover:bg-brass-300">
@@ -175,10 +177,11 @@ function OwnerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5 items-start">
 
       <div className="relative bg-pine-800 border-2 border-pine-800 rounded-md p-4 pb-3 overflow-hidden">
-        <svg viewBox="0 0 200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.08]">
-          <circle cx="100" cy="80" r="20" fill="none" stroke="#F6F1E7" strokeWidth="2" />
+        {/* Toned way down (was 0.08, four rings) — this is the highest-contrast
+            card on the page but the lowest-information one, so the decoration
+            shouldn't compete with the actual numbers for attention. */}
+        <svg viewBox="0 0 200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.035]">
           <circle cx="100" cy="80" r="40" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-          <circle cx="100" cy="80" r="60" fill="none" stroke="#F6F1E7" strokeWidth="2" />
           <circle cx="100" cy="80" r="80" fill="none" stroke="#F6F1E7" strokeWidth="2" />
         </svg>
         <div className="relative flex items-center justify-between flex-wrap gap-2 mb-2">
@@ -311,12 +314,12 @@ function OwnerDashboard() {
                 <tbody>
                   {recientes.map(p => (
                     <tr key={p.id}>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-pine-800 whitespace-nowrap">
+                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-[14px] text-pine-800 whitespace-nowrap">
                         {p.alumno ? <Link to={`/alumnos/${p.alumno}`} className="hover:text-brass-700 hover:underline">{p.alumno_nombre}</Link> : p.alumno_nombre}
                       </td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 text-pine-700 whitespace-nowrap">{p.pagador_nombre}</td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 text-pine-700 whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-pine-900 whitespace-nowrap">{formatEur(Number(p.total))}</td>
+                      <td className="px-3.5 py-3 border-b border-khaki-300 text-xs text-pine-700 whitespace-nowrap">{p.pagador_nombre}</td>
+                      <td className="px-3.5 py-3 border-b border-khaki-300 text-xs text-pine-700 whitespace-nowrap">{formatMonth(p.periodo)}</td>
+                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-[15px] text-pine-900 whitespace-nowrap">{formatEur(Number(p.total))}</td>
                       <td className="px-3.5 py-3 border-b border-khaki-300 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span className={`inline-block text-xs font-extrabold uppercase tracking-[0.03em] px-2.5 py-1 rounded ${ESTADO_CLS[p.estado]}`}>
@@ -345,7 +348,10 @@ function OwnerDashboard() {
         {/* Side panels */}
         <div className="flex flex-col gap-5">
 
-          {/* Quick actions */}
+          {/* Quick actions — the header up top only has room for one primary
+              shortcut, so this is where the rest of the day-to-day jumps
+              live. Also gives this column enough visual weight to sit next
+              to the ledger table without reading as mostly empty space. */}
           <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
             <div className="font-head text-[15px] text-pine-800 mb-3.5">⚡ Quick Actions</div>
             <div className="flex flex-col gap-2">
@@ -354,6 +360,12 @@ function OwnerDashboard() {
               </Link>
               <Link to="/pagos/nuevo" className="px-3.5 py-2.5 rounded-[5px] bg-pine-800 text-khaki-100 text-sm font-semibold no-underline hover:bg-pine-700 text-center">
                 + Nuevo pago
+              </Link>
+              <Link to="/horario" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+                📅 Ver Horario
+              </Link>
+              <Link to="/crm" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+                🧭 Ver CRM
               </Link>
             </div>
           </div>
