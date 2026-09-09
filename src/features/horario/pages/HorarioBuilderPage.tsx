@@ -879,10 +879,17 @@ export default function HorarioBuilderPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {alumnosByAge[g].map(a => {
                     const n = effectiveGruposOf(a).size
+                    // Sin clase asignada — resaltado en ámbar para que salte a
+                    // la vista en el listado, en vez de mezclarse con el resto.
                     return (
                       <span key={a.id}
-                        className="student-pill touch-none flex items-center gap-1.5 text-xs font-semibold bg-white border border-khaki-300 text-pine-800 rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none"
-                        data-name={a.nombre} data-alumno-id={a.id} title={BRAND_META[a.marca].label}>
+                        className={`student-pill touch-none flex items-center gap-1.5 text-xs font-semibold rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none ${
+                          n === 0
+                            ? "bg-amber-50 border border-amber-300 text-amber-900"
+                            : "bg-white border border-khaki-300 text-pine-800"
+                        }`}
+                        data-name={a.nombre} data-alumno-id={a.id}
+                        title={n === 0 ? `${BRAND_META[a.marca].label} · sin clase asignada` : BRAND_META[a.marca].label}>
                         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                         {a.nombre}
                         {n > 0 && (
