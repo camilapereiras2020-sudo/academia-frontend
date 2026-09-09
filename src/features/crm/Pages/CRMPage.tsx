@@ -161,6 +161,18 @@ export default function CRMPage() {
   // list state
   const [filtroEtapa, setFiltroEtapa] = useState("")
   const [search, setSearch] = useState("")
+  // "Activos" (pipeline en curso) vs "Guardados" (fríos) — antes vivían todos
+  // mezclados en el mismo listado, distinguibles solo por una etiqueta. Ahora
+  // son dos vistas separadas: Guardados solo muestra etapa="frio", Activos
+  // muestra todo lo demás (nunca frío ni archivado).
+  const [vista, setVista] = useState<"activos" | "guardados">("activos")
+  // Formulario de "Nueva consulta" reducido a lo esencial por defecto — el
+  // resto de campos quedan plegados detrás de "+ Más detalles".
+  const [showOptional, setShowOptional] = useState(false)
+  // Tras crear un lead nuevo (no al editar uno existente), se ofrece decidir
+  // qué hacer con él de una — matricular / esperar / contactar / guardar —
+  // en vez de tener que volver a buscarlo en el listado.
+  const [postCreateLead, setPostCreateLead] = useState<Lead | null>(null)
 
   // detail panel — opening from ?lead=<id> (e.g. the reminders popup's
   // "Ver" button) selects it up front via a lazy initializer, so there's
@@ -217,13 +229,16 @@ export default function CRMPage() {
     queryFn: () => api.get(`/leads/${filtroEtapa ? `?etapa=${filtroEtapa}` : ""}`).then(r => r.data),
   })
   const leadsAll: Lead[] = Array.isArray(leadsRaw) ? leadsRaw : leadsRaw?.results ?? []
+  const leadsPorVista = vista === "guardados"
+    ? leadsAll.filter(l => l.etapa === "frio")
+    : leadsAll.filter(l => l.etapa !== "frio" && l.etapa !== "archivado")
   const leads = search
-    ? leadsAll.filter(l =>
+    ? leadsPorVista.filter(l =>
         l.nombre_alumno.toLowerCase().includes(search.toLowerCase()) ||
         l.nombre_contacto.toLowerCase().includes(search.toLowerCase()) ||
         (l.telefono ?? "").includes(search)
       )
-    : leadsAll
+    : leadsPorVista
 
   const { data: gruposRaw } = useQuery({
     queryKey: ["grupos"],
@@ -243,11 +258,16 @@ export default function CRMPage() {
     mutationFn: (data: any) => editingId
       ? api.patch(`/leads/${editingId}/`, data)
       : api.post("/leads/", data),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      const wasNew = !editingId
       qc.invalidateQueries({ queryKey: ["leads"] })
       qc.invalidateQueries({ queryKey: ["crm-dashboard"] })
       if (editingId) qc.invalidateQueries({ queryKey: ["lead", editingId] })
       closeModal()
+      // Recién creado (no editado) — ofrecer decidir qué hacer con él ya
+      // mismo, en vez de dejarlo perdido en "Nueva consulta" hasta que
+      // alguien lo encuentre en el listado.
+      if (wasNew) setPostCreateLead(res.data as Lead)
     },
     onError: () => setFormError("Error al guardar. Revisa los campos."),
   })
@@ -308,7 +328,8 @@ export default function CRMPage() {
   // ── handlers ──────────────────────────────────────────────────────────────
 
   function openNew() {
-    setEditingId(null); setForm(emptyLeadForm()); setOriginalTelefono(""); setFormError(""); setShowModal(true)
+    setEditingId(null); setForm(emptyLeadForm()); setOriginalTelefono(""); setFormError("")
+    setShowOptional(false); setShowModal(true)
   }
 
   function openEdit(lead: Lead) {
@@ -326,10 +347,26 @@ export default function CRMPage() {
       pagador_es_alumno: lead.pagador_es_alumno ?? false,
     })
     setOriginalTelefono(lead.telefono ?? "")
-    setFormError(""); setShowModal(true)
+    setFormError(""); setShowOptional(true); setShowModal(true)
   }
 
   function closeModal() { setShowModal(false); setEditingId(null) }
+
+  // Las 4 decisiones tras crear un lead — cada una es directamente un cambio
+  // de etapa (esperar=pendiente_llamar, contactar=en_conversacion,
+  // guardar=frio), salvo matricular que abre su propio modal.
+  function decidirNuevoLead(accion: "matricular" | "esperar" | "contactar" | "guardar") {
+    if (!postCreateLead) return
+    if (accion === "matricular") {
+      openMatricular(postCreateLead)
+      setPostCreateLead(null)
+      return
+    }
+    const etapa = accion === "esperar" ? "pendiente_llamar" : accion === "contactar" ? "en_conversacion" : "frio"
+    cambiarEtapaMut.mutate({ id: postCreateLead.id, etapa })
+    if (accion === "contactar") selectLead(postCreateLead.id)
+    setPostCreateLead(null)
+  }
 
   function handleSubmit() {
     if ((!form.es_adulto && !form.nombre_contacto.trim()) || !form.nombre_alumno.trim()) {
@@ -426,34 +463,56 @@ export default function CRMPage() {
           </div>
         )}
 
+        {/* Activos vs Guardados — separa a los fríos del pipeline en curso,
+            en vez de mezclarlos en el mismo listado distinguibles solo por
+            una etiqueta. */}
+        <div className="flex gap-1 mb-4 bg-khaki-100 rounded-lg p-1 w-fit">
+          <button onClick={() => { setVista("activos"); setFiltroEtapa("") }}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              vista === "activos" ? "bg-white text-pine-900 shadow-sm" : "text-pine-600 hover:text-pine-900"
+            }`}>
+            Activos
+          </button>
+          <button onClick={() => { setVista("guardados"); setFiltroEtapa("") }}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              vista === "guardados" ? "bg-white text-pine-900 shadow-sm" : "text-pine-600 hover:text-pine-900"
+            }`}>
+            🗄 Guardados
+          </button>
+        </div>
+
         {/* Search + etapa filter */}
         <div className="mb-4 space-y-2">
           <input type="text" placeholder="Buscar por nombre o teléfono…" value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full max-w-xs border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setFiltroEtapa("")}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                filtroEtapa === "" ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
-              }`}>
-              Todos
-            </button>
-            {ETAPAS.filter(e => e.value !== "archivado").map(e => (
-              <button key={e.value} onClick={() => setFiltroEtapa(e.value)}
+          {vista === "activos" && (
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setFiltroEtapa("")}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filtroEtapa === e.value ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
+                  filtroEtapa === "" ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
                 }`}>
-                {e.label}
+                Todos
               </button>
-            ))}
-          </div>
+              {ETAPAS.filter(e => e.value !== "archivado" && e.value !== "frio").map(e => (
+                <button key={e.value} onClick={() => setFiltroEtapa(e.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    filtroEtapa === e.value ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
+                  }`}>
+                  {e.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
         {!isLoading && !leads.length && (
           <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
             <span className="text-5xl mb-3">📋</span>
-            <p className="text-sm">{search ? "Sin resultados." : "Sin leads. Añade una consulta."}</p>
+            <p className="text-sm">
+              {search ? "Sin resultados." : vista === "guardados" ? "Sin contactos guardados." : "Sin leads. Añade una consulta."}
+            </p>
           </div>
         )}
 
@@ -699,7 +758,7 @@ export default function CRMPage() {
               )}
 
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Obligatorio</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Datos rápidos</p>
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs font-semibold text-pine-700 mb-1">
@@ -714,6 +773,26 @@ export default function CRMPage() {
                     <input value={form.nombre_alumno} placeholder="Carlos García"
                       onChange={e => setForm(p => ({ ...p, nombre_alumno: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-pine-700 mb-1">Teléfono</label>
+                    <input value={form.telefono} placeholder="666 123 456"
+                      onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                        form.telefono.trim() && !isValidSpanishPhone(form.telefono)
+                          ? "border-red-300 focus:ring-red-400"
+                          : "focus:ring-brass-500"
+                      }`} />
+                    {form.telefono.trim() && !isValidSpanishPhone(form.telefono) && (
+                      <p className="text-xs text-red-600 mt-1">Debe tener 9 dígitos y empezar por 6, 7 o 9.</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-pine-700 mb-1">¿Cómo contactó?</label>
+                    <select value={form.origen} onChange={e => setForm(p => ({ ...p, origen: e.target.value }))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                      {ORIGENES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="flex items-center gap-2 text-sm text-pine-700 cursor-pointer">
@@ -742,9 +821,12 @@ export default function CRMPage() {
               </section>
 
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Opcional</p>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setShowOptional(v => !v)}
+                  className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-pine-600 mb-3 hover:text-pine-900">
+                  <span className="text-[10px]">{showOptional ? "▾" : "▸"}</span> Más detalles (opcional)
+                </button>
+                {showOptional && (
+                  <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-semibold text-pine-700 mb-1">Objetivo</label>
                       <select value={form.objetivo} onChange={e => setForm(p => ({ ...p, objetivo: e.target.value }))}
@@ -752,68 +834,48 @@ export default function CRMPage() {
                         {OBJETIVOS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Origen</label>
-                      <select value={form.origen} onChange={e => setForm(p => ({ ...p, origen: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
-                        {ORIGENES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-pine-700 mb-1">Edad alumno</label>
+                        <input type="number" placeholder="12" value={form.edad_alumno}
+                          onChange={e => setForm(p => ({ ...p, edad_alumno: e.target.value }))}
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-pine-700 mb-1">Curso escolar</label>
+                        <input placeholder="1º ESO" value={form.curso_escolar}
+                          onChange={e => setForm(p => ({ ...p, curso_escolar: e.target.value }))}
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Teléfono</label>
-                    <input value={form.telefono} placeholder="666 123 456"
-                      onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))}
-                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                        form.telefono.trim() && !isValidSpanishPhone(form.telefono)
-                          ? "border-red-300 focus:ring-red-400"
-                          : "focus:ring-brass-500"
-                      }`} />
-                    {form.telefono.trim() && !isValidSpanishPhone(form.telefono) && (
-                      <p className="text-xs text-red-600 mt-1">Debe tener 9 dígitos y empezar por 6, 7 o 9.</p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { key: "email",                label: "Email",              placeholder: "ana@email.com" },
+                      { key: "colegio",              label: "Colegio",            placeholder: "IES Xelmírez" },
+                      { key: "nivel_estimado",       label: "Nivel estimado",     placeholder: "A2, B1…" },
+                      { key: "disponibilidad",       label: "Disponibilidad",     placeholder: "Tardes, martes y jueves…" },
+                      { key: "necesidades_especiales", label: "Necesidades especiales", placeholder: "TDAH, dislexia…" },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label className="block text-xs font-semibold text-pine-700 mb-1">{f.label}</label>
+                        <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
+                          onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      </div>
+                    ))}
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Edad alumno</label>
-                      <input type="number" placeholder="12" value={form.edad_alumno}
-                        onChange={e => setForm(p => ({ ...p, edad_alumno: e.target.value }))}
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">Próximo seguimiento</label>
+                      <input type="date" value={form.proximo_seguimiento}
+                        onChange={e => setForm(p => ({ ...p, proximo_seguimiento: e.target.value }))}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Curso escolar</label>
-                      <input placeholder="1º ESO" value={form.curso_escolar}
-                        onChange={e => setForm(p => ({ ...p, curso_escolar: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
+                      <textarea rows={3} placeholder="Cualquier detalle relevante…" value={form.notas}
+                        onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none" />
                     </div>
                   </div>
-                  {[
-                    { key: "email",                label: "Email",              placeholder: "ana@email.com" },
-                    { key: "colegio",              label: "Colegio",            placeholder: "IES Xelmírez" },
-                    { key: "nivel_estimado",       label: "Nivel estimado",     placeholder: "A2, B1…" },
-                    { key: "disponibilidad",       label: "Disponibilidad",     placeholder: "Tardes, martes y jueves…" },
-                    { key: "necesidades_especiales", label: "Necesidades especiales", placeholder: "TDAH, dislexia…" },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">{f.label}</label>
-                      <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
-                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-                    </div>
-                  ))}
-                  <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Próximo seguimiento</label>
-                    <input type="date" value={form.proximo_seguimiento}
-                      onChange={e => setForm(p => ({ ...p, proximo_seguimiento: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
-                    <textarea rows={3} placeholder="Cualquier detalle relevante…" value={form.notas}
-                      onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none" />
-                  </div>
-                </div>
+                )}
               </section>
             </div>
 
@@ -921,6 +983,43 @@ export default function CRMPage() {
               <button onClick={() => navigate(`/alumnos/${matriculaResult.alumno_id}`)}
                 className="flex-1 px-4 py-2 bg-pine-900 text-white rounded-lg text-sm font-medium hover:bg-pine-700">
                 Ver perfil del alumno
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL — decidir qué hacer con un lead recién creado ───────────── */}
+      {postCreateLead && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setPostCreateLead(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-lg font-bold text-pine-900">{postCreateLead.nombre_alumno}</h2>
+              <p className="text-xs text-pine-600 mt-0.5">Contacto guardado. ¿Qué hacemos?</p>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-2">
+              <button onClick={() => decidirNuevoLead("matricular")}
+                className="px-3 py-3 border rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 flex flex-col items-center gap-1">
+                <span className="text-lg">🎓</span> Matricular
+              </button>
+              <button onClick={() => decidirNuevoLead("esperar")}
+                className="px-3 py-3 border rounded-lg text-sm font-medium text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1">
+                <span className="text-lg">⏳</span> Esperar
+              </button>
+              <button onClick={() => decidirNuevoLead("contactar")}
+                className="px-3 py-3 border rounded-lg text-sm font-medium text-purple-700 hover:bg-purple-50 flex flex-col items-center gap-1">
+                <span className="text-lg">💬</span> Contactar
+              </button>
+              <button onClick={() => decidirNuevoLead("guardar")}
+                className="px-3 py-3 border rounded-lg text-sm font-medium text-pine-600 hover:bg-khaki-100 flex flex-col items-center gap-1">
+                <span className="text-lg">🗄</span> Guardar
+              </button>
+            </div>
+            <div className="px-6 pb-5">
+              <button onClick={() => setPostCreateLead(null)}
+                className="w-full text-xs text-pine-500 hover:text-pine-700 underline">
+                Decidir más tarde
               </button>
             </div>
           </div>
