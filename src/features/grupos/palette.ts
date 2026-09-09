@@ -25,6 +25,22 @@ export function suggestUniqueGrupoName(
   return `${trimmed} (${DIAS[dia]?.slice(0, 3)} ${horaIni})`
 }
 
+// Plain-text label for a grupo in a <select>/list, WITH its schedule —
+// several list/select spots across the app (Asistencia, Pagos, CRM) show
+// only `grupo.nombre`, which is exactly what's ambiguous when several
+// grupos share a name (see suggestUniqueGrupoName above — the suffix there
+// only covers NEW grupos going forward, existing homonyms still need this
+// at display time). Always appends the schedule, not just when there's a
+// clash — the day/time is useful context regardless, and this fn has no way
+// to know about other grupos in the list to check for one.
+export function grupoLabel(g: { nombre: string; horarios?: { dia: number; ini: string }[] }): string {
+  const horarios = g.horarios ?? []
+  if (!horarios.length) return g.nombre
+  const primero = `${DIAS[horarios[0].dia]?.slice(0, 3)} ${horarios[0].ini}`
+  const resto = horarios.length > 1 ? ` +${horarios.length - 1}` : ""
+  return `${g.nombre} — ${primero}${resto}`
+}
+
 export const PALETTE = [
   { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd", accent: "#3b82f6" },
   { bg: "#dcfce7", text: "#15803d", border: "#86efac", accent: "#22c55e" },

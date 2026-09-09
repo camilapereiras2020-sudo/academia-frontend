@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { gruposApi } from "@/features/grupos/api"
+import { grupoLabel } from "@/features/grupos/palette"
 import type { Grupo } from "@/types"
 
 // ── constants ──────────────────────────────────────────────────────────────
@@ -856,7 +857,7 @@ export default function CRMPage() {
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
                   <option value="">Selecciona un grupo…</option>
                   {grupos.map(g => (
-                    <option key={g.id} value={g.id}>{g.nombre} — {Number(g.tarifa).toFixed(2)}€</option>
+                    <option key={g.id} value={g.id}>{grupoLabel(g)} — {Number(g.tarifa).toFixed(2)}€</option>
                   ))}
                 </select>
               </div>

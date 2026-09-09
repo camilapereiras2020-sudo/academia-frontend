@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { asistenciaApi } from "../api"
 import { gruposApi } from "@/features/grupos/api"
+import { grupoLabel } from "@/features/grupos/palette"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import type { Grupo, Alumno, Sesion } from "@/types"
 
@@ -71,7 +72,7 @@ export default function AsistenciaPage() {
           <select value={grupoId} onChange={e => { setGrupoId(+e.target.value); setShowForm(false) }}
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
             <option value="">Seleccionar grupo...</option>
-            {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+            {grupos.map(g => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
           </select>
         </div>
         <div>
@@ -121,7 +122,9 @@ export default function AsistenciaPage() {
       {grupoId && !showForm && (
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="px-6 py-4 border-b">
-            <h2 className="font-semibold text-pine-900">Historial — {grupos.find(g => g.id === grupoId)?.nombre}</h2>
+            <h2 className="font-semibold text-pine-900">
+              Historial — {(() => { const g = grupos.find(g => g.id === grupoId); return g ? grupoLabel(g) : "" })()}
+            </h2>
           </div>
           {!sesiones.length && <p className="p-6 text-pine-600 text-sm">Sin sesiones este mes.</p>}
           {sesiones.map(s => (

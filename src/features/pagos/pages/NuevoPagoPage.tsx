@@ -5,6 +5,7 @@ import { pagosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
+import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
 import type { Tarifa, Marca } from "@/types"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
@@ -161,7 +162,7 @@ export default function NuevoPagoPage() {
             <select value={grupo} onChange={e => setGrupo(+e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
               <option value="">Sin grupo</option>
-              {grupos.map((g: any) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+              {grupos.map((g: any) => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
             </select>
           </div>
           <div>
