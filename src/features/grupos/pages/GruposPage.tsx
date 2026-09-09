@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { gruposApi } from "../api"
-import { DIAS, PALETTE } from "../palette"
+import { DIAS, PALETTE, suggestUniqueGrupoName } from "../palette"
 import type { Grupo } from "@/types"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
@@ -29,6 +29,7 @@ export default function GruposPage() {
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<Grupo | null>(null)
   const [deleteError, setDeleteError] = useState("")
+  const [nameAutoAdjusted, setNameAutoAdjusted] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ["grupos"],
@@ -56,6 +57,7 @@ export default function GruposPage() {
     setEditing(null)
     setForm(emptyForm(grupos.length % PALETTE.length))
     setFormError("")
+    setNameAutoAdjusted(false)
     setShowModal(true)
   }
 
@@ -67,10 +69,26 @@ export default function GruposPage() {
       horarios: g.horarios ?? [],
     })
     setFormError("")
+    setNameAutoAdjusted(false)
     setShowModal(true)
   }
 
   function closeModal() { setShowModal(false); setEditing(null) }
+
+  // Fires when the nombre field loses focus (not on every keystroke, so
+  // typing isn't interrupted mid-word) — if what's there matches an existing
+  // grupo's name, append that grupo's own day+time to make this one tell
+  // apart from it. Only kicks in once at least one horario is set; with none
+  // yet there's nothing to disambiguate with, so the name is left alone.
+  function handleNombreBlur() {
+    const suggested = suggestUniqueGrupoName(
+      form.nombre, all, form.horarios[0]?.dia, form.horarios[0]?.ini, editing?.id
+    )
+    if (suggested !== form.nombre.trim()) {
+      setForm(f => ({ ...f, nombre: suggested }))
+      setNameAutoAdjusted(true)
+    }
+  }
 
   function addHorario() {
     setForm(f => ({ ...f, horarios: [...f.horarios, { dia: 0, ini: "09:00", fin: "10:00" }] }))
@@ -90,6 +108,15 @@ export default function GruposPage() {
 
   function handleSubmit() {
     if (!form.nombre.trim()) { setFormError("El nombre es obligatorio."); return }
+    // Belt-and-suspenders for the case the onBlur suggestion couldn't fire
+    // (ej. pegó el nombre y le dio a "Crear grupo" sin pasar por otro campo)
+    // — sin horario no hay con qué armar un sufijo, así que frenamos en vez
+    // de dejar pasar otra clase indistinguible de una ya existente.
+    const clash = all.some(g => g.id !== editing?.id && g.nombre.trim().toLowerCase() === form.nombre.trim().toLowerCase())
+    if (clash) {
+      setFormError("Ya existe una clase con ese nombre. Añadí un horario (para diferenciarla automáticamente) o cambiá el nombre.")
+      return
+    }
     setFormError("")
     saveMut.mutate(form)
   }
@@ -211,8 +238,14 @@ export default function GruposPage() {
               <div>
                 <label className="block text-xs font-semibold text-pine-800 mb-1">Nombre *</label>
                 <input type="text" value={form.nombre} placeholder="Ej: B1 Martes tarde"
-                  onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                  onChange={e => { setForm(f => ({ ...f, nombre: e.target.value })); setNameAutoAdjusted(false) }}
+                  onBlur={handleNombreBlur}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                {nameAutoAdjusted && (
+                  <p className="text-[11px] text-brass-700 mt-1">
+                    Ya existe una clase con ese nombre — se agregó el horario para diferenciarla. Podés cambiarlo si querés otro nombre.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -270,10 +303,12 @@ export default function GruposPage() {
                   {form.horarios.map((h, idx) => (
                     <div key={idx} className="flex items-center gap-2 flex-wrap">
                       <select value={h.dia} onChange={e => updateHorario(idx, "dia", +e.target.value)}
+                        onBlur={idx === 0 ? handleNombreBlur : undefined}
                         className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none">
                         {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                       </select>
                       <input type="time" value={h.ini} onChange={e => updateHorario(idx, "ini", e.target.value)}
+                        onBlur={idx === 0 ? handleNombreBlur : undefined}
                         className="border rounded-lg px-2 py-1.5 text-sm w-28 focus:outline-none" />
                       <span className="text-sm text-pine-300">→</span>
                       <input type="time" value={h.fin} onChange={e => updateHorario(idx, "fin", e.target.value)}

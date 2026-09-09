@@ -11,7 +11,7 @@ import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { profesoresApi } from "@/features/profesores/api"
 import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
 import AulaCombobox from "@/features/aulas/AulaCombobox"
-import { PALETTE } from "@/features/grupos/palette"
+import { PALETTE, suggestUniqueGrupoName } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import type { Alumno, Grupo, Marca, Profesor } from "@/types"
 
@@ -197,6 +197,7 @@ export default function HorarioBuilderPage() {
     profesorId: number | null; aula: string; nombre: string; marca: Marca
   } | null>(null)
   const [pendingCreateError, setPendingCreateError] = useState("")
+  const [pendingCreateNameAdjusted, setPendingCreateNameAdjusted] = useState(false)
 
   // Editing/deleting the class currently open in the roster drawer. Mirrors
   // pendingCreate's shape/modal so it feels like the same form — but only
@@ -275,6 +276,7 @@ export default function HorarioBuilderPage() {
       profesorId: null, aula: "", nombre: "", marca: marcaFilter || "rangers_academy",
     })
     setPendingCreateError("")
+    setPendingCreateNameAdjusted(false)
   }
 
   // A 6th student fits (HARD_MAX_PER_CLASS) but isn't added silently past the
@@ -306,12 +308,31 @@ export default function HorarioBuilderPage() {
     onError: () => setPendingCreateError("Error al crear la clase. Revisa los datos e inténtalo de nuevo."),
   })
 
+  // Same problem as GruposPage: nothing stops two Grupos from sharing a
+  // nombre (ej. "Mountain Rangers" dado por Cande martes Y jueves con
+  // alumnos distintos), and that's exactly what made a class hard to pick
+  // out from another same-level one. Fires on blur (not every keystroke) —
+  // if the typed name matches an existing grupo, append this class's own
+  // day+start-time so the name itself tells them apart.
+  function handlePendingNombreBlur() {
+    if (!pendingCreate) return
+    const suggested = suggestUniqueGrupoName(pendingCreate.nombre, grupos, pendingCreate.dia, pendingCreate.horaInicio)
+    if (suggested !== pendingCreate.nombre.trim()) {
+      setPendingCreate(p => p && { ...p, nombre: suggested })
+      setPendingCreateNameAdjusted(true)
+    }
+  }
+
   function handleCrearClase() {
     if (!pendingCreate) return
     if (!pendingCreate.nombre.trim()) { setPendingCreateError("Ponle un nombre a la clase."); return }
     if (!pendingCreate.profesorId) { setPendingCreateError("Elige un profesor/a."); return }
     if (!pendingCreate.aula.trim()) { setPendingCreateError("Indica el aula."); return }
     if (pendingCreate.horaFin <= pendingCreate.horaInicio) { setPendingCreateError("La hora de fin debe ser posterior a la de inicio."); return }
+    // Belt-and-suspenders, same as GruposPage — covers pegar el nombre y
+    // apretar "Crear clase" sin pasar el foco por otro campo primero.
+    const clash = grupos.some(g => g.nombre.trim().toLowerCase() === pendingCreate.nombre.trim().toLowerCase())
+    if (clash) { setPendingCreateError("Ya existe una clase con ese nombre y no se pudo diferenciar automáticamente. Cambiá el nombre."); return }
     setPendingCreateError("")
     crearClaseMut.mutate(pendingCreate)
   }
@@ -501,6 +522,36 @@ export default function HorarioBuilderPage() {
     return match ? match.extendedProps.grupoId : null
   }
 
+  // Precise drop target, read straight from the DOM instead of guessed from
+  // day+time. day+time alone can't tell two classes apart when they overlap
+  // on the calendar (two same-level sections meeting the same day and hour
+  // with different profesores is exactly the common case) — grupoIdAtDropDate
+  // above just returns whichever overlapping class happens to come first in
+  // `events`, regardless of which visual column the pointer was actually
+  // over, silently mixing students between same-level classes.
+  // elementFromPoint is safe here even though FullCalendar's drag "mirror"
+  // (the clone that follows the cursor) is sitting on top of everything at
+  // drop time — @fullcalendar/interaction's ElementMirror sets
+  // `pointerEvents: none` on it (see node_modules/@fullcalendar/interaction,
+  // ElementMirror class), so elementFromPoint already sees through it to the
+  // real event underneath. Falls back to null (not the day/time guess) when
+  // there's nothing under the point — that's an empty cell, correctly
+  // triggering the "create new class" flow in handleDrop.
+  function grupoIdAtPoint(clientX: number, clientY: number): number | null {
+    const el = document.elementFromPoint(clientX, clientY)
+    const withGrupo = el?.closest<HTMLElement>("[data-grupo-id]")
+    const raw = withGrupo?.dataset.grupoId
+    return raw ? Number(raw) : null
+  }
+
+  function clientPointFromJsEvent(jsEvent: unknown): { x: number; y: number } | null {
+    const e = jsEvent as (MouseEvent & TouchEvent) | undefined
+    if (!e) return null
+    if (typeof e.clientX === "number") return { x: e.clientX, y: e.clientY }
+    const touch = e.changedTouches?.[0]
+    return touch ? { x: touch.clientX, y: touch.clientY } : null
+  }
+
   // sourceGrupoId is set when the drag started from an already-open class
   // drawer (a "roster-pill") — that's a reassign/move (drop out of the
   // source class, into the target). A drag from the sidebar (unassigned or
@@ -509,9 +560,9 @@ export default function HorarioBuilderPage() {
   // exactly what "2 or 3 classes a week" needs.
   function handleDrop(
     alumnoId: number, alumnoNombre: string, dropDate: Date, sourceGrupoId?: number,
-    resourceProfesorId?: number | null
+    resourceProfesorId?: number | null, grupoIdHit?: number | null
   ) {
-    const grupoId = grupoIdAtDropDate(dropDate, resourceProfesorId)
+    const grupoId = grupoIdHit ?? grupoIdAtDropDate(dropDate, resourceProfesorId)
     if (!grupoId) {
       // Empty cell — no class meets here yet. Rather than no-op, offer to
       // create one on the spot with this student as its first enrollment.
@@ -529,6 +580,7 @@ export default function HorarioBuilderPage() {
         aula: "", nombre: `${DAY_LABELS[dia]} ${horaInicio} — ${alumno.nombre}`,
         marca: alumno.marca,
       })
+      setPendingCreateNameAdjusted(false)
       return
     }
     const grupo = grupos.find(g => g.id === grupoId)
@@ -697,7 +749,9 @@ export default function HorarioBuilderPage() {
           const nombre = info.draggedEl.getAttribute("data-name") ?? ""
           const sourceAttr = info.draggedEl.getAttribute("data-source-grupo-id")
           const sourceGrupoId = sourceAttr ? Number(sourceAttr) : undefined
-          handleDrop(alumnoId, nombre, info.date, sourceGrupoId, opts.dropColumnProfesorId)
+          const point = clientPointFromJsEvent(info.jsEvent)
+          const grupoIdHit = point ? grupoIdAtPoint(point.x, point.y) : null
+          handleDrop(alumnoId, nombre, info.date, sourceGrupoId, opts.dropColumnProfesorId, grupoIdHit)
         }}
         eventReceive={(info) => info.revert()}
       />
@@ -985,8 +1039,14 @@ export default function HorarioBuilderPage() {
             <div>
               <label className="text-xs font-semibold text-pine-700">Nombre</label>
               <input type="text" value={pendingCreate.nombre} placeholder="Clase B1 (Eco Rangers)…"
-                onChange={e => setPendingCreate(p => p && { ...p, nombre: e.target.value })}
+                onChange={e => { setPendingCreate(p => p && { ...p, nombre: e.target.value }); setPendingCreateNameAdjusted(false) }}
+                onBlur={handlePendingNombreBlur}
                 className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+              {pendingCreateNameAdjusted && (
+                <p className="text-[11px] text-brass-700 mt-1">
+                  Ya existe una clase con ese nombre — se agregó el horario para diferenciarla.
+                </p>
+              )}
             </div>
 
             {/* Marca only matters here (not on the drag-created path) because

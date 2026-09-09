@@ -1,5 +1,30 @@
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 
+// Same-level parallel sections (ej. "Mountain Rangers" dado por Cande los
+// martes Y los jueves, con alumnos distintos en cada uno) end up with the
+// exact same Grupo.nombre — nothing enforces uniqueness, and Cami/Cande have
+// no way to tell them apart when picking one to edit/asignar. If the name
+// being typed already matches an existing grupo (case/whitespace-insensitive,
+// excluding the one being edited), append its day+start-time so the name
+// itself disambiguates it — same idea as a school doing "4ºA" vs "4ºB", but
+// automatic instead of asking Cami to remember to do it by hand.
+export function suggestUniqueGrupoName(
+  nombre: string,
+  existing: { id?: number; nombre: string }[],
+  dia?: number | null,
+  horaIni?: string,
+  excludeId?: number
+): string {
+  const trimmed = nombre.trim()
+  if (!trimmed) return trimmed
+  const clash = existing.some(
+    g => g.id !== excludeId && g.nombre.trim().toLowerCase() === trimmed.toLowerCase()
+  )
+  if (!clash) return trimmed
+  if (dia == null || !horaIni) return trimmed // no day/time yet to disambiguate with
+  return `${trimmed} (${DIAS[dia]?.slice(0, 3)} ${horaIni})`
+}
+
 export const PALETTE = [
   { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd", accent: "#3b82f6" },
   { bg: "#dcfce7", text: "#15803d", border: "#86efac", accent: "#22c55e" },
