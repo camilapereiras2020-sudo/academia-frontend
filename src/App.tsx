@@ -24,6 +24,8 @@ import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
 import CalendarioPage from "@/features/calendario/pages/CalendarioPage"
 import PreciosPage from "@/features/tarifas/pages/PreciosPage"
+import PagadoresPage from "@/features/pagadores/pages/PagadoresPage"
+import PagadorDetailPage from "@/features/pagadores/pages/PagadorDetailPage"
 import RangersHomepage from "@/pages/RangersHomepage"
 import StationDesk from "@/pages/StationDesk"
 
@@ -62,6 +64,8 @@ export default function App() {
             <Route path="/empresas" element={<EmpresasPage />} />
             <Route path="/facturacion" element={<FacturacionPage />} />
             <Route path="/precios" element={<PreciosPage />} />
+            <Route path="/payers" element={<PagadoresPage />} />
+            <Route path="/payers/:id" element={<PagadorDetailPage />} />
           </Route>
         </Route>
       </Route>

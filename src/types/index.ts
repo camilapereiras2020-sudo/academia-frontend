@@ -102,6 +102,7 @@ export interface AlumnoResumen {
 export interface Pago {
   id: number; marca: Marca; marca_display?: string
   pagador: number | null; pagador_nombre: string | null; alumno: number | null; alumno_nombre: string | null
+  emisor: number | null; emisor_nombre?: string | null
   grupo: number | null; grupo_nombre: string | null; periodo: string; mensualidad: number; descuento: number
   extras: { concepto: string; importe: number }[]; total: number; metodo: string
   estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string

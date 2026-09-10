@@ -2,11 +2,12 @@ import { api } from "@/lib/axios"
 import type { Pago, Marca } from "@/types"
 
 export const pagosApi = {
-  list: (params?: { estado?: string; periodo?: string; marca?: Marca }) => {
+  list: (params?: { estado?: string; periodo?: string; marca?: Marca; pagador?: number }) => {
     const qs = new URLSearchParams()
     if (params?.estado) qs.append("estado", params.estado)
     if (params?.periodo) qs.append("periodo", params.periodo)
     if (params?.marca) qs.append("marca", params.marca)
+    if (params?.pagador) qs.append("pagador", String(params.pagador))
     return api.get<Pago[]>(`/pagos/?${qs}`)
   },
   get: (id: number) => api.get<Pago>(`/pagos/${id}/`),
@@ -36,6 +37,11 @@ export const documentosApi = {
   // — the client used to guess it and could get it wrong (e.g. bizum).
   generar: (pago_id: number) =>
     api.post("/documentos/generar/", { pago_id }),
+  // One invoice covering several pagos that share a pagador (siblings).
+  // emisor_id is required whenever the selected pagos don't already agree
+  // on one brand/emisor — see PagadorDetailPage.
+  generarCombinado: (pago_ids: number[], emisor_id?: number) =>
+    api.post("/documentos/generar-combinado/", { pago_ids, ...(emisor_id ? { emisor_id } : {}) }),
   delete: (id: number) => api.delete(`/documentos/${id}/`),
 }
 

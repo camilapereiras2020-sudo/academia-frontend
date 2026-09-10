@@ -22,7 +22,7 @@ const NAV_SECTIONS = [
     items: [
       { to: "/dashboard", icon: LayoutDashboard, label: "Overview" },
       { to: "/alumnos", icon: GraduationCap, label: "Students" },
-      { to: null, icon: CreditCard, label: "Payers" },
+      { to: "/payers", icon: CreditCard, label: "Payers" },
       { to: "/empresas", icon: Building2, label: "Companies" },
     ]
   },

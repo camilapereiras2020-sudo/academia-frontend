@@ -24,10 +24,23 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/empresas": ["owner", "co_manager"],
   "/facturacion": ["reception", "co_manager"],
   "/precios": ALL_ROLES,
+  "/payers": ["owner", "co_manager"],
 }
 
 export function canAccess(role: Role | undefined, path: string): boolean {
-  const allowed = PAGE_ROLES[path]
+  const allowed = PAGE_ROLES[path] ?? nearestAncestorRule(path)
   if (!allowed) return true
   return !!role && allowed.includes(role)
+}
+
+// A dynamic detail route (e.g. "/payers/12") isn't listed itself — it
+// inherits its parent's rule ("/payers") so it can't be reached by URL
+// just because it's missing from PAGE_ROLES.
+function nearestAncestorRule(path: string): Role[] | undefined {
+  const segments = path.split("/").filter(Boolean)
+  for (let i = segments.length - 1; i > 0; i--) {
+    const parent = "/" + segments.slice(0, i).join("/")
+    if (PAGE_ROLES[parent]) return PAGE_ROLES[parent]
+  }
+  return undefined
 }
