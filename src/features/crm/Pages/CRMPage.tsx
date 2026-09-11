@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
+import { useAuthStore } from "@/store/authStore"
 import type { Grupo } from "@/types"
 
 // ── constants ──────────────────────────────────────────────────────────────
@@ -157,6 +158,10 @@ export default function CRMPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  // Matricular (convertir-alumno) creates a real Alumno + Pago — reserved
+  // server-side for owner/co_manager, same as creating an alumno from
+  // scratch. Reception can log/work leads but not this one action.
+  const canMatricular = useAuthStore((s) => s.user?.role) !== "reception"
 
   // list state
   const [filtroEtapa, setFiltroEtapa] = useState("")
@@ -545,7 +550,7 @@ export default function CRMPage() {
                   </div>
                   {/* Quick stage advance / matricular */}
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    {lead.etapa === "matriculado" && !lead.alumno ? (
+                    {lead.etapa === "matriculado" && !lead.alumno && canMatricular ? (
                       <button onClick={() => openMatricular(lead)}
                         className="px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 whitespace-nowrap">
                         Matricular
@@ -584,7 +589,7 @@ export default function CRMPage() {
                   </span>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
-                  {detalle.etapa === "matriculado" && !detalle.alumno && (
+                  {detalle.etapa === "matriculado" && !detalle.alumno && canMatricular && (
                     <button onClick={() => openMatricular(detalle)}
                       className="px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700">
                       Matricular
@@ -983,10 +988,12 @@ export default function CRMPage() {
               <p className="text-xs text-pine-600 mt-0.5">Contacto guardado. ¿Qué hacemos?</p>
             </div>
             <div className="p-6 grid grid-cols-2 gap-2">
-              <button onClick={() => decidirNuevoLead("matricular")}
-                className="px-3 py-3 border rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 flex flex-col items-center gap-1">
-                <span className="text-lg">🎓</span> Matricular
-              </button>
+              {canMatricular && (
+                <button onClick={() => decidirNuevoLead("matricular")}
+                  className="px-3 py-3 border rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 flex flex-col items-center gap-1">
+                  <span className="text-lg">🎓</span> Matricular
+                </button>
+              )}
               <button onClick={() => decidirNuevoLead("esperar")}
                 className="px-3 py-3 border rounded-lg text-sm font-medium text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1">
                 <span className="text-lg">⏳</span> Esperar

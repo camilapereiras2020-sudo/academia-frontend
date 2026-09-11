@@ -92,10 +92,9 @@ const TIPO_CONSENTIMIENTO_LABELS: Record<TipoConsentimiento, string> = {
   politica_cancelacion: "Política de cancelación",
 }
 const CONSENTIMIENTO_TIPOS = Object.keys(TIPO_CONSENTIMIENTO_LABELS) as TipoConsentimiento[]
-// Tipos con PDF autorrellenable (backend: AlumnoViewSet.documento_legal). Los
-// otros dos (proteccion_datos, matricula) todavía no tienen un renderer —
-// solo se marca la casilla a mano cuando vuelve el papel firmado.
-const TIPOS_CON_PDF: TipoConsentimiento[] = ["autorizacion_imagen", "politica_cancelacion"]
+// All 4 now have a PDF renderer (backend: AlumnoViewSet.documento_legal /
+// modules.documentos.legal_docs_service.RENDERERS).
+const TIPOS_CON_PDF: TipoConsentimiento[] = ["autorizacion_imagen", "politica_cancelacion", "proteccion_datos", "matricula"]
 
 function age(fnac: string | null) {
   if (!fnac) return null

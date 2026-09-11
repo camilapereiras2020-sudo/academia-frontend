@@ -19,7 +19,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/documentos": ["owner", "co_manager"],
   "/config": ["owner", "co_manager"],
   "/pendientes": ["owner", "co_manager"],
-  "/crm": ["owner", "co_manager"],
+  "/crm": ALL_ROLES,
   "/whatsapp-respuestas": ALL_ROLES,
   "/empresas": ["owner", "co_manager"],
   "/facturacion": ["reception", "co_manager"],

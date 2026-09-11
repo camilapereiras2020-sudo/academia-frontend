@@ -2,12 +2,13 @@ import { api } from "@/lib/axios"
 import type { Pago, Marca } from "@/types"
 
 export const pagosApi = {
-  list: (params?: { estado?: string; periodo?: string; marca?: Marca; pagador?: number }) => {
+  list: (params?: { estado?: string; periodo?: string; marca?: Marca; pagador?: number; alumno?: number }) => {
     const qs = new URLSearchParams()
     if (params?.estado) qs.append("estado", params.estado)
     if (params?.periodo) qs.append("periodo", params.periodo)
     if (params?.marca) qs.append("marca", params.marca)
     if (params?.pagador) qs.append("pagador", String(params.pagador))
+    if (params?.alumno) qs.append("alumno", String(params.alumno))
     return api.get<Pago[]>(`/pagos/?${qs}`)
   },
   get: (id: number) => api.get<Pago>(`/pagos/${id}/`),

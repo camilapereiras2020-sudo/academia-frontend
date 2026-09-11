@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi } from "../api"
@@ -23,6 +23,29 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
 }
 
 interface ExtraLine { concepto: string; importe: number }
+
+// One-time enrollment fee — same figure as CalculadoraPage.tsx's MATRICULA
+// and modules/tarifas/pricing.py (kept in sync by hand across all three).
+const MATRICULA_FEE = 20
+const MATRICULA_CONCEPTO = "Matrícula"
+// Common amounts staff actually charge (full price down to waived) — for
+// siblings, returning students, etc. Always a judgment call, not an
+// automated rule — this just beats typing a number by hand every time.
+const MATRICULA_PRESETS = [0, 10, 20, 30, 40]
+
+// The "why" for a non-standard amount lives inside the extra's own concepto
+// — "Matrícula — 3er hermano" — so it prints right on the invoice, exactly
+// where the family reads it, instead of a separate field nobody sees.
+function isMatriculaRow(ex: ExtraLine) {
+  return ex.concepto === MATRICULA_CONCEPTO || ex.concepto.startsWith(`${MATRICULA_CONCEPTO} — `)
+}
+function matriculaDetalle(concepto: string) {
+  const marker = `${MATRICULA_CONCEPTO} — `
+  return concepto.startsWith(marker) ? concepto.slice(marker.length) : ""
+}
+function matriculaConceptoFor(detalle: string) {
+  return detalle.trim() ? `${MATRICULA_CONCEPTO} — ${detalle.trim()}` : MATRICULA_CONCEPTO
+}
 
 export default function NuevoPagoPage() {
   const navigate = useNavigate()
@@ -53,12 +76,35 @@ export default function NuevoPagoPage() {
   const [notas, setNotas] = useState("")
   const [extras, setExtras] = useState<ExtraLine[]>([])
   const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pendiente")
+  // Which alumno we've already auto-added the matrícula line for — so it's
+  // added once per selection, and doesn't reappear if staff deletes it.
+  const [matriculaAutoAddedFor, setMatriculaAutoAddedFor] = useState<number | null>(null)
 
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
   const selectedAlumno = alumnos.find((a: any) => a.id === alumno)
   const alumnoEsAdulto = !!selectedAlumno?.es_adulto
+
+  // First payment ever for this alumno? Auto-add the one-time matrícula fee
+  // as an extra line — easy to forget by hand, and it's real revenue across
+  // a lot of new sign-ups. Still just a normal extra: staff can edit/remove it.
+  const { data: pagosAlumno } = useQuery({
+    queryKey: ["pagos-alumno-historial", alumno],
+    queryFn: () => pagosApi.list({ alumno: alumno as number }).then(r => r.data),
+    enabled: typeof alumno === "number",
+  })
+  useEffect(() => {
+    if (typeof alumno !== "number" || !pagosAlumno || matriculaAutoAddedFor === alumno) return
+    setMatriculaAutoAddedFor(alumno)
+    if (pagosAlumno.length === 0) {
+      setExtras(prev =>
+        prev.some(isMatriculaRow)
+          ? prev
+          : [...prev, { concepto: MATRICULA_CONCEPTO, importe: MATRICULA_FEE }]
+      )
+    }
+  }, [alumno, pagosAlumno, matriculaAutoAddedFor])
 
   function onAlumnoChange(aid: number) {
     setAlumno(aid)
@@ -233,16 +279,52 @@ export default function NuevoPagoPage() {
             <label className="text-xs font-semibold text-pine-700">Extras</label>
             <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="text-xs text-brass-700 hover:text-pine-900">+ Anadir extra</button>
           </div>
+          {extras.some(isMatriculaRow) && matriculaAutoAddedFor === alumno && (
+            <p className="text-xs text-pine-600 mb-2">
+              Matrícula añadida automáticamente — es el primer pago de este alumno. Quítala si no aplica.
+            </p>
+          )}
           {extras.map((ex, i) => (
-            <div key={i} className="flex gap-2 mb-2">
-              <input type="text" placeholder="Concepto" value={ex.concepto}
-                onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: e.target.value }; setExtras(n) }}
-                className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-              <input type="number" placeholder="€" value={ex.importe} min="0" step="0.01"
-                onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
-                className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-              <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} className="text-red-500 text-sm">✕</button>
-            </div>
+            isMatriculaRow(ex) ? (
+              <div key={i} className="border rounded-lg p-2.5 mb-2 bg-khaki-50">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-medium text-pine-900">Matrícula</span>
+                  <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} className="text-red-500 text-sm">✕</button>
+                </div>
+                <div className="flex gap-1.5 flex-wrap mb-2">
+                  {MATRICULA_PRESETS.map(preset => (
+                    <button key={preset} type="button"
+                      onClick={() => { const n = [...extras]; n[i] = { ...n[i], importe: preset }; setExtras(n) }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${
+                        ex.importe === preset
+                          ? "bg-brass-500 border-brass-700 text-white"
+                          : "bg-white border-khaki-300 text-pine-700 hover:border-brass-400"
+                      }`}>
+                      {preset}€
+                    </button>
+                  ))}
+                  <input type="number" value={ex.importe} step="0.01"
+                    onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
+                    className="w-20 border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                </div>
+                {ex.importe !== MATRICULA_FEE && (
+                  <input type="text" placeholder="Motivo del descuento (ej. 3er hermano, alumno recurrente...)"
+                    value={matriculaDetalle(ex.concepto)}
+                    onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: matriculaConceptoFor(e.target.value) }; setExtras(n) }}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                )}
+              </div>
+            ) : (
+              <div key={i} className="flex gap-2 mb-2">
+                <input type="text" placeholder="Concepto" value={ex.concepto}
+                  onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: e.target.value }; setExtras(n) }}
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                <input type="number" placeholder="€" value={ex.importe} min="0" step="0.01"
+                  onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
+                  className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} className="text-red-500 text-sm">✕</button>
+              </div>
+            )
           ))}
         </div>
 
