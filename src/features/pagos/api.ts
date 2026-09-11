@@ -38,6 +38,11 @@ export const documentosApi = {
   // — the client used to guess it and could get it wrong (e.g. bizum).
   generar: (pago_id: number) =>
     api.post("/documentos/generar/", { pago_id }),
+  // One invoice covering several pagos that share a pagador (siblings).
+  // emisor_id is required whenever the selected pagos don't already agree
+  // on one brand/emisor — see PagadorDetailPage.
+  generarCombinado: (pago_ids: number[], emisor_id?: number) =>
+    api.post("/documentos/generar-combinado/", { pago_ids, ...(emisor_id ? { emisor_id } : {}) }),
   delete: (id: number) => api.delete(`/documentos/${id}/`),
 }
 
