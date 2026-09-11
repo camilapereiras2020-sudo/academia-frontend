@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi } from "../api"
@@ -23,6 +23,11 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
 }
 
 interface ExtraLine { concepto: string; importe: number }
+
+// One-time enrollment fee — same figure as CalculadoraPage.tsx's MATRICULA
+// and modules/tarifas/pricing.py (kept in sync by hand across all three).
+const MATRICULA_FEE = 20
+const MATRICULA_CONCEPTO = "Matrícula"
 
 export default function NuevoPagoPage() {
   const navigate = useNavigate()
@@ -53,12 +58,35 @@ export default function NuevoPagoPage() {
   const [notas, setNotas] = useState("")
   const [extras, setExtras] = useState<ExtraLine[]>([])
   const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pendiente")
+  // Which alumno we've already auto-added the matrícula line for — so it's
+  // added once per selection, and doesn't reappear if staff deletes it.
+  const [matriculaAutoAddedFor, setMatriculaAutoAddedFor] = useState<number | null>(null)
 
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
   const selectedAlumno = alumnos.find((a: any) => a.id === alumno)
   const alumnoEsAdulto = !!selectedAlumno?.es_adulto
+
+  // First payment ever for this alumno? Auto-add the one-time matrícula fee
+  // as an extra line — easy to forget by hand, and it's real revenue across
+  // a lot of new sign-ups. Still just a normal extra: staff can edit/remove it.
+  const { data: pagosAlumno } = useQuery({
+    queryKey: ["pagos-alumno-historial", alumno],
+    queryFn: () => pagosApi.list({ alumno: alumno as number }).then(r => r.data),
+    enabled: typeof alumno === "number",
+  })
+  useEffect(() => {
+    if (typeof alumno !== "number" || !pagosAlumno || matriculaAutoAddedFor === alumno) return
+    setMatriculaAutoAddedFor(alumno)
+    if (pagosAlumno.length === 0) {
+      setExtras(prev =>
+        prev.some(e => e.concepto === MATRICULA_CONCEPTO)
+          ? prev
+          : [...prev, { concepto: MATRICULA_CONCEPTO, importe: MATRICULA_FEE }]
+      )
+    }
+  }, [alumno, pagosAlumno, matriculaAutoAddedFor])
 
   function onAlumnoChange(aid: number) {
     setAlumno(aid)
@@ -233,6 +261,11 @@ export default function NuevoPagoPage() {
             <label className="text-xs font-semibold text-pine-700">Extras</label>
             <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="text-xs text-brass-700 hover:text-pine-900">+ Anadir extra</button>
           </div>
+          {extras.some(e => e.concepto === MATRICULA_CONCEPTO) && matriculaAutoAddedFor === alumno && (
+            <p className="text-xs text-pine-600 mb-2">
+              Matrícula añadida automáticamente — es el primer pago de este alumno. Quítala si no aplica.
+            </p>
+          )}
           {extras.map((ex, i) => (
             <div key={i} className="flex gap-2 mb-2">
               <input type="text" placeholder="Concepto" value={ex.concepto}
