@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { useState } from "react"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 type Contacto = {
   id: number
@@ -41,6 +42,8 @@ export default function EmpresasPage() {
   const [selected, setSelected]             = useState<Empresa | null>(null)
   const [showModal, setShowModal]           = useState(false)
   const [showContactoModal, setShowContactoModal] = useState(false)
+  const showModalOverlayGuard = useOverlayMouseGuard(() => setShowModal(false))
+  const showContactoModalOverlayGuard = useOverlayMouseGuard(() => setShowContactoModal(false))
   const [confirmDelete, setConfirmDelete]   = useState(false)
   const [form, setForm]                     = useState(emptyEmpresa)
   const [contactoForm, setContactoForm]     = useState(emptyContacto)
@@ -241,7 +244,7 @@ export default function EmpresasPage() {
 
       {/* MODAL — Nueva empresa */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" {...showModalOverlayGuard}>
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <h2 className="text-lg font-semibold text-pine-900">Nueva empresa</h2>
@@ -295,7 +298,7 @@ export default function EmpresasPage() {
 
       {/* MODAL — Nuevo contacto */}
       {showContactoModal && selected && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowContactoModal(false)}>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" {...showContactoModalOverlayGuard}>
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-pine-900">Nuevo contacto</h2>

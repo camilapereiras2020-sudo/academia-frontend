@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createPortal } from "react-dom"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 interface Props {
   to: string            // display name or email shown in header
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function EmailModal({ to, onSend, onClose }: Props) {
+  const overlayGuard = useOverlayMouseGuard(onClose)
   const [asunto, setAsunto] = useState("")
   const [cuerpo, setCuerpo] = useState("")
   const [sending, setSending] = useState(false)
@@ -28,8 +30,7 @@ export default function EmailModal({ to, onSend, onClose }: Props) {
   }
 
   return createPortal(
-    <div className="modal-overlay"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="modal-overlay" {...overlayGuard}>
       <div className="modal" style={{ maxWidth: "32rem", padding: 0 }}>
         <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>

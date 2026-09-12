@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { gruposApi } from "@/features/grupos/api"
 import { PALETTE } from "@/features/grupos/palette"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -35,6 +36,7 @@ export default function CalendarioPage() {
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const dayModalOverlayGuard = useOverlayMouseGuard(() => setSelectedDay(null))
 
   const { data, isLoading } = useQuery({
     queryKey: ["grupos"],
@@ -146,7 +148,7 @@ export default function CalendarioPage() {
 
       {selectedDate && createPortal(
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null) }}>
+          {...dayModalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
               <h2 className="font-head font-normal text-lg text-pine-900">

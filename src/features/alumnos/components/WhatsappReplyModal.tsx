@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 import { useMutation } from "@tanstack/react-query"
 import { whatsappReplyApi, type Situacion } from "@/features/whatsapp/api"
 import type { Alumno } from "@/types"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 interface Props {
   alumno: Alumno
@@ -27,6 +28,7 @@ function buildContext(alumno: Alumno, pagadorNombre: string | null, grupoNombre:
 }
 
 export default function WhatsappReplyModal({ alumno, pagadorNombre, grupoNombre, onClose }: Props) {
+  const overlayGuard = useOverlayMouseGuard(onClose)
   const context = buildContext(alumno, pagadorNombre, grupoNombre)
   const [incoming, setIncoming] = useState("")
   const [situation, setSituation] = useState<Situacion>("normal")
@@ -57,7 +59,7 @@ export default function WhatsappReplyModal({ alumno, pagadorNombre, grupoNombre,
   }
 
   return createPortal(
-    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="modal-overlay" {...overlayGuard}>
       <div className="modal" style={{ maxWidth: "34rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
           <h2 style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Generar respuesta WhatsApp</h2>

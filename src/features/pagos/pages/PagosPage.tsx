@@ -10,6 +10,7 @@ import { formatEur, formatMonth, formatDate } from "@/lib/utils"
 import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
 import PagoDetailModal from "../PagoDetailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 const METODOS = ["efectivo", "bizum", "transferencia", "domiciliacion"] as const
 const METODO_LABEL: Record<string, string> = {
@@ -59,6 +60,7 @@ export default function PagosPage() {
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [showGenerarMes, setShowGenerarMes] = useState(false)
+  const generarMesOverlayGuard = useOverlayMouseGuard(() => setShowGenerarMes(false))
   const [periodoMes, setPeriodoMes] = useState(new Date().toISOString().slice(0, 7))
   const [generarMesResult, setGenerarMesResult] = useState<Awaited<ReturnType<typeof pagosApi.generarMes>>["data"] | null>(null)
   const [deleteError, setDeleteError] = useState("")
@@ -210,7 +212,7 @@ export default function PagosPage() {
 
       {/* Generar pagos del mes modal */}
       {showGenerarMes && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowGenerarMes(false)}>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" {...generarMesOverlayGuard}>
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-pine-900">Generar pagos del mes</h2>

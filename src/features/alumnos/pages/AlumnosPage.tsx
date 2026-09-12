@@ -10,6 +10,7 @@ import type { Alumno, Pagador, Marca } from "@/types"
 import EmailModal from "@/components/shared/EmailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import { useAuthStore } from "@/store/authStore"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
@@ -172,6 +173,7 @@ export default function AlumnosPage() {
   }
 
   function closeModal() { setShowModal(false); setEditing(null); setForm(emptyForm()) }
+  const modalOverlayGuard = useOverlayMouseGuard(closeModal)
 
   function handleSubmit() {
     if (!form.nombre.trim()) { setFormError("El nombre es obligatorio."); return }
@@ -363,7 +365,7 @@ export default function AlumnosPage() {
 
       {/* Create / Edit modal */}
       {showModal && createPortal(
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" {...modalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
             {/* Modal header */}
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">

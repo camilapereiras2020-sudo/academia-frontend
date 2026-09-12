@@ -7,6 +7,7 @@ import type { Grupo } from "@/types"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { ProfesorSelect } from "@/features/profesores/ProfesorSelect"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 interface HorarioSlot { dia: number; ini: string; fin: string }
 interface GrupoForm {
@@ -74,6 +75,7 @@ export default function GruposPage() {
   }
 
   function closeModal() { setShowModal(false); setEditing(null) }
+  const modalOverlayGuard = useOverlayMouseGuard(closeModal)
 
   // Fires when the nombre field loses focus (not on every keystroke, so
   // typing isn't interrupted mid-word) — if what's there matches an existing
@@ -221,7 +223,7 @@ export default function GruposPage() {
       {/* Create / Edit modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
+          {...modalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">

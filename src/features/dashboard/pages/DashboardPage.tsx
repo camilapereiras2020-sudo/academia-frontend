@@ -10,6 +10,7 @@ import { formatEur, formatMonth } from "@/lib/utils"
 import { useAuthStore } from "@/store/authStore"
 import ReceptionSummary from "../components/ReceptionSummary"
 import type { Pago, Grupo } from "@/types"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 const ESTADO_CLS: Record<string, string> = {
   pagado:   "bg-green-100 text-green-800",
@@ -70,6 +71,7 @@ function OwnerDashboard() {
   const [calYear, setCalYear] = useState(today.getFullYear())
   const [calMonth, setCalMonth] = useState(today.getMonth())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const dayModalOverlayGuard = useOverlayMouseGuard(() => setSelectedDay(null))
 
   const { data: pagosRaw } = useQuery({
     queryKey: ["pagos"],
@@ -254,7 +256,7 @@ function OwnerDashboard() {
           away to /calendario, so a quick look doesn't lose dashboard context. */}
       {selectedDate && createPortal(
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null) }}>
+          {...dayModalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
               <h2 className="font-head font-normal text-lg text-pine-900">

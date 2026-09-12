@@ -14,6 +14,7 @@ import AulaCombobox from "@/features/aulas/AulaCombobox"
 import { PALETTE, suggestUniqueGrupoName } from "@/features/grupos/palette"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import type { Alumno, Grupo, Marca, Profesor } from "@/types"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 // 5 is the normal target size; a 6th fits but asks for confirmation first
 // (the playful "eh eh" pop-up) rather than being silently allowed or
@@ -334,6 +335,10 @@ export default function HorarioBuilderPage() {
     },
     onError: () => setPendingCreateError("Error al crear la clase. Revisa los datos e inténtalo de nuevo."),
   })
+
+  const pendingCreateOverlayGuard = useOverlayMouseGuard(() => { if (!crearClaseMut.isPending) setPendingCreate(null) })
+  const editingClaseOverlayGuard = useOverlayMouseGuard(() => { if (!editarClaseMut.isPending) setEditingClase(null) })
+  const pendingOverflowOverlayGuard = useOverlayMouseGuard(() => setPendingOverflow(null))
 
   // Same problem as GruposPage: nothing stops two Grupos from sharing a
   // nombre (ej. "Mountain Rangers" dado por Cande martes Y jueves con
@@ -1184,7 +1189,7 @@ export default function HorarioBuilderPage() {
           undivided attention before it can save anything. */}
       {pendingCreate && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
-          onClick={e => { if (e.target === e.currentTarget && !crearClaseMut.isPending) setPendingCreate(null) }}>
+          {...pendingCreateOverlayGuard}>
           <div className="bg-white rounded-xl shadow-xl w-96 p-5 space-y-3">
             <div className="flex items-start justify-between">
               <div>
@@ -1285,7 +1290,7 @@ export default function HorarioBuilderPage() {
           selectedGrupo. Solo toca horarios[0] (ver nota en editarClaseMut). */}
       {editingClase && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
-          onClick={e => { if (e.target === e.currentTarget && !editarClaseMut.isPending) setEditingClase(null) }}>
+          {...editingClaseOverlayGuard}>
           <div className="bg-white rounded-xl shadow-xl w-96 p-5 space-y-3">
             <div className="flex items-start justify-between">
               <div>
@@ -1405,7 +1410,7 @@ export default function HorarioBuilderPage() {
 
       {pendingOverflow && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
-          onClick={e => { if (e.target === e.currentTarget) setPendingOverflow(null) }}>
+          {...pendingOverflowOverlayGuard}>
           <div className="bg-white rounded-xl shadow-xl w-80 p-5 text-center space-y-3">
             <p className="text-3xl">😏</p>
             <p className="text-sm text-pine-800">

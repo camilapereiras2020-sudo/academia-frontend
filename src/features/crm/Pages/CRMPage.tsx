@@ -6,6 +6,7 @@ import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
 import { useAuthStore } from "@/store/authStore"
 import type { Grupo } from "@/types"
+import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 
 // ── constants ──────────────────────────────────────────────────────────────
 
@@ -173,6 +174,7 @@ export default function CRMPage() {
   // qué hacer con él de una — matricular / esperar / contactar / guardar —
   // en vez de tener que volver a buscarlo en el listado.
   const [postCreateLead, setPostCreateLead] = useState<Lead | null>(null)
+  const postCreateLeadOverlayGuard = useOverlayMouseGuard(() => setPostCreateLead(null))
 
   // detail panel — opening from ?lead=<id> (e.g. the reminders popup's
   // "Ver" button) selects it up front via a lazy initializer, so there's
@@ -215,6 +217,7 @@ export default function CRMPage() {
   const [matriculaResult, setMatriculaResult] = useState<{
     alumno_id: number; alumno_nombre: string; pagador_nombre: string | null; pagador_autocompletado: boolean
   } | null>(null)
+  const matriculaResultOverlayGuard = useOverlayMouseGuard(() => setMatriculaResult(null))
 
   // ── queries ──────────────────────────────────────────────────────────────
 
@@ -356,6 +359,7 @@ export default function CRMPage() {
   }
 
   function closeModal() { setShowModal(false); setEditingId(null) }
+  const modalOverlayGuard = useOverlayMouseGuard(closeModal)
 
   // Las 4 decisiones tras crear un lead — cada una es directamente un cambio
   // de etapa (esperar=pendiente_llamar, contactar=en_conversacion,
@@ -408,6 +412,7 @@ export default function CRMPage() {
   }
 
   function closeMatricular() { setMatricularLead(null); setMError("") }
+  const matricularOverlayGuard = useOverlayMouseGuard(closeMatricular)
 
   function onGrupoChange(value: string) {
     const g = grupos.find(x => String(x.id) === value)
@@ -730,7 +735,7 @@ export default function CRMPage() {
       {/* ── MODAL — create / edit ─────────────────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-          onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
+          {...modalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
@@ -886,7 +891,7 @@ export default function CRMPage() {
       {/* ── MODAL — matricular (convertir a alumno) ───────────────────────── */}
       {matricularLead && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-          onClick={e => { if (e.target === e.currentTarget) closeMatricular() }}>
+          {...matricularOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
               <h2 className="text-lg font-bold text-pine-900">Matricular a {matricularLead.nombre_alumno}</h2>
@@ -943,7 +948,7 @@ export default function CRMPage() {
       {/* ── MODAL — matricula confirmada ──────────────────────────────────── */}
       {matriculaResult && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-          onClick={e => { if (e.target === e.currentTarget) setMatriculaResult(null) }}>
+          {...matriculaResultOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
             <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
               <h2 className="text-lg font-bold text-pine-900">¡Matrícula completada!</h2>
@@ -981,7 +986,7 @@ export default function CRMPage() {
       {/* ── MODAL — decidir qué hacer con un lead recién creado ───────────── */}
       {postCreateLead && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-          onClick={e => { if (e.target === e.currentTarget) setPostCreateLead(null) }}>
+          {...postCreateLeadOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-bold text-pine-900">{postCreateLead.nombre_alumno}</h2>
