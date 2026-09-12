@@ -258,8 +258,8 @@ body::before {
 
 /* Animations */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .fade-up {
   animation: fadeUp 0.35s ease forwards;
