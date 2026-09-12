@@ -55,12 +55,14 @@ export default function PagadoresPage() {
             <div>
               <p className="font-medium text-pine-900">{p.nombre}</p>
               <p className="text-xs text-pine-700 mt-0.5">
-                {p.alumnos_count} hijo{p.alumnos_count !== 1 ? "s" : ""}
+                {p.es_alumno_adulto
+                  ? "Alumno adulto"
+                  : `${p.alumnos_count} alumno${p.alumnos_count !== 1 ? "s" : ""}`}
                 {p.email && ` · ${p.email}`}
                 {p.telefono && ` · ${p.telefono}`}
               </p>
             </div>
-            {p.alumnos_count > 1 && (
+            {!p.es_alumno_adulto && p.alumnos_count > 1 && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-khaki-200 text-brass-700">
                 Familia
               </span>

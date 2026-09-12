@@ -3,6 +3,7 @@ export interface Pagador {
   direccion: string
   metodo: string; frecuencia: string; iban: string; notas: string
   fnac: string | null; aviso_cumple_dias: number | null; alumnos_count: number
+  es_alumno_adulto: boolean
 }
 
 export interface Grupo {

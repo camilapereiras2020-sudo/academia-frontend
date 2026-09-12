@@ -110,10 +110,10 @@ export default function PagadorDetailPage() {
         </div>
       </div>
 
-      {/* Hijos */}
+      {/* Alumnos vinculados */}
       <div className="bg-white rounded-xl border shadow-sm p-5 mb-5">
         <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">
-          Alumnos ({alumnos?.length ?? 0})
+          {pagador.es_alumno_adulto ? "Alumno adulto" : `Alumnos (${alumnos?.length ?? 0})`}
         </p>
         {loadingAlumnos && <p className="text-khaki-400 text-sm">Cargando...</p>}
         {!loadingAlumnos && !alumnos?.length && <p className="text-sm text-pine-600">Sin alumnos vinculados.</p>}
