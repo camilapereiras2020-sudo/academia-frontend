@@ -142,9 +142,9 @@ function OwnerDashboard() {
     <div className="flex flex-col gap-7">
 
       {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-800">Station Overview</h1>
+          <h1 className="font-serif font-light text-[2rem] sm:text-[2.5rem] leading-none tracking-[-0.01em] text-pine-800">Station Overview</h1>
           <p className="text-[13px] text-pine-700 mt-1">{formatMonth(mesAct)}</p>
         </div>
         <div className="flex items-center gap-4">
@@ -160,7 +160,7 @@ function OwnerDashboard() {
       </div>
 
       {/* Stat ledger */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
         <StatItem label="Cobrado este mes" value={formatEur(cobradoMes)} sub={`${estesMes.filter(p => p.estado === "pagado").length} pagos`} />
         <StatItem label="Pendiente de cobro" value={formatEur(importePendiente)} sub={`${pendientes.length} sin cobrar`} />
         <StatItem label="Tasa de cobro" value={coleccionRate !== null ? `${coleccionRate}%` : "—"} sub={totalMes > 0 ? formatMonth(mesAct) : "sin pagos"} />
@@ -184,7 +184,7 @@ function OwnerDashboard() {
           <circle cx="100" cy="80" r="40" fill="none" stroke="#F6F1E7" strokeWidth="2" />
           <circle cx="100" cy="80" r="80" fill="none" stroke="#F6F1E7" strokeWidth="2" />
         </svg>
-        <div className="relative flex items-center justify-between flex-wrap gap-2 mb-2">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
           <div className="text-[13px] font-bold text-brass-300 uppercase tracking-[0.05em]">🧭 Trail Log</div>
           <div className="flex items-center gap-2">
             <button onClick={goToday}

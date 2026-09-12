@@ -40,8 +40,11 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   const title = PAGE_TITLES[location.pathname] || 'Cami&Co'
 
-  const today = now.toLocaleDateString('es-ES', {
+  const todayFull = now.toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  })
+  const todayShort = now.toLocaleDateString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short'
   })
   const clockTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
 
@@ -62,20 +65,22 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <Menu size={22} strokeWidth={2} />
         </button>
         <div className="min-w-0">
-          <div className="text-[12px] font-extrabold uppercase tracking-[0.06em] text-pine-700 whitespace-nowrap">
-            {today}
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.06em] text-pine-700">
+            <span className="sm:hidden">{todayShort}</span>
+            <span className="hidden sm:inline">{todayFull}</span>
           </div>
-          <h1 className="font-serif font-light text-[1.75rem] leading-none tracking-[-0.01em] text-pine-800 mt-1 whitespace-nowrap">
+          <h1 className="font-serif font-light text-[1.5rem] sm:text-[1.75rem] leading-tight tracking-[-0.01em] text-pine-800 mt-1">
             {title}
           </h1>
         </div>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap justify-end">
-        <div className="flex items-center gap-2 bg-pine-800 text-khaki-100 px-3.5 py-2 rounded-[5px] flex-shrink-0">
+        <div className="hidden sm:flex items-center gap-2 bg-pine-800 text-khaki-100 px-3.5 py-2 rounded-[5px] flex-shrink-0">
           <span className="font-head text-[16px] leading-none">{clockTime}</span>
           <span className="text-[11px] font-bold text-brass-300 uppercase tracking-[0.03em] whitespace-nowrap">Trail Time</span>
         </div>
+        <div className="sm:hidden font-head text-[16px] text-pine-800 flex-shrink-0">{clockTime}</div>
 
         <button
           onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}

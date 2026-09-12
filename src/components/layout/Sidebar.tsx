@@ -62,7 +62,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
 
   return (
     <aside className={`
-      w-[250px] flex-shrink-0 bg-pine-900 flex flex-col h-screen border-r-4 border-brass-500 relative overflow-hidden
+      w-[250px] flex-shrink-0 bg-pine-900 flex flex-col h-screen border-r-4 border-brass-500 overflow-hidden
       fixed xl:static inset-y-0 left-0 z-50 transition-transform duration-200
       ${open ? "translate-x-0" : "-translate-x-full"} xl:translate-x-0
     `}>
