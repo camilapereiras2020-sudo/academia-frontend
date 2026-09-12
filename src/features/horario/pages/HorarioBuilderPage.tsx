@@ -952,7 +952,7 @@ export default function HorarioBuilderPage() {
           the row via flex-1 as before. The inner min-width + overflow-x-auto
           keeps the 6 day columns at a legible width on a narrow tablet
           instead of squeezing illegibly — you scroll sideways instead. */}
-      <div className="flex-1 min-w-0 flex flex-col h-[70vh] lg:h-auto">
+      <div className="min-w-0 flex flex-col h-[70vh] lg:flex-1 lg:h-auto">
         {loadingGrupos ? (
           <p className="text-sm text-pine-600">Cargando…</p>
         ) : vistaProfesor ? (
