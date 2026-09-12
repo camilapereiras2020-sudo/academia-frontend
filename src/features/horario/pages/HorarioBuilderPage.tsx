@@ -702,16 +702,16 @@ export default function HorarioBuilderPage() {
         )}
         {brand && (
           <span
-            className="absolute top-[1px] right-[1px] text-[7px] font-bold leading-none px-[3px] py-[1px] rounded-sm"
+            className="absolute top-[1px] right-[1px] text-[10px] font-bold leading-none px-[3px] py-[1px] rounded-sm"
             style={{ background: brand.bg, color: brand.text }}
             title={brand.label}
           >
             {brand.tag}
           </span>
         )}
-        <div className="font-head text-[11px] leading-tight truncate pr-6">{arg.event.title}</div>
+        <div className="font-head text-[13px] leading-tight truncate pr-6">{arg.event.title}</div>
         {roster && (
-          <div className="text-[9px] leading-tight opacity-80 truncate">
+          <div className="text-[11px] leading-tight opacity-80 truncate">
             {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {roster.length}/{HARD_MAX_PER_CLASS}
           </div>
         )}
@@ -721,7 +721,7 @@ export default function HorarioBuilderPage() {
             personal (partial) window also shows their actual time range,
             not just the class's — that's the whole point of the feature. */}
         {roster && roster.length > 0 && (
-          <div className="text-[9px] leading-tight font-semibold truncate">
+          <div className="text-[11px] leading-tight font-semibold truncate">
             {roster.map(a => {
               const grupo = props.grupoId != null ? grupos.find(g => g.id === props.grupoId) : undefined
               const hp = props.grupoId != null ? horarioPersonalFor(a, props.grupoId, grupo) : null
@@ -833,7 +833,7 @@ export default function HorarioBuilderPage() {
       <aside className="w-full lg:w-64 lg:flex-shrink-0 flex flex-col gap-3">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <h1 className="font-head font-normal text-xl text-pine-900">Horario</h1>
+            <h1 className="font-serif font-light text-[1.75rem] leading-none tracking-[-0.01em] text-pine-900">Horario</h1>
             <button onClick={openNuevaClase}
               className="text-xs font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded-lg px-2.5 py-1 flex-shrink-0">
               + Nueva clase
@@ -845,7 +845,7 @@ export default function HorarioBuilderPage() {
         </div>
 
         {profesoresActivos.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-[10px]">
+          <div className="flex flex-wrap gap-2 text-[11px]">
             {profesoresActivos.map(p => (
               <span key={p.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded"
                 style={{ background: colorForProfesor(p.id).bg, color: colorForProfesor(p.id).text }}>
@@ -890,7 +890,7 @@ export default function HorarioBuilderPage() {
 
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-        <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
+        <p className="text-[13px] font-bold uppercase tracking-widest text-pine-600">
           Alumnos ({visibleCount})
           <span className="font-normal normal-case text-khaki-400"> · {unassignedCount} sin asignar</span>
         </p>
@@ -904,7 +904,7 @@ export default function HorarioBuilderPage() {
             // hueco para añadir una clase más, tenga ya alguna o no.
             AGE_GROUP_ORDER.filter(g => alumnosByAge[g].length > 0).map(g => (
               <div key={g}>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-khaki-400 mb-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-khaki-400 mb-1">
                   {AGE_GROUP_LABELS[g]} ({alumnosByAge[g].length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -927,10 +927,10 @@ export default function HorarioBuilderPage() {
                         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                         {a.nombre}
                         {n > 0 && (
-                          <span className="text-[9px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
+                          <span className="text-[11px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
                         )}
                         <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                          className="text-pine-400 hover:text-brass-700 text-[10px] leading-none">↗</button>
+                          className="text-pine-400 hover:text-brass-700 text-[11px] leading-none">↗</button>
                       </span>
                     )
                   })}
@@ -988,7 +988,7 @@ export default function HorarioBuilderPage() {
             <div className="px-5 py-4 border-b flex items-start justify-between">
               <div>
                 <p className="font-head font-normal text-lg text-pine-900">{alumnoResaltado.nombre}</p>
-                <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                <span className="inline-block mt-1 text-[11px] font-bold px-1.5 py-0.5 rounded"
                   style={{ background: BRAND_META[alumnoResaltado.marca].bg, color: BRAND_META[alumnoResaltado.marca].text }}>
                   {BRAND_META[alumnoResaltado.marca].tag}
                 </span>
@@ -1000,10 +1000,10 @@ export default function HorarioBuilderPage() {
               </div>
             </div>
             <div className="p-5 overflow-y-auto flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600 mb-2">
+              <p className="text-[13px] font-bold uppercase tracking-widest text-pine-600 mb-2">
                 Sus clases ({susGrupos.length})
               </p>
-              <p className="text-[11px] text-pine-600 mb-3">Resaltadas en el calendario. Pulsa una para abrirla.</p>
+              <p className="text-[13px] text-pine-600 mb-3">Resaltadas en el calendario. Pulsa una para abrirla.</p>
               {susGrupos.length === 0 ? (
                 <p className="text-xs text-pine-600 italic">Sin clases asignadas todavía.</p>
               ) : (
@@ -1037,7 +1037,7 @@ export default function HorarioBuilderPage() {
               <div>
                 <p className="font-head font-normal text-lg text-pine-900 flex items-center gap-2">
                   {selectedGrupo.nombre}
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded"
                     style={{ background: BRAND_META[selectedGrupo.marca].bg, color: BRAND_META[selectedGrupo.marca].text }}>
                     {BRAND_META[selectedGrupo.marca].tag}
                   </span>
@@ -1059,12 +1059,12 @@ export default function HorarioBuilderPage() {
             </div>
             <div className="p-5 overflow-y-auto flex-1">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-pine-600">
+                <p className="text-[13px] font-bold uppercase tracking-widest text-pine-600">
                   Alumnos ({selectedRoster.length}/{HARD_MAX_PER_CLASS})
                 </p>
                 {!addAlumnoOpen && (
                   <button onClick={() => setAddAlumnoOpen(true)}
-                    className="text-[11px] font-semibold text-brass-700 hover:text-brass-900 flex items-center gap-1 flex-shrink-0">
+                    className="text-[13px] font-semibold text-brass-700 hover:text-brass-900 flex items-center gap-1 flex-shrink-0">
                     + Agregar alumno
                   </button>
                 )}
@@ -1080,16 +1080,16 @@ export default function HorarioBuilderPage() {
                   </div>
                   <div className="max-h-40 overflow-y-auto space-y-1">
                     {addAlumnoCandidates.length === 0 ? (
-                      <p className="text-[11px] text-pine-500 italic px-1">Sin resultados.</p>
+                      <p className="text-[13px] text-pine-500 italic px-1">Sin resultados.</p>
                     ) : addAlumnoCandidates.map(a => (
                       <button key={a.id}
                         onClick={() => selectedGrupoId != null && assignAlumnoToGrupo(a.id, a.nombre, selectedGrupoId)}
                         className="w-full text-left text-xs flex items-center gap-2 px-2 py-1 rounded hover:bg-white">
-                        <span className="w-4 h-4 rounded-full bg-brass-500 text-white text-[8px] font-bold flex items-center justify-center flex-shrink-0">
+                        <span className="w-4 h-4 rounded-full bg-brass-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                           {initials(a.nombre)}
                         </span>
                         <span className="flex-1 truncate">{a.nombre}</span>
-                        <span className="text-[8px] font-bold px-1 py-0.5 rounded flex-shrink-0"
+                        <span className="text-[10px] font-bold px-1 py-0.5 rounded flex-shrink-0"
                           style={{ background: BRAND_META[a.marca].bg, color: BRAND_META[a.marca].text }}>
                           {BRAND_META[a.marca].tag}
                         </span>
@@ -1098,7 +1098,7 @@ export default function HorarioBuilderPage() {
                   </div>
                 </div>
               )}
-              <p className="text-[11px] text-pine-600 mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
+              <p className="text-[13px] text-pine-600 mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
               {selectedRoster.length === 0 ? (
                 <p className="text-xs text-pine-600 italic">Sin alumnos todavía. Arrastra desde la izquierda, o usa "+ Agregar alumno".</p>
               ) : (
@@ -1113,7 +1113,7 @@ export default function HorarioBuilderPage() {
                           className="roster-pill touch-none flex items-center justify-between text-sm cursor-grab select-none"
                           data-name={a.nombre} data-alumno-id={a.id} data-source-grupo-id={selectedGrupoId ?? undefined}>
                           <span className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                            <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                               {initials(a.nombre)}
                             </span>
                             {a.nombre}
@@ -1131,16 +1131,16 @@ export default function HorarioBuilderPage() {
                         <div className="flex items-center gap-1.5 mt-1.5 pl-7">
                           <input type="time" value={edit.ini}
                             onChange={e => setTimeEdits(prev => ({ ...prev, [a.id]: { ini: e.target.value, fin: edit.fin } }))}
-                            className="text-[11px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
-                          <span className="text-[10px] text-pine-500">–</span>
+                            className="text-[13px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
+                          <span className="text-[11px] text-pine-500">–</span>
                           <input type="time" value={edit.fin}
                             onChange={e => setTimeEdits(prev => ({ ...prev, [a.id]: { ini: edit.ini, fin: e.target.value } }))}
-                            className="text-[11px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
+                            className="text-[13px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
                           {dirtyTime && (
                             <button
                               onClick={() => horarioPersonalMut.mutate({ alumnoId: a.id, grupoId: selectedGrupoId!, hora_inicio: edit.ini, hora_fin: edit.fin })}
                               disabled={horarioPersonalMut.isPending}
-                              className="text-[10px] font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded px-1.5 py-0.5 disabled:opacity-50">
+                              className="text-[11px] font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded px-1.5 py-0.5 disabled:opacity-50">
                               Guardar
                             </button>
                           )}
@@ -1149,7 +1149,7 @@ export default function HorarioBuilderPage() {
                               onClick={() => horarioPersonalMut.mutate({ alumnoId: a.id, grupoId: selectedGrupoId!, hora_inicio: null, hora_fin: null })}
                               disabled={horarioPersonalMut.isPending}
                               title="Volver al horario completo de la clase"
-                              className="text-[10px] text-pine-500 hover:text-pine-700 underline disabled:opacity-50">
+                              className="text-[11px] text-pine-500 hover:text-pine-700 underline disabled:opacity-50">
                               horario completo
                             </button>
                           )}
@@ -1210,7 +1210,7 @@ export default function HorarioBuilderPage() {
                 onBlur={handlePendingNombreBlur}
                 className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
               {pendingCreateNameAdjusted && (
-                <p className="text-[11px] text-brass-700 mt-1">
+                <p className="text-[13px] text-brass-700 mt-1">
                   Ya existe una clase con ese nombre — se agregó el horario para diferenciarla.
                 </p>
               )}

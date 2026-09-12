@@ -69,6 +69,7 @@ export default {
       fontFamily: {
         head: ["Bevan", "serif"],
         body: ["'Barlow Semi Condensed'", "sans-serif"],
+        serif: ["'Cormorant Garamond'", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

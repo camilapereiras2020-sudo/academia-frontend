@@ -199,7 +199,7 @@ export default function AlumnosPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-head font-normal text-3xl text-pine-900">Alumnos</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Alumnos</h1>
           <p className="text-sm text-pine-700 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
         </div>
         {!isReception && (
@@ -279,7 +279,7 @@ export default function AlumnosPage() {
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="font-semibold text-pine-900">{a.nombre}</span>
                   {a.activo === false && (
-                    <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-khaki-200 text-pine-600">
+                    <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-khaki-200 text-pine-600">
                       Ex-alumno
                     </span>
                   )}

@@ -438,7 +438,7 @@ export default function CRMPage() {
         {/* Header */}
         <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
           <div>
-            <h1 className="font-head font-normal text-3xl text-pine-900">CRM</h1>
+            <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">CRM</h1>
             <p className="text-sm text-pine-700 mt-0.5">Gestión de consultas y leads</p>
           </div>
           <button onClick={openNew}
@@ -812,7 +812,7 @@ export default function CRMPage() {
               <section>
                 <button type="button" onClick={() => setShowOptional(v => !v)}
                   className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-pine-600 mb-3 hover:text-pine-900">
-                  <span className="text-[10px]">{showOptional ? "▾" : "▸"}</span> Más detalles (opcional)
+                  <span className="text-[11px]">{showOptional ? "▾" : "▸"}</span> Más detalles (opcional)
                 </button>
                 {showOptional && (
                   <div className="space-y-3">

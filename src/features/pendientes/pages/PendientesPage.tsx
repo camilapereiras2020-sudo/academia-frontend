@@ -44,7 +44,7 @@ export default function PendientesPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-head font-normal text-3xl text-pine-900">Pagos pendientes</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Pagos pendientes</h1>
           <p className="text-sm text-pine-700 mt-1">
             {todos.length} pago{todos.length !== 1 ? "s" : ""} por cobrar
             {todos.length > 0 && <span className="font-semibold text-red-600 ml-1">— {formatEur(total)}</span>}

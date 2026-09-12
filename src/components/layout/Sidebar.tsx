@@ -88,7 +88,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
           <div className="font-head text-[19px] text-khaki-100 leading-tight whitespace-nowrap">
             RANGERS
             <br />
-            <span className="text-[11px] tracking-[0.2em] text-brass-300 font-body font-bold">STATION DESK</span>
+            <span className="text-[13px] tracking-[0.2em] text-brass-300 font-body font-bold">STATION DESK</span>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {navSections.map((section) => (
           <div key={section.label} className="mb-4">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-brass-300 px-2 pt-3.5 pb-2">
+            <div className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-brass-300 px-2 pt-3.5 pb-2">
               {section.label}
             </div>
             {section.items.map(({ to, icon: Icon, label }) =>
@@ -108,7 +108,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                 >
                   <Icon size={17} strokeWidth={2} />
                   {label}
-                  <span className="ml-auto text-[9px] font-body font-bold uppercase tracking-wider text-khaki-100/40 border border-white/10 rounded px-1.5 py-0.5">
+                  <span className="ml-auto text-[11px] font-body font-bold uppercase tracking-wider text-khaki-100/40 border border-white/10 rounded px-1.5 py-0.5">
                     Soon
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[13px] text-khaki-200 font-semibold truncate">{user?.username || "Front Desk"}</div>
-          <NavLink to="/config" className="text-[11px] text-khaki-300 hover:text-brass-300 no-underline inline-flex items-center gap-1">
+          <NavLink to="/config" className="text-[13px] text-khaki-300 hover:text-brass-300 no-underline inline-flex items-center gap-1">
             <Settings size={11} strokeWidth={2} />
             Settings
           </NavLink>

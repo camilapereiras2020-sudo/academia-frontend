@@ -119,7 +119,7 @@ export default function PreciosPage() {
   return (
     <div className="max-w-4xl">
       <div className="mb-4">
-        <h1 className="font-head font-normal text-3xl text-pine-900">Precios — Rangers Academy · Curso 2026/2027</h1>
+        <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Precios — Rangers Academy · Curso 2026/2027</h1>
         <p className="text-sm text-pine-700 mt-1">
           Guía interna para explicar los precios a las familias, y el cotizador rápido para consultas nuevas.
         </p>

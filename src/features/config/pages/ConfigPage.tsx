@@ -8,7 +8,7 @@ export default function ConfigPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="font-head font-normal text-3xl text-pine-900 mb-6">Configuración</h1>
+      <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900 mb-6">Configuración</h1>
 
       {/* Account info */}
       <div className="bg-khaki-100 border rounded-xl p-4 mb-5 flex items-center gap-3">

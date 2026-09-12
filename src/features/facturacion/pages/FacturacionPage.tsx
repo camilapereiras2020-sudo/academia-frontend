@@ -71,7 +71,7 @@ export default function FacturacionPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-head font-normal text-3xl text-pine-900">Facturación</h1>
+        <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Facturación</h1>
         <p className="text-sm text-pine-700 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
       </div>
 

@@ -144,7 +144,7 @@ function OwnerDashboard() {
       {/* Header */}
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-head text-[26px] font-normal text-pine-800">Station Overview</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-800">Station Overview</h1>
           <p className="text-[13px] text-pine-700 mt-1">{formatMonth(mesAct)}</p>
         </div>
         <div className="flex items-center gap-4">
@@ -185,7 +185,7 @@ function OwnerDashboard() {
           <circle cx="100" cy="80" r="80" fill="none" stroke="#F6F1E7" strokeWidth="2" />
         </svg>
         <div className="relative flex items-center justify-between flex-wrap gap-2 mb-2">
-          <div className="text-[11px] font-bold text-brass-300 uppercase tracking-[0.05em]">🧭 Trail Log</div>
+          <div className="text-[13px] font-bold text-brass-300 uppercase tracking-[0.05em]">🧭 Trail Log</div>
           <div className="flex items-center gap-2">
             <button onClick={goToday}
               className="px-2 py-0.5 rounded-md border border-white/20 text-[10.5px] font-semibold text-khaki-100 hover:bg-white/10">
@@ -214,7 +214,7 @@ function OwnerDashboard() {
                 disabled={d.day == null}
                 onClick={() => d.day != null && setSelectedDay(d.day)}
                 title={clases.length ? `${clases.length} clase${clases.length === 1 ? "" : "s"}` : undefined}
-                className={`h-7 rounded-md text-[11px] flex items-center justify-center gap-0.5 transition-colors ${
+                className={`h-7 rounded-md text-[13px] flex items-center justify-center gap-0.5 transition-colors ${
                   d.day == null ? "cursor-default" : "cursor-pointer hover:bg-white/10"
                 } ${isToday ? "bg-brass-500 text-pine-900 font-extrabold" : "text-khaki-100"}`}
               >
@@ -329,7 +329,7 @@ function OwnerDashboard() {
                             <button
                               onClick={() => marcarMut.mutate(p.id)}
                               disabled={marcarMut.isPending}
-                              className="text-[11px] font-bold text-brass-700 border border-brass-500/50 rounded px-1.5 py-0.5 hover:bg-brass-500/10 disabled:opacity-50"
+                              className="text-[13px] font-bold text-brass-700 border border-brass-500/50 rounded px-1.5 py-0.5 hover:bg-brass-500/10 disabled:opacity-50"
                               title="Marcar como pagado"
                             >
                               ✓ Marcar pagado

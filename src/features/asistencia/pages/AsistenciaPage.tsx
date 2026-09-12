@@ -64,7 +64,7 @@ export default function AsistenciaPage() {
 
   return (
     <div>
-      <h1 className="font-head font-normal text-3xl text-pine-900 mb-6">Asistencia</h1>
+      <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900 mb-6">Asistencia</h1>
 
       <div className="flex gap-3 mb-6 flex-wrap items-end">
         <div>

@@ -126,7 +126,7 @@ export default function GruposPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-head font-normal text-3xl text-pine-900">Grupos</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Grupos</h1>
           <p className="text-sm text-pine-800 mt-1">{all.length} grupos activos</p>
         </div>
         {!isReception && (
@@ -242,7 +242,7 @@ export default function GruposPage() {
                   onBlur={handleNombreBlur}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
                 {nameAutoAdjusted && (
-                  <p className="text-[11px] text-brass-700 mt-1">
+                  <p className="text-[13px] text-brass-700 mt-1">
                     Ya existe una clase con ese nombre — se agregó el horario para diferenciarla. Podés cambiarlo si querés otro nombre.
                   </p>
                 )}

@@ -44,7 +44,7 @@ export default function AulaCombobox({ value, onChange, className }: Props) {
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         className={className} />
       {selected?.codigo && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-khaki-400">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-khaki-400">
           {selected.codigo}
         </span>
       )}

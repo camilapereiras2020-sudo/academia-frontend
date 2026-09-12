@@ -71,7 +71,7 @@ export default function CalendarioPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-head font-normal text-3xl text-pine-900">Calendario</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Calendario</h1>
           <p className="text-sm text-pine-700 mt-1">Clases programadas por semana. Reuniones y feriados, próximamente.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function CalendarioPage() {
         <div className="bg-white rounded-2xl border border-khaki-300 overflow-hidden">
           <div className="grid grid-cols-7 bg-khaki-100 border-b border-khaki-300">
             {DIAS_SEMANA.map(d => (
-              <div key={d} className="px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wider text-pine-700">
+              <div key={d} className="px-2 py-2 text-center text-[13px] font-bold uppercase tracking-wider text-pine-700">
                 {d}
               </div>
             ))}
@@ -125,14 +125,14 @@ export default function CalendarioPage() {
                           const palette = PALETTE[grupo.color_idx % PALETTE.length]
                           return (
                             <span key={i}
-                              className="text-[10px] px-1.5 py-0.5 rounded truncate"
+                              className="text-[11px] px-1.5 py-0.5 rounded truncate"
                               style={{ background: palette.bg, color: palette.text }}>
                               {horario.ini} {grupo.nombre}
                             </span>
                           )
                         })}
                         {clases.length > 3 && (
-                          <span className="text-[10px] text-pine-600">+{clases.length - 3} más</span>
+                          <span className="text-[11px] text-pine-600">+{clases.length - 3} más</span>
                         )}
                       </div>
                     </>

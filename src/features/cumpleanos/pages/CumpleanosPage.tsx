@@ -41,7 +41,7 @@ export default function CumpleanosPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-head font-normal text-3xl text-pine-900">Cumpleaños</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Cumpleaños</h1>
           <p className="text-sm text-pine-700 mt-1">
             {cumples.length} cumpleaños en los próximos {dias} días
           </p>

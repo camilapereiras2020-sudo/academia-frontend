@@ -42,7 +42,7 @@ function ScoreBadge({ score }: { score: number }) {
     ? "bg-amber-100 text-amber-800"
     : "bg-khaki-100 text-pine-600"
   return (
-    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cls}`}>
+    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${cls}`}>
       {Math.round(score * 100)}%
     </span>
   )
@@ -140,7 +140,7 @@ export default function PagosPendientesPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-head font-normal text-3xl text-pine-900">Pagos pendientes de completar</h1>
+          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Pagos pendientes de completar</h1>
           <p className="text-sm text-pine-700 mt-1">
             {pending.length} pago(s) importado(s) sin alumno/pagador asignado — se sugieren coincidencias a partir del concepto original de Bizum.
           </p>

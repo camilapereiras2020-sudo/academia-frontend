@@ -65,7 +65,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <div className="text-[12px] font-extrabold uppercase tracking-[0.06em] text-pine-700 whitespace-nowrap">
             {today}
           </div>
-          <h1 className="font-head font-normal text-[24px] text-pine-800 mt-1 whitespace-nowrap">
+          <h1 className="font-serif font-light text-[1.75rem] leading-none tracking-[-0.01em] text-pine-800 mt-1 whitespace-nowrap">
             {title}
           </h1>
         </div>
@@ -74,12 +74,12 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       <div className="flex items-center gap-3 flex-wrap justify-end">
         <div className="flex items-center gap-2 bg-pine-800 text-khaki-100 px-3.5 py-2 rounded-[5px] flex-shrink-0">
           <span className="font-head text-[16px] leading-none">{clockTime}</span>
-          <span className="text-[10px] font-bold text-brass-300 uppercase tracking-[0.03em] whitespace-nowrap">Trail Time</span>
+          <span className="text-[11px] font-bold text-brass-300 uppercase tracking-[0.03em] whitespace-nowrap">Trail Time</span>
         </div>
 
         <button
           onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}
-          className="text-[11px] font-body font-semibold text-pine-700 uppercase tracking-[0.1em] bg-transparent border border-pine-800/30 rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-pine-800/5"
+          className="text-[13px] font-body font-semibold text-pine-700 uppercase tracking-[0.1em] bg-transparent border border-pine-800/30 rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-pine-800/5"
         >
           {i18n.language === 'es' ? 'ES' : 'EN'}
         </button>

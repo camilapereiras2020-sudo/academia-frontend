@@ -19,7 +19,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-khaki-100">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm border-2 border-khaki-300">
-        <h1 className="font-head font-normal text-2xl text-center text-pine-900 mb-6">Crear cuenta</h1>
+        <h1 className="font-serif font-light text-[2rem] leading-none tracking-[-0.01em] text-center text-pine-900 mb-6">Crear cuenta</h1>
         {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded-lg">{error}</p>}
         <div className="space-y-3">
           {[
