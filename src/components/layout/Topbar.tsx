@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut, Menu } from "lucide-react"
 import { useAuthStore } from "@/store/authStore"
 import { queryClient } from "@/lib/queryClient"
+import AvisosBell from "@/features/avisos/components/AvisosBell"
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Panel principal',
@@ -81,6 +82,8 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <span className="text-[11px] font-bold text-brass-300 uppercase tracking-[0.03em] whitespace-nowrap">Trail Time</span>
         </div>
         <div className="sm:hidden font-head text-[16px] text-pine-800 flex-shrink-0">{clockTime}</div>
+
+        <AvisosBell />
 
         <button
           onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}

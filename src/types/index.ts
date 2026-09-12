@@ -1,3 +1,13 @@
+export interface Aviso {
+  id: number; titulo: string; fecha: string | null; hecha: boolean
+  para: number | null; para_nombre: string | null
+  creado_por: number; creado_por_nombre: string; created_at: string
+}
+
+export interface EquipoUser {
+  id: number; username: string; email: string; role: string
+}
+
 export interface Pagador {
   id: number; nombre: string; nif: string; telefono: string; email: string
   direccion: string
