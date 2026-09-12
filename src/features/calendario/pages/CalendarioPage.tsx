@@ -46,6 +46,11 @@ export default function CalendarioPage() {
   const dayModalOverlayGuard = useOverlayMouseGuard(() => openDay(null))
   const [nuevaTarea, setNuevaTarea] = useState("")
   const [nuevaTareaPara, setNuevaTareaPara] = useState<number | "">("")
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [quickTitulo, setQuickTitulo] = useState("")
+  const [quickFecha, setQuickFecha] = useState(() => isoDate(today.getFullYear(), today.getMonth(), today.getDate()))
+  const [quickPara, setQuickPara] = useState<number | "">("")
+  const quickAddOverlayGuard = useOverlayMouseGuard(() => setShowQuickAdd(false))
 
   const { data, isLoading } = useQuery({
     queryKey: ["grupos"],
@@ -85,6 +90,16 @@ export default function CalendarioPage() {
   const eliminarTareaMut = useMutation({
     mutationFn: (id: number) => avisosApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["avisos"] }),
+  })
+  const crearQuickMut = useMutation({
+    mutationFn: () => avisosApi.create({ titulo: quickTitulo.trim(), fecha: quickFecha, para: quickPara || null }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["avisos"] })
+      setShowQuickAdd(false)
+      setQuickTitulo(""); setQuickPara("")
+      const [y, m] = res.data.fecha!.split("-").map(Number)
+      setYear(y); setMonth(m - 1)
+    },
   })
 
   function tareasForDay(day: number) {
@@ -129,7 +144,48 @@ export default function CalendarioPage() {
           <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Calendario</h1>
           <p className="text-sm text-pine-700 mt-1">Clases programadas por semana. Reuniones y feriados, próximamente.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
+          <button onClick={() => setShowQuickAdd(s => !s)}
+            className="px-3 py-1.5 rounded-lg bg-brass-500 text-white text-sm font-semibold hover:bg-brass-700">
+            + Nueva tarea
+          </button>
+          {showQuickAdd && (
+            <>
+              <div className="fixed inset-0 z-40" {...quickAddOverlayGuard} />
+              <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[20rem] bg-white rounded-xl border shadow-xl p-4 flex flex-col gap-2">
+                <input
+                  autoFocus
+                  value={quickTitulo}
+                  onChange={e => setQuickTitulo(e.target.value)}
+                  placeholder="¿Qué tarea es?"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={quickFecha}
+                    onChange={e => setQuickFecha(e.target.value)}
+                    className="flex-1 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                  />
+                  <select
+                    value={quickPara}
+                    onChange={e => setQuickPara(e.target.value ? Number(e.target.value) : "")}
+                    className="flex-1 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                  >
+                    <option value="">Sin asignar</option>
+                    {equipo.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                  </select>
+                </div>
+                <button
+                  onClick={() => crearQuickMut.mutate()}
+                  disabled={!quickTitulo.trim() || !quickFecha || crearQuickMut.isPending}
+                  className="self-end px-3 py-1.5 rounded-lg bg-brass-500 text-white text-sm font-semibold hover:bg-brass-700 disabled:opacity-50"
+                >
+                  {crearQuickMut.isPending ? "Agregando..." : "Agregar"}
+                </button>
+              </div>
+            </>
+          )}
           <button onClick={goToday}
             className="px-3 py-1.5 rounded-lg border border-khaki-300 text-sm font-medium text-pine-700 hover:bg-khaki-100">
             Hoy

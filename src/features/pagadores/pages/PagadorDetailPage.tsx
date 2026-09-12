@@ -5,7 +5,9 @@ import { ArrowLeft, Receipt } from "lucide-react"
 import { pagadoresApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagosApi, documentosApi, emisoresApi } from "@/features/pagos/api"
+import PagoDetailModal from "@/features/pagos/PagoDetailModal"
 import { formatEur, formatMonth } from "@/lib/utils"
+import type { Pago } from "@/types"
 
 const MARCA_LABEL: Record<string, string> = {
   cami_and_co: "Cami & Co",
@@ -21,6 +23,7 @@ export default function PagadorDetailPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [emisorOverride, setEmisorOverride] = useState<number | "">("")
   const [error, setError] = useState("")
+  const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
 
   const { data: pagador, isLoading: loadingPagador } = useQuery({
     queryKey: ["pagador", pagadorId],
@@ -143,7 +146,7 @@ export default function PagadorDetailPage() {
           <Receipt size={16} className="text-brass-700" />
         </div>
         <p className="text-xs text-pine-600 mb-4">
-          Selecciona 2 o más pagos pendientes de facturar para emitir una única factura que los cubra a todos.
+          "Generar factura" en un pago abre su factura individual. Para combinar 2 o más pagos en una sola factura, seleccionalos y usá el botón de abajo.
         </p>
 
         {loadingPagos && <p className="text-khaki-400 text-sm">Cargando...</p>}
@@ -173,7 +176,16 @@ export default function PagadorDetailPage() {
                     {p.emisor_nombre && ` · ${p.emisor_nombre}`}
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-pine-900">{formatEur(Number(p.total))}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-pine-900">{formatEur(Number(p.total))}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedPago(p) }}
+                    className="text-xs font-semibold text-brass-700 hover:text-brass-900 flex-shrink-0"
+                  >
+                    Generar factura →
+                  </button>
+                </div>
               </div>
             </label>
           ))}
@@ -241,6 +253,15 @@ export default function PagadorDetailPage() {
             ))}
           </div>
         </div>
+      )}
+      {selectedPago && (
+        <PagoDetailModal
+          pago={selectedPago}
+          onClose={() => {
+            setSelectedPago(null)
+            qc.invalidateQueries({ queryKey: ["pagos", { pagador: pagadorId }] })
+          }}
+        />
       )}
     </div>
   )

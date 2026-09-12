@@ -8,11 +8,12 @@ import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
 import EmailModal from "@/components/shared/EmailModal"
 import WhatsappReplyModal from "../components/WhatsappReplyModal"
+import PagoDetailModal from "@/features/pagos/PagoDetailModal"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
-import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso } from "@/types"
+import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago } from "@/types"
 
 const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const NIVELES: NivelObjetivo[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -114,6 +115,7 @@ export default function AlumnoDetailPage() {
 
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showWhatsappModal, setShowWhatsappModal] = useState(false)
+  const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
   const [showFechaForm, setShowFechaForm] = useState(false)
   const [fechaForm, setFechaForm] = useState({ fecha: "", tipo: "examen" as TipoFechaImportante, descripcion: "" })
   const [showNotaForm, setShowNotaForm] = useState(false)
@@ -643,7 +645,7 @@ export default function AlumnoDetailPage() {
               <thead><tr>{["Periodo", "Importe", "Método", "Estado", "Doc"].map(h => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {pagosFiltrados.map(p => (
-                  <tr key={p.id}>
+                  <tr key={p.id} onClick={() => setSelectedPago(p)} style={{ cursor: "pointer" }}>
                     <td>{formatMonth(p.periodo)}</td>
                     <td style={{ fontWeight: 600, color: "var(--text)" }}>{formatEur(Number(p.total))}</td>
                     <td style={{ textTransform: "capitalize" }}>{p.metodo}</td>
@@ -860,6 +862,15 @@ export default function AlumnoDetailPage() {
           pagadorNombre={pagador?.nombre ?? null}
           grupoNombre={grupoDetalle?.grupo_nombre ?? null}
           onClose={() => setShowWhatsappModal(false)}
+        />
+      )}
+      {selectedPago && (
+        <PagoDetailModal
+          pago={selectedPago}
+          onClose={() => {
+            setSelectedPago(null)
+            qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+          }}
         />
       )}
     </div>
