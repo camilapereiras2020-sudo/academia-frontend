@@ -12,12 +12,23 @@ export const pagosApi = {
     return api.get<Pago[]>(`/pagos/?${qs}`)
   },
   get: (id: number) => api.get<Pago>(`/pagos/${id}/`),
-  create: (data: Partial<Pago> & { guardar_como_borrador?: boolean; diferir_factura?: boolean }) =>
-    api.post<Pago>("/pagos/", data),
-  update: (id: number, data: Partial<Pago> & { diferir_factura?: boolean }) => api.patch<Pago>(`/pagos/${id}/`, data),
+  create: (data: Partial<Pago> & { guardar_como_borrador?: boolean }) => api.post<Pago>("/pagos/", data),
+  update: (id: number, data: Partial<Pago>) => api.patch<Pago>(`/pagos/${id}/`, data),
   delete: (id: number) => api.delete(`/pagos/${id}/`),
   marcarPagado: (id: number) => api.post(`/pagos/${id}/marcar-pagado/`),
   sugerencias: () => api.get<SugerenciaRow[]>("/pagos/sugerencias/"),
+  // Mid-month bulk generation: one un-invoiced pago per enrolled alumno,
+  // priced off their assigned group's tarifa. Safe to re-run for the same
+  // periodo — anyone who already has a pago is skipped, not duplicated.
+  generarMes: (periodo?: string) =>
+    api.post<{ periodo: string; creados: { pago_id: number; alumno: string; total: string }[]; omitidos: { alumno: string; motivo: string }[] }>(
+      "/pagos/generar-mes/", periodo ? { periodo } : {}
+    ),
+  // Unnumbered, watermarked look at what this pago's invoice would print —
+  // for reviewing before "Confirmar factura" actually assigns a número.
+  // Blob response (needs the auth header, so a plain <a href> won't work —
+  // same pattern as DocumentosPage's handleDescargar).
+  previewFactura: (id: number) => api.get(`/pagos/${id}/preview-factura/`, { responseType: "blob" }),
 }
 
 export interface Sugerencia { id: number; nombre: string; score: number }
@@ -44,6 +55,9 @@ export const documentosApi = {
   // on one brand/emisor — see PagadorDetailPage.
   generarCombinado: (pago_ids: number[], emisor_id?: number) =>
     api.post("/documentos/generar-combinado/", { pago_ids, ...(emisor_id ? { emisor_id } : {}) }),
+  // Manual send — never automatic. Staff clicks this once a confirmed
+  // invoice has been reviewed and is ready to go to the family.
+  enviar: (id: number) => api.post<{ ok: boolean }>(`/documentos/${id}/enviar/`),
   delete: (id: number) => api.delete(`/documentos/${id}/`),
 }
 

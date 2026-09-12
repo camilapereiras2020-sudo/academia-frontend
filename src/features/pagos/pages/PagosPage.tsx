@@ -58,6 +58,9 @@ export default function PagosPage() {
   const [form, setForm] = useState(emptyForm())
   const [formError, setFormError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  const [showGenerarMes, setShowGenerarMes] = useState(false)
+  const [periodoMes, setPeriodoMes] = useState(new Date().toISOString().slice(0, 7))
+  const [generarMesResult, setGenerarMesResult] = useState<Awaited<ReturnType<typeof pagosApi.generarMes>>["data"] | null>(null)
   const [deleteError, setDeleteError] = useState("")
   const [actionError, setActionError] = useState("")
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
@@ -113,6 +116,15 @@ export default function PagosPage() {
     mutationFn: (p: Pago) => documentosApi.generar(p.id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setActionError("") },
     onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al generar el documento."),
+  })
+
+  const generarMesMut = useMutation({
+    mutationFn: (periodo: string) => pagosApi.generarMes(periodo),
+    onSuccess: (res) => {
+      setGenerarMesResult(res.data)
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+    },
+    onError: (err: any) => setGenerarMesResult({ periodo: periodoMes, creados: [], omitidos: [{ alumno: "", motivo: err.response?.data?.error ?? "Error al generar los pagos del mes." }] }),
   })
 
   const createMut = useMutation({
@@ -182,6 +194,12 @@ export default function PagosPage() {
             </button>
           )}
           <button
+            onClick={() => { setShowGenerarMes(true); setGenerarMesResult(null) }}
+            className="inline-flex items-center gap-2 bg-white border border-brass-300 text-brass-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-khaki-100"
+          >
+            📅 Generar pagos del mes
+          </button>
+          <button
             onClick={showForm ? closeForm : openForm}
             className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700"
           >
@@ -189,6 +207,67 @@ export default function PagosPage() {
           </button>
         </div>
       </div>
+
+      {/* Generar pagos del mes modal */}
+      {showGenerarMes && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowGenerarMes(false)}>
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-pine-900">Generar pagos del mes</h2>
+              <button onClick={() => setShowGenerarMes(false)} className="text-khaki-400 hover:text-pine-600 text-lg leading-none">✕</button>
+            </div>
+            <p className="text-sm text-pine-700 mb-4">
+              Crea un pago pendiente de facturar por cada alumno matriculado, usando la tarifa de su grupo.
+              No se genera ningún número ni PDF todavía — solo el pago, listo para que lo revisen y confirmen.
+              Si un alumno ya tiene un pago para este período, se omite (podés correrlo de nuevo sin duplicar nada).
+            </p>
+            {!generarMesResult ? (
+              <>
+                <label className="block text-xs font-semibold text-pine-700 mb-1">Período</label>
+                <input type="month" value={periodoMes} onChange={e => setPeriodoMes(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setShowGenerarMes(false)} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-300">
+                    Cancelar
+                  </button>
+                  <button onClick={() => generarMesMut.mutate(periodoMes)} disabled={generarMesMut.isPending}
+                    className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+                    {generarMesMut.isPending ? "Generando..." : "Generar"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-pine-900 mb-2">
+                  {generarMesResult.creados.length} pago{generarMesResult.creados.length === 1 ? "" : "s"} creado{generarMesResult.creados.length === 1 ? "" : "s"} para {generarMesResult.periodo}
+                </p>
+                {generarMesResult.creados.length > 0 && (
+                  <ul className="text-xs text-pine-700 mb-3 max-h-32 overflow-y-auto space-y-0.5">
+                    {generarMesResult.creados.map(c => (
+                      <li key={c.pago_id}>✓ {c.alumno} — {formatEur(Number(c.total))}</li>
+                    ))}
+                  </ul>
+                )}
+                {generarMesResult.omitidos.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-amber-700 mb-1">Omitidos — revisar a mano:</p>
+                    <ul className="text-xs text-amber-700 mb-3 max-h-32 overflow-y-auto space-y-0.5">
+                      {generarMesResult.omitidos.map((o, i) => (
+                        <li key={i}>⚠ {o.alumno ? `${o.alumno}: ` : ""}{o.motivo}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <div className="flex justify-end">
+                  <button onClick={() => setShowGenerarMes(false)} className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700">
+                    Listo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Create form */}
       {showForm && (
@@ -399,7 +478,7 @@ export default function PagosPage() {
                           onClick={() => generarMut.mutate(p)}
                           disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
                           className="px-2 py-1 border rounded text-xs text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
-                          title="Generar factura o recibo"
+                          title="Confirmar factura o recibo"
                         >
                           🧾
                         </button>

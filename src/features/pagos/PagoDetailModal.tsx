@@ -64,6 +64,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const [horas, setHoras] = useState<number | "">(initial.horas_trabajadas ?? "")
   const [descuento, setDescuento] = useState(Number(initial.descuento) || 0)
   const [metodo, setMetodo] = useState(initial.metodo)
+  const [estadoPago, setEstadoPago] = useState<"pagado" | "pendiente" | "parcial">(initial.estado)
   const [notas, setNotas] = useState(initial.notas)
   const [conceptoLibre, setConceptoLibre] = useState(initial.concepto_libre)
   const [extras, setExtras] = useState<ExtraLine[]>(initial.extras ?? [])
@@ -103,6 +104,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
       extras,
       total,
       metodo,
+      estado: estadoPago,
       notas,
       concepto_libre: conceptoLibre,
       horas_trabajadas: horas === "" ? 0 : horas,
@@ -133,6 +135,36 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
     onError: (err: any) =>
       setError(err.response?.data?.error ?? "Error generando la factura/recibo."),
   })
+
+  const [previewLoading, setPreviewLoading] = useState(false)
+  async function handlePreview() {
+    setPreviewLoading(true)
+    setError("")
+    try {
+      const res = await pagosApi.previewFactura(pago.id)
+      const url = window.URL.createObjectURL(res.data as Blob)
+      window.open(url, "_blank", "noopener,noreferrer")
+      setTimeout(() => window.URL.revokeObjectURL(url), 30000)
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Error generando la vista previa.")
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const enviarMut = useMutation({
+    mutationFn: (docId: number) => documentosApi.enviar(docId),
+    onError: (err: any) => setError(err.response?.data?.error ?? "Error al enviar la factura."),
+  })
+
+  const pagadorObj = pagador !== "" ? pagadores.find((p: any) => p.id === pagador) : undefined
+  function whatsappLink(numDoc: string) {
+    const tel = (pagadorObj?.telefono || "").replace(/\D/g, "")
+    const texto = encodeURIComponent(
+      `Hola${pagadorObj?.nombre ? " " + pagadorObj.nombre : ""}, te paso la factura ${numDoc} por ${total.toFixed(2)}€. ¡Gracias!`
+    )
+    return `https://wa.me/${tel.startsWith("34") ? tel : "34" + tel}?text=${texto}`
+  }
 
   async function handleDescargar(d: Documento) {
     setDownloadingId(d.id)
@@ -283,6 +315,15 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                 {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-pine-700 mb-1">Estado de pago</label>
+              <select value={estadoPago} onChange={e => setEstadoPago(e.target.value as "pagado" | "pendiente" | "parcial")}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                <option value="pendiente">Pendiente</option>
+                <option value="pagado">Pagado</option>
+                <option value="parcial">Pago parcial</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -328,35 +369,56 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-pine-700 mb-2">Factura / Recibo</h3>
               {pago.num_doc ? (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-sm bg-khaki-100 px-2 py-1 rounded">{pago.num_doc}</span>
-                  {docs.map(d => (
-                    <span key={d.id} className="inline-flex items-center gap-2">
-                      <button onClick={() => handleDescargar(d)} disabled={downloadingId === d.id}
-                        className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
-                        {downloadingId === d.id ? "..." : "📥 Ver / Descargar (Ctrl+P para imprimir)"}
-                      </button>
-                      <span className="text-xs text-pine-600" title="Cuándo se emitió este documento/PDF">
-                        Fecha de emisión: {formatFechaEmision(d.emitida_at)}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="font-mono text-sm bg-khaki-100 px-2 py-1 rounded">{pago.num_doc}</span>
+                    {docs.map(d => (
+                      <span key={d.id} className="inline-flex items-center gap-2">
+                        <button onClick={() => handleDescargar(d)} disabled={downloadingId === d.id}
+                          className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
+                          {downloadingId === d.id ? "..." : "📥 Ver / Descargar (Ctrl+P para imprimir)"}
+                        </button>
+                        <span className="text-xs text-pine-600" title="Cuándo se emitió este documento/PDF">
+                          Fecha de emisión: {formatFechaEmision(d.emitida_at)}
+                        </span>
                       </span>
-                    </span>
-                  ))}
+                    ))}
+                  </div>
+                  {docs.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button onClick={() => enviarMut.mutate(docs[0].id)} disabled={enviarMut.isPending}
+                        className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
+                        {enviarMut.isPending ? "Enviando..." : "✉️ Enviar por email"}
+                      </button>
+                      <a href={whatsappLink(pago.num_doc)} target="_blank" rel="noopener noreferrer"
+                        className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium">
+                        💬 Enviar por WhatsApp
+                      </a>
+                      {enviarMut.isSuccess && <span className="text-xs text-sage-700">Enviado ✓</span>}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
                   {facturaNoGenerada && (
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-2">
-                      ⚠ La factura no se generó automáticamente al completar este pago. Puedes reintentar:
+                      ⚠ Hubo un error la última vez que se intentó generar. Puedes reintentar:
                     </p>
                   )}
-                  <button onClick={() => generarMut.mutate()} disabled={generarMut.isPending}
-                    className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
-                    {generarMut.isPending ? "Generando..." : "🧾 Generar factura/recibo"}
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button onClick={handlePreview} disabled={previewLoading}
+                      className="px-3 py-1.5 border rounded-lg text-xs text-pine-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
+                      {previewLoading ? "..." : "👁 Vista previa (borrador)"}
+                    </button>
+                    <button onClick={() => generarMut.mutate()} disabled={generarMut.isPending}
+                      className="px-3 py-1.5 rounded-lg text-xs bg-brass-500 text-white hover:bg-brass-700 font-medium disabled:opacity-50">
+                      {generarMut.isPending ? "Confirmando..." : "🧾 Confirmar factura"}
+                    </button>
+                  </div>
                 </div>
               )}
               <p className="text-xs text-pine-600 mt-2">
-                El envío por email al pagador ocurre automáticamente al generar — no hay un botón de reenvío manual todavía.
+                Nada se envía automáticamente — el número, el PDF y el email/WhatsApp se disparan siempre a mano, botón por botón.
               </p>
             </div>
           )}

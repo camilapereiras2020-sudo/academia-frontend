@@ -73,6 +73,13 @@ export default function DocumentosPage() {
       setActionError(err.response?.data?.error ?? "Error al anular el documento."),
   })
 
+  const enviarMut = useMutation({
+    mutationFn: (id: number) => api.post(`/documentos/${id}/enviar/`),
+    onSuccess: (_res, id) => { setActionError(""); setJustSentId(id) },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al enviar la factura."),
+  })
+  const [justSentId, setJustSentId] = useState<number | null>(null)
+
   async function handleDescargar(d: Documento) {
     setDownloadingId(d.id)
     setDownloadError("")
@@ -208,6 +215,16 @@ export default function DocumentosPage() {
                   className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium">
                   🔗 Ver en Drive
                 </a>
+              )}
+              {d.estado !== "anulada" && (
+                <button
+                  onClick={() => enviarMut.mutate(d.id)}
+                  disabled={enviarMut.isPending && enviarMut.variables === d.id}
+                  className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
+                  {enviarMut.isPending && enviarMut.variables === d.id
+                    ? "..."
+                    : justSentId === d.id ? "✓ Enviado" : "✉️ Enviar"}
+                </button>
               )}
               {d.estado === "anulada" ? null : d.estado === "borrador" ? (
                 <button

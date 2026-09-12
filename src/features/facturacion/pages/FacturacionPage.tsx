@@ -121,7 +121,7 @@ export default function FacturacionPage() {
                       disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
                       className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50 whitespace-nowrap"
                     >
-                      {generarMut.isPending && (generarMut.variables as Pago)?.id === p.id ? "Generando..." : "🧾 Generar factura/recibo"}
+                      {generarMut.isPending && (generarMut.variables as Pago)?.id === p.id ? "Confirmando..." : "🧾 Confirmar factura"}
                     </button>
                   </td>
                 </tr>
