@@ -12,8 +12,9 @@ export const pagosApi = {
     return api.get<Pago[]>(`/pagos/?${qs}`)
   },
   get: (id: number) => api.get<Pago>(`/pagos/${id}/`),
-  create: (data: Partial<Pago> & { guardar_como_borrador?: boolean }) => api.post<Pago>("/pagos/", data),
-  update: (id: number, data: Partial<Pago>) => api.patch<Pago>(`/pagos/${id}/`, data),
+  create: (data: Partial<Pago> & { guardar_como_borrador?: boolean; diferir_factura?: boolean }) =>
+    api.post<Pago>("/pagos/", data),
+  update: (id: number, data: Partial<Pago> & { diferir_factura?: boolean }) => api.patch<Pago>(`/pagos/${id}/`, data),
   delete: (id: number) => api.delete(`/pagos/${id}/`),
   marcarPagado: (id: number) => api.post(`/pagos/${id}/marcar-pagado/`),
   sugerencias: () => api.get<SugerenciaRow[]>("/pagos/sugerencias/"),

@@ -76,6 +76,10 @@ export default function NuevoPagoPage() {
   const [notas, setNotas] = useState("")
   const [extras, setExtras] = useState<ExtraLine[]>([])
   const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pendiente")
+  // For a sibling's payment meant to be combined with the rest of the family
+  // into one invoice later (Payers page) instead of getting its own
+  // individual one right now — see modules/pagos/views.py's diferir_factura.
+  const [diferirFactura, setDiferirFactura] = useState(false)
   // Which alumno we've already auto-added the matrícula line for — so it's
   // added once per selection, and doesn't reappear if staff deletes it.
   const [matriculaAutoAddedFor, setMatriculaAutoAddedFor] = useState<number | null>(null)
@@ -134,6 +138,7 @@ export default function NuevoPagoPage() {
       horas_trabajadas: horas === "" ? 0 : horas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
       ...(borrador ? { guardar_como_borrador: true } : {}),
+      ...(!borrador && diferirFactura ? { diferir_factura: true } : {}),
     }),
     onSuccess: (_res, borrador) => {
       qc.invalidateQueries({ queryKey: ["pagos"] })
@@ -273,6 +278,14 @@ export default function NuevoPagoPage() {
             </select>
           </div>
         </div>
+
+        <label className="flex items-start gap-2 -mt-1 cursor-pointer">
+          <input type="checkbox" checked={diferirFactura} onChange={e => setDiferirFactura(e.target.checked)}
+            className="mt-0.5 accent-brass-500" />
+          <span className="text-xs text-pine-700">
+            Es de una familia con varios hermanos — combinar en una sola factura después (no facturar este pago individualmente). Andá a <b>Payers</b> cuando estén todos los pagos cargados.
+          </span>
+        </label>
 
         <div>
           <div className="flex items-center justify-between mb-2">
