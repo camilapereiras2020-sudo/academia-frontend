@@ -142,7 +142,7 @@ export interface Tarifa {
 
 export interface RegistroAsistencia {
   id: number; alumno: number; alumno_nombre: string
-  estado: "present" | "absent" | "makeup" | "guest"; nota: string; es_invitado: boolean
+  estado: "present" | "absent" | "makeup" | "guest" | "other"; nota: string; es_invitado: boolean
 }
 
 export interface Sesion {

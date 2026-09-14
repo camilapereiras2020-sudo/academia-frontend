@@ -11,7 +11,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/grupos": ALL_ROLES,
   "/calendario": ALL_ROLES,
   "/horario": ALL_ROLES,
-  "/asistencia": ["owner", "co_manager"],
+  "/asistencia": ALL_ROLES,
   "/pagos": ["owner", "co_manager"],
   "/pagos/nuevo": ["owner", "co_manager"],
   "/pagos/pendientes": ["owner", "co_manager"],
