@@ -30,9 +30,11 @@ const CURSOS: { value: Curso; label: string }[] = [
   { value: "fp", label: "Formación Profesional" }, { value: "adulto", label: "Adulto" }, { value: "otro", label: "Otro" },
 ]
 // Público/concertado/privado en Pontevedra y Poio — recopilado a mano
-// (paxinasgalegas.es, agosto 2026), puede faltar algún centro nuevo o de
-// otro ayuntamiento cercano. Por eso "Colegio de origen" sigue siendo texto
-// libre con estas como sugerencias (datalist), nunca un desplegable cerrado.
+// (paxinasgalegas.es agosto 2026; IES públicos de Pontevedra añadidos en
+// septiembre 2026 tras faltar en la primera pasada), puede faltar algún
+// centro nuevo o de otro ayuntamiento cercano. Por eso "Colegio de origen"
+// sigue siendo texto libre con estas como sugerencias (datalist), nunca un
+// desplegable cerrado.
 const COLEGIOS_SUGERIDOS = [
   // Pontevedra — público
   "CEIP A Carballeira", "CEIP A Xunqueira Nº 1", "CEIP A Xunqueira Nº 2", "CEIP Álvarez Limeses",
@@ -40,6 +42,9 @@ const COLEGIOS_SUGERIDOS = [
   "CEIP Manuel Vidal Portela", "CEIP Parada-Campañó", "CEIP Pontesampaio", "CEIP Pza. Barcelos",
   "CEIP San Benito de Lérez", "CEIP San Martiño", "CEIP Santo André de Xeve", "CEIP Vilaverde-Mourente",
   "CEP Campolongo", "CEP Marcos da Portela", "CEE Amencer", "CEE Juan XXIII",
+  // Pontevedra — IES (público, secundaria/bacharelato)
+  "IES A Xunqueira I", "IES A Xunqueira II", "IES Sánchez Cantón", "IES Valle-Inclán",
+  "IES Frei Martín Sarmiento", "IES Montecelo",
   // Pontevedra — concertado
   "CPR Calasancio", "CPR Nuestra Señora de los Dolores (Doroteas)", "CPR Sagrado Corazón de Jesús",
   "CPR Sagrado Corazón de Placeres", "CPR San José",
