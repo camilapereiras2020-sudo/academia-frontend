@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
-import { resumenApi, fechasImportantesApi, notasAlumnoApi, datoSaludApi, consentimientosApi } from "../ficha_api"
+import { resumenApi, fechasImportantesApi, notasAlumnoApi, datoSaludApi, consentimientosApi, cargoExtraApi } from "../ficha_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
@@ -13,7 +13,7 @@ import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
-import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago } from "@/types"
+import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase } from "@/types"
 
 const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const NIVELES: NivelObjetivo[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -90,6 +90,20 @@ const TIPO_FECHA_STYLE: Record<TipoFechaImportante, { background: string; color:
 }
 
 const TIPO_NOTA_LABELS: Record<TipoNotaAlumno, string> = { progreso: "Progreso", reunion: "Reunión", general: "General" }
+
+const CODIGO_CLASE_LABELS: Record<Exclude<CodigoClase, "">, string> = {
+  HORA: "Clase grupo (1h/semana)",
+  HORA_Y_MEDIA: "Clase grupo (1h30/semana)",
+  PRIVADA: "Clase privada",
+  PRIVADA_PROFESIONAL: "Clase privada profesional/adultos",
+}
+const CUOTA_TIPO_LABELS: Record<string, string> = {
+  manual: "Precio manual",
+  privada_manual: "Clase privada — precio manual",
+  bono_familia: "Bono Familia (prorrateado)",
+  clase_grupo: "Clase Grupo",
+  sin_tabla: "Sin calcular",
+}
 
 const TIPO_CONSENTIMIENTO_LABELS: Record<TipoConsentimiento, string> = {
   autorizacion_imagen: "Autorización de imagen",
@@ -317,6 +331,45 @@ export default function AlumnoDetailPage() {
     },
   })
 
+  const codigoClaseMut = useMutation({
+    mutationFn: (codigo_clase: CodigoClase) => alumnosApi.update(alumnoId, { codigo_clase }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+    },
+  })
+
+  const [cuotaManualEditing, setCuotaManualEditing] = useState(false)
+  const [cuotaManualDraft, setCuotaManualDraft] = useState("")
+  const cuotaManualMut = useMutation({
+    mutationFn: (cuota_manual: number | null) => alumnosApi.update(alumnoId, { cuota_manual }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+      setCuotaManualEditing(false)
+    },
+  })
+
+  const [showCargoExtraForm, setShowCargoExtraForm] = useState(false)
+  const [cargoExtraForm, setCargoExtraForm] = useState({
+    concepto: "", monto: "", fecha: new Date().toISOString().slice(0, 10),
+  })
+  const cargoExtraMut = useMutation({
+    mutationFn: () => cargoExtraApi.create({
+      alumno: alumnoId, concepto: cargoExtraForm.concepto.trim(),
+      monto: Number(cargoExtraForm.monto), fecha: cargoExtraForm.fecha,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+      setShowCargoExtraForm(false)
+      setCargoExtraForm({ concepto: "", monto: "", fecha: new Date().toISOString().slice(0, 10) })
+    },
+  })
+  const eliminarCargoExtraMut = useMutation({
+    mutationFn: (id: number) => cargoExtraApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] }),
+  })
+
   const saludMut = useMutation({
     mutationFn: () => datoSaludApi.update(alumnoId, saludForm),
     onSuccess: (res) => {
@@ -380,6 +433,8 @@ export default function AlumnoDetailPage() {
   const pagos = resumen?.pagos ?? []
   const fechas = resumen?.fechas_importantes ?? []
   const notas = resumen?.notas ?? []
+  const cuota = resumen?.cuota ?? null
+  const cargosExtra = resumen?.cargos_extra ?? []
   const periodos = Array.from(new Set(pagos.map(p => p.periodo))).sort().reverse()
   const pagosFiltrados = periodoFilter ? pagos.filter(p => p.periodo === periodoFilter) : pagos
 
@@ -629,6 +684,119 @@ export default function AlumnoDetailPage() {
               </div>
             )}
           </>
+        )}
+      </section>
+
+      {/* Cuota — cálculo automático (modules.tarifas.pricing.calcular_cuota_alumno)
+          + clases a mayores (CargoExtra), sumadas aparte a la factura del mes. */}
+      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+          Cuota
+        </h2>
+
+        <div className="grid-2col" style={{ marginBottom: "1rem" }}>
+          <div>
+            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Tipo de clase</p>
+            <select className="input" value={alumno.codigo_clase}
+              onChange={e => codigoClaseMut.mutate(e.target.value as CodigoClase)}>
+              <option value="">— Sin definir —</option>
+              {Object.entries(CODIGO_CLASE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Cuota mensual</p>
+            {cuota?.cuota != null && !cuotaManualEditing ? (
+              <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
+                {formatEur(cuota.cuota)}
+                <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-dim)", marginLeft: "0.5rem" }}>
+                  {CUOTA_TIPO_LABELS[cuota.tipo] ?? cuota.tipo}
+                </span>
+              </p>
+            ) : cuotaManualEditing ? (
+              <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                <input type="number" step="0.01" className="input" style={{ width: "8rem" }}
+                  value={cuotaManualDraft} onChange={e => setCuotaManualDraft(e.target.value)} autoFocus />
+                <button className="btn-primary" style={{ padding: "0.3rem 0.6rem" }}
+                  disabled={cuotaManualMut.isPending}
+                  onClick={() => cuotaManualMut.mutate(cuotaManualDraft.trim() === "" ? null : Number(cuotaManualDraft))}>
+                  Guardar
+                </button>
+                <button className="btn-ghost" style={{ padding: "0.3rem 0.6rem" }} onClick={() => setCuotaManualEditing(false)}>
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Precio manual — sin cargar aún.</p>
+            )}
+            {!cuotaManualEditing && (
+              <button className="btn-ghost" style={{ marginTop: "0.4rem", fontSize: "0.75rem", padding: "0.15rem 0.5rem" }}
+                onClick={() => { setCuotaManualDraft(alumno.cuota_manual != null ? String(alumno.cuota_manual) : ""); setCuotaManualEditing(true) }}>
+                {alumno.cuota_manual != null ? "Editar precio manual" : "Cargar precio manual"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {cuota?.tipo === "bono_familia" && (
+          <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>
+            Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"},
+            repartido en partes iguales.
+          </p>
+        )}
+        {!!cuota?.avisos.length && (
+          <div style={{ marginBottom: "0.75rem" }}>
+            {cuota.avisos.map((a, i) => (
+              <p key={i} style={{ fontSize: "0.8rem", color: "var(--terracotta)" }}>⚠ {a}</p>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem", marginTop: "0.5rem" }}>
+          <p style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Clases a mayores</p>
+          {!showCargoExtraForm && <button className="btn-ghost" onClick={() => setShowCargoExtraForm(true)}>+ Añadir clase a mayores</button>}
+        </div>
+
+        {showCargoExtraForm && (
+          <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            <input type="text" className="input" placeholder="Concepto (ej. Refuerzo pre-examen Cambridge B2)"
+              value={cargoExtraForm.concepto} onChange={e => setCargoExtraForm(f => ({ ...f, concepto: e.target.value }))} />
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <input type="number" step="0.01" className="input" style={{ width: "8rem" }} placeholder="Importe €"
+                value={cargoExtraForm.monto} onChange={e => setCargoExtraForm(f => ({ ...f, monto: e.target.value }))} />
+              <input type="date" className="input" style={{ width: "auto" }}
+                value={cargoExtraForm.fecha} onChange={e => setCargoExtraForm(f => ({ ...f, fecha: e.target.value }))} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+              <button className="btn-ghost" onClick={() => setShowCargoExtraForm(false)}>Cancelar</button>
+              <button className="btn-primary"
+                disabled={!cargoExtraForm.concepto.trim() || !cargoExtraForm.monto || cargoExtraMut.isPending}
+                onClick={() => cargoExtraMut.mutate()}>
+                {cargoExtraMut.isPending ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!cargosExtra.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin clases a mayores registradas.</p>}
+        {!!cargosExtra.length && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {cargosExtra.map(c => (
+              <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+                <div>
+                  <span style={{ fontSize: "0.875rem", color: "var(--text)" }}>{c.concepto}</span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginLeft: "0.5rem" }}>{formatDate(c.fecha)}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{formatEur(Number(c.monto))}</span>
+                  <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.15rem 0.5rem" }}
+                    disabled={eliminarCargoExtraMut.isPending} onClick={() => eliminarCargoExtraMut.mutate(c.id)}>
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 

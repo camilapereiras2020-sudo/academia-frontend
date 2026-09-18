@@ -57,6 +57,8 @@ export type Curso =
   | "bach_1" | "bach_2"
   | "fp" | "adulto" | "otro"
 
+export type CodigoClase = "HORA" | "HORA_Y_MEDIA" | "PRIVADA" | "PRIVADA_PROFESIONAL" | ""
+
 export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
   fnac: string | null; telefono: string; email: string; dni: string; nivel: string
@@ -75,6 +77,26 @@ export interface Alumno {
   idioma_nativo: string
   contacto_emergencia_nombre: string
   contacto_emergencia_telefono: string
+  codigo_clase: CodigoClase
+  cuota_manual: number | null
+}
+
+// modules.tarifas.pricing.calcular_cuota_alumno — nunca lanza, cuota=null +
+// avisos es "no se puede calcular sola, revisar a mano".
+export interface AlumnoCuota {
+  tipo: "manual" | "privada_manual" | "bono_familia" | "clase_grupo" | "sin_tabla"
+  cuota: number | null
+  descuento_pct?: number
+  dias_semana?: number
+  duracion_min?: number
+  n_hermanos?: number
+  total_bono?: number
+  tarifa_hora_referencia?: number
+  avisos: string[]
+}
+
+export interface CargoExtra {
+  id: number; alumno: number; concepto: string; monto: number; fecha: string; created_at: string
 }
 
 export type TipoFechaImportante = "examen" | "revision_nivel" | "inicio_curso" | "fin_curso" | "otro"
@@ -108,6 +130,8 @@ export interface AlumnoResumen {
   pagos: Pago[]
   fechas_importantes: FechaImportante[]
   notas: NotaAlumno[]
+  cuota: AlumnoCuota
+  cargos_extra: CargoExtra[]
 }
 
 export interface Pago {
