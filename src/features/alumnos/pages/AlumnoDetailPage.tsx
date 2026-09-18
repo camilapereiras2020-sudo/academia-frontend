@@ -92,8 +92,6 @@ const TIPO_FECHA_STYLE: Record<TipoFechaImportante, { background: string; color:
 const TIPO_NOTA_LABELS: Record<TipoNotaAlumno, string> = { progreso: "Progreso", reunion: "Reunión", general: "General" }
 
 const CODIGO_CLASE_LABELS: Record<Exclude<CodigoClase, "">, string> = {
-  HORA: "Clase grupo (1h/semana)",
-  HORA_Y_MEDIA: "Clase grupo (1h30/semana)",
   PRIVADA: "Clase privada",
   PRIVADA_PROFESIONAL: "Clase privada profesional/adultos",
 }
@@ -696,10 +694,10 @@ export default function AlumnoDetailPage() {
 
         <div className="grid-2col" style={{ marginBottom: "1rem" }}>
           <div>
-            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Tipo de clase</p>
+            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Modalidad</p>
             <select className="input" value={alumno.codigo_clase}
               onChange={e => codigoClaseMut.mutate(e.target.value as CodigoClase)}>
-              <option value="">— Sin definir —</option>
+              <option value="">Clase grupo (automática)</option>
               {Object.entries(CODIGO_CLASE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
@@ -707,12 +705,20 @@ export default function AlumnoDetailPage() {
           <div>
             <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Cuota mensual</p>
             {cuota?.cuota != null && !cuotaManualEditing ? (
-              <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
-                {formatEur(cuota.cuota)}
-                <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-dim)", marginLeft: "0.5rem" }}>
-                  {CUOTA_TIPO_LABELS[cuota.tipo] ?? cuota.tipo}
-                </span>
-              </p>
+              <>
+                <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
+                  {formatEur(cuota.cuota)}
+                  <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-dim)", marginLeft: "0.5rem" }}>
+                    {CUOTA_TIPO_LABELS[cuota.tipo] ?? cuota.tipo}
+                  </span>
+                </p>
+                {!!cuota.dias_semana && (
+                  <p style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
+                    {cuota.dias_semana} día{cuota.dias_semana === 1 ? "" : "s"}/semana
+                    {cuota.duracion_min ? ` · clases de ${cuota.duracion_min} min` : ""}
+                  </p>
+                )}
+              </>
             ) : cuotaManualEditing ? (
               <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
                 <input type="number" step="0.01" className="input" style={{ width: "8rem" }}
