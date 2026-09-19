@@ -741,7 +741,7 @@ export default function AlumnoDetailPage() {
         {cuota?.tipo === "bono_familia" && (
           <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>
             Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"},
-            repartido en partes iguales.
+            repartido en proporción al tramo individual de cada hermano.
           </p>
         )}
         {!!cuota?.avisos.length && (
