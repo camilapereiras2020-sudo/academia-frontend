@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "@/features/pagos/api"
 import { formatMonth } from "@/lib/utils"
@@ -11,6 +12,9 @@ export default function FacturacionPage() {
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [downloadError, setDownloadError] = useState("")
   const [actionError, setActionError] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const alumnoFilter = searchParams.get("alumno")
+  const pagadorFilter = searchParams.get("pagador")
 
   // Pagador nombre/monto/etc. are intentionally not shown here — this page
   // exists so reception can generate invoices for existing payments without
@@ -20,7 +24,18 @@ export default function FacturacionPage() {
     queryKey: ["pagos", "facturacion"],
     queryFn: () => pagosApi.list({ estado: "pagado" }).then(r => r.data),
   })
-  const pagos: Pago[] = Array.isArray(pagosRaw) ? pagosRaw : (pagosRaw as any)?.results ?? []
+  const pagosTodos: Pago[] = Array.isArray(pagosRaw) ? pagosRaw : (pagosRaw as any)?.results ?? []
+  // ?alumno=/&pagador= llega del atajo "Generar factura" en la ficha del
+  // alumno — filtra también por pagador para no perderse un pago familiar
+  // combinado (alumno=null, pagador=el del hermano) que igual le corresponde.
+  const filtrandoAlumno = !!(alumnoFilter || pagadorFilter)
+  const pagos: Pago[] = filtrandoAlumno
+    ? pagosTodos.filter(p =>
+        (alumnoFilter && String(p.alumno) === alumnoFilter) ||
+        (pagadorFilter && String(p.pagador) === pagadorFilter)
+      )
+    : pagosTodos
+  const nombreFiltrado = pagos[0]?.alumno_nombre ?? pagos[0]?.pagador_nombre ?? null
 
   const { data: docsRaw } = useQuery({
     queryKey: ["documentos", "facturacion"],
@@ -74,6 +89,20 @@ export default function FacturacionPage() {
         <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Facturación</h1>
         <p className="text-sm text-pine-700 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
       </div>
+
+      {filtrandoAlumno && (
+        <div className="flex items-center justify-between gap-3 bg-brass-100 border border-brass-300 rounded-lg px-4 py-2.5 mb-4">
+          <p className="text-sm text-pine-900">
+            Mostrando facturación de <strong>{nombreFiltrado ?? "este alumno"}</strong>
+          </p>
+          <button
+            className="text-xs font-semibold text-brass-700 hover:underline whitespace-nowrap"
+            onClick={() => setSearchParams({})}
+          >
+            Ver todos
+          </button>
+        </div>
+      )}
 
       {downloadError && (
         <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{downloadError}</p>
