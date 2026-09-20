@@ -64,7 +64,12 @@ export default function DocumentosPage() {
     mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
       api.post(`/documentos/${id}/anular/`, { motivo_anulacion: motivo }),
     onSuccess: () => {
+      // El pago detrás de este documento deja de contar como "cobrado" (ver
+      // Pago.documento_anulado) — sin esto, Facturación, Rangers/Cami&Co y
+      // la ficha del alumno seguían mostrando los datos viejos hasta un F5.
       qc.invalidateQueries({ queryKey: ["documentos"] })
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen"] })
       setConfirmAnular(null)
       setMotivoAnulacion("")
       setActionError("")
