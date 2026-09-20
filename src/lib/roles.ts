@@ -7,6 +7,8 @@ export const ALL_ROLES: Role[] = ["owner", "co_manager", "reception"]
 // listed here (e.g. /grupos/:id) are open to every authenticated role.
 export const PAGE_ROLES: Record<string, Role[]> = {
   "/dashboard": ALL_ROLES,
+  "/rangers-academy": ["owner", "co_manager"],
+  "/cami-and-co": ["owner", "co_manager"],
   "/alumnos": ALL_ROLES,
   "/grupos": ALL_ROLES,
   "/calendario": ALL_ROLES,

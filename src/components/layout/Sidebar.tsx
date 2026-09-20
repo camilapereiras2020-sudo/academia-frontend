@@ -6,7 +6,7 @@ import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, CreditCard, Building2,
   Compass, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
-  Coins, FileText, MessageCircle, Cake, Settings, X,
+  Coins, FileText, MessageCircle, Cake, Settings, X, Landmark, Store,
 } from "lucide-react"
 
 const LOGO_SRC = {
@@ -42,6 +42,8 @@ const NAV_SECTIONS = [
     items: [
       { to: "/pagos", icon: Coins, label: "Payments" },
       { to: "/documentos", icon: FileText, label: "Invoicing" },
+      { to: "/rangers-academy", icon: Landmark, label: "Rangers Academy" },
+      { to: "/cami-and-co", icon: Store, label: "Cami & Co" },
       { to: "/whatsapp-respuestas", icon: MessageCircle, label: "WhatsApp" },
       { to: "/cumpleanos", icon: Cake, label: "Birthdays" },
     ]
