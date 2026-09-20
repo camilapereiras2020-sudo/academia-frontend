@@ -104,7 +104,9 @@ function OwnerDashboard() {
 
   // Derived stats
   const estesMes       = pagos.filter(p => p.periodo === mesAct)
-  const cobradoMes     = estesMes.filter(p => p.estado === "pagado").reduce((s, p) => s + Number(p.total), 0)
+  // Una factura anulada sin reemplazo no cuenta como cobrado, aunque el
+  // pago siga marcado "pagado" — ver PagoSerializer.documento_anulado.
+  const cobradoMes     = estesMes.filter(p => p.estado === "pagado" && !p.documento_anulado).reduce((s, p) => s + Number(p.total), 0)
   const totalMes       = estesMes.reduce((s, p) => s + Number(p.total), 0)
   const coleccionRate  = totalMes > 0 ? Math.round((cobradoMes / totalMes) * 100) : null
   const pendientes     = pagos.filter(p => p.estado === "pendiente" || p.estado === "parcial")
