@@ -26,6 +26,7 @@ export interface Grupo {
 export interface Profesor {
   id: number; nombre: string; codigo: string; es_suplente: boolean
   orden: number; activo: boolean; created_at: string
+  grupos_count: number; alumnos_count: number
 }
 
 export interface Aula {
