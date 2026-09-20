@@ -149,6 +149,9 @@ export interface Pago {
   numero_factura_reservado: string
   concepto_original: string
   concepto_libre: string
+  // true si la última factura/recibo de este pago fue anulada y todavía no
+  // se generó una nueva — un "pagado" en este estado no cuenta como ingreso.
+  documento_anulado: boolean
 }
 
 export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"
