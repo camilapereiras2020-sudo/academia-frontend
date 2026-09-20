@@ -1,22 +1,16 @@
 import { useMemo, useState } from "react"
 import { createPortal } from "react-dom"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "react-router-dom"
-import { pagosApi } from "@/features/pagos/api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { gruposApi } from "@/features/grupos/api"
 import { PALETTE } from "@/features/grupos/palette"
-import { formatEur, formatMonth } from "@/lib/utils"
+import { formatMonth } from "@/lib/utils"
 import { useAuthStore } from "@/store/authStore"
+import StatItem from "@/components/shared/StatItem"
 import ReceptionSummary from "../components/ReceptionSummary"
-import type { Pago, Grupo } from "@/types"
+import type { Grupo } from "@/types"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
-
-const ESTADO_CLS: Record<string, string> = {
-  pagado:   "bg-green-100 text-green-800",
-  pendiente: "bg-red-100 text-red-800",
-  parcial:  "bg-amber-100 text-amber-800",
-}
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -41,28 +35,12 @@ function buildMonthCells(year: number, month: number) {
   return cells
 }
 
-function StatItem({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="min-w-0 flex items-center gap-2.5 px-4 py-3.5 border-r border-b border-khaki-300 last:border-r-0">
-      <div className="w-1 self-stretch bg-brass-500 rounded-sm flex-shrink-0" />
-      <div className="min-w-0">
-        <div className="text-[10.5px] font-extrabold uppercase tracking-[0.03em] text-pine-700 leading-tight">{label}</div>
-        <div className="flex items-baseline gap-1.5 flex-wrap">
-          <div className="font-head text-[18px] text-pine-800 whitespace-nowrap">{value}</div>
-          {sub && <div className="text-[10.5px] text-pine-700 font-semibold whitespace-nowrap">{sub}</div>}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function DashboardPage() {
   const isReception = useAuthStore((s) => s.user?.role === "reception")
   return isReception ? <ReceptionSummary /> : <OwnerDashboard />
 }
 
 function OwnerDashboard() {
-  const qc = useQueryClient()
   const navigate = useNavigate()
   const mesAct = new Date().toISOString().slice(0, 7)
   const today = new Date()
@@ -72,12 +50,6 @@ function OwnerDashboard() {
   const [calMonth, setCalMonth] = useState(today.getMonth())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const dayModalOverlayGuard = useOverlayMouseGuard(() => setSelectedDay(null))
-
-  const { data: pagosRaw } = useQuery({
-    queryKey: ["pagos"],
-    queryFn: () => pagosApi.list().then(r => r.data),
-  })
-  const pagos: Pago[] = Array.isArray(pagosRaw) ? pagosRaw : (pagosRaw as any)?.results ?? []
 
   const { data: alumnosRaw } = useQuery({
     queryKey: ["alumnos"],
@@ -96,22 +68,6 @@ function OwnerDashboard() {
     queryFn: () => alumnosApi.cumpleanos(30).then(r => r.data),
   })
   const cumples: any[] = Array.isArray(cumpleRaw) ? cumpleRaw : []
-
-  const marcarMut = useMutation({
-    mutationFn: pagosApi.marcarPagado,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos"] }),
-  })
-
-  // Derived stats
-  const estesMes       = pagos.filter(p => p.periodo === mesAct)
-  // Una factura anulada sin reemplazo no cuenta como cobrado, aunque el
-  // pago siga marcado "pagado" — ver PagoSerializer.documento_anulado.
-  const cobradoMes     = estesMes.filter(p => p.estado === "pagado" && !p.documento_anulado).reduce((s, p) => s + Number(p.total), 0)
-  const totalMes       = estesMes.reduce((s, p) => s + Number(p.total), 0)
-  const coleccionRate  = totalMes > 0 ? Math.round((cobradoMes / totalMes) * 100) : null
-  const pendientes     = pagos.filter(p => p.estado === "pendiente" || p.estado === "parcial")
-  const importePendiente = pendientes.reduce((s, p) => s + Number(p.total), 0)
-  const recientes      = [...pagos].sort((a, b) => b.id - a.id).slice(0, 6)
 
   // Today's timetable, computed from each group's weekly schedule
   const timetableHoy = grupos
@@ -163,11 +119,10 @@ function OwnerDashboard() {
         </div>
       </div>
 
-      {/* Stat ledger */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
-        <StatItem label="Cobrado este mes" value={formatEur(cobradoMes)} sub={`${estesMes.filter(p => p.estado === "pagado").length} pagos`} />
-        <StatItem label="Pendiente de cobro" value={formatEur(importePendiente)} sub={`${pendientes.length} sin cobrar`} />
-        <StatItem label="Tasa de cobro" value={coleccionRate !== null ? `${coleccionRate}%` : "—"} sub={totalMes > 0 ? formatMonth(mesAct) : "sin pagos"} />
+      {/* Stat ledger — la parte financiera (cobrado/pendiente/tasa de cobro)
+          vive ahora en las vistas por marca (Rangers Academy / Cami & Co),
+          no acá combinada. */}
+      <div className="grid grid-cols-2 bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
         <StatItem label="Alumnos" value={String(alumnosCount)} sub="registrados" />
         <StatItem label="Grupos activos" value={String(grupos.length)} sub="en curso" />
       </div>
@@ -293,109 +248,51 @@ function OwnerDashboard() {
         document.body
       )}
 
-      {/* Ledger + side panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
+      {/* Side panels — antes compartían la fila con la tabla de "Últimos
+          pagos" (financiero, movido a las vistas por marca); ahora ocupan
+          todo el ancho entre sí. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
 
-        {/* Recent ledger entries */}
-        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 bg-pine-800">
-            <div className="font-head text-[16px] text-khaki-100">📖 Últimos pagos</div>
-            <Link to="/pagos" className="text-[13px] font-bold text-brass-300 no-underline">Ver todos →</Link>
+        {/* Quick actions */}
+        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
+          <div className="font-head text-[15px] text-pine-800 mb-3.5">⚡ Quick Actions</div>
+          <div className="flex flex-col gap-2">
+            <Link to="/asistencia" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+              ✅ Pasar lista
+            </Link>
+            <Link to="/pagos/nuevo" className="px-3.5 py-2.5 rounded-[5px] bg-pine-800 text-khaki-100 text-sm font-semibold no-underline hover:bg-pine-700 text-center">
+              + Nuevo pago
+            </Link>
+            <Link to="/horario" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+              📅 Ver Horario
+            </Link>
+            <Link to="/crm" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+              🧭 Ver CRM
+            </Link>
           </div>
-          {!recientes.length && (
-            <p className="px-5 py-8 text-sm text-pine-700 text-center">Sin pagos registrados.</p>
-          )}
-          {!!recientes.length && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    {["Alumno", "Pagador", "Periodo", "Importe", "Estado"].map(h => (
-                      <th key={h} className="text-left text-[12px] font-extrabold uppercase tracking-[0.05em] text-pine-700 px-3.5 py-2.5 border-b-2 border-pine-800 whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {recientes.map(p => (
-                    <tr key={p.id}>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-[14px] text-pine-800 whitespace-nowrap">
-                        {p.alumno ? <Link to={`/alumnos/${p.alumno}`} className="hover:text-brass-700 hover:underline">{p.alumno_nombre}</Link> : p.alumno_nombre}
-                      </td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 text-xs text-pine-700 whitespace-nowrap">{p.pagador_nombre}</td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 text-xs text-pine-700 whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 font-bold text-[15px] text-pine-900 whitespace-nowrap">{formatEur(Number(p.total))}</td>
-                      <td className="px-3.5 py-3 border-b border-khaki-300 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-block text-xs font-extrabold uppercase tracking-[0.03em] px-2.5 py-1 rounded ${ESTADO_CLS[p.estado]}`}>
-                            {p.estado}
-                          </span>
-                          {(p.estado === "pendiente" || p.estado === "parcial") && (
-                            <button
-                              onClick={() => marcarMut.mutate(p.id)}
-                              disabled={marcarMut.isPending}
-                              className="text-[13px] font-bold text-brass-700 border border-brass-500/50 rounded px-1.5 py-0.5 hover:bg-brass-500/10 disabled:opacity-50"
-                              title="Marcar como pagado"
-                            >
-                              ✓ Marcar pagado
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
-        {/* Side panels */}
-        <div className="flex flex-col gap-5">
-
-          {/* Quick actions — the header up top only has room for one primary
-              shortcut, so this is where the rest of the day-to-day jumps
-              live. Also gives this column enough visual weight to sit next
-              to the ledger table without reading as mostly empty space. */}
-          <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
-            <div className="font-head text-[15px] text-pine-800 mb-3.5">⚡ Quick Actions</div>
+        {/* Upcoming birthdays */}
+        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
+          <div className="font-head text-[15px] text-pine-800 mb-3">🎂 Upcoming Birthdays</div>
+          {!cumples.length && (
+            <p className="text-[13.5px] text-pine-700">Sin cumpleaños en los próximos 30 días.</p>
+          )}
+          {!!cumples.length && (
             <div className="flex flex-col gap-2">
-              <Link to="/asistencia" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-                ✅ Pasar lista
-              </Link>
-              <Link to="/pagos/nuevo" className="px-3.5 py-2.5 rounded-[5px] bg-pine-800 text-khaki-100 text-sm font-semibold no-underline hover:bg-pine-700 text-center">
-                + Nuevo pago
-              </Link>
-              <Link to="/horario" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-                📅 Ver Horario
-              </Link>
-              <Link to="/crm" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-                🧭 Ver CRM
-              </Link>
+              {cumples.slice(0, 6).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
+                  <Link to={`/alumnos/${c.id}`} className="text-pine-900 font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
+                  <span className="text-pine-700 flex-shrink-0">
+                    {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos}d`}
+                  </span>
+                </div>
+              ))}
+              {cumples.length > 6 && (
+                <Link to="/cumpleanos" className="text-xs font-bold text-brass-700 no-underline mt-1">+{cumples.length - 6} más → Ver todos</Link>
+              )}
             </div>
-          </div>
-
-          {/* Upcoming birthdays */}
-          <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
-            <div className="font-head text-[15px] text-pine-800 mb-3">🎂 Upcoming Birthdays</div>
-            {!cumples.length && (
-              <p className="text-[13.5px] text-pine-700">Sin cumpleaños en los próximos 30 días.</p>
-            )}
-            {!!cumples.length && (
-              <div className="flex flex-col gap-2">
-                {cumples.slice(0, 6).map((c: any) => (
-                  <div key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
-                    <Link to={`/alumnos/${c.id}`} className="text-pine-900 font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
-                    <span className="text-pine-700 flex-shrink-0">
-                      {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos}d`}
-                    </span>
-                  </div>
-                ))}
-                {cumples.length > 6 && (
-                  <Link to="/cumpleanos" className="text-xs font-bold text-brass-700 no-underline mt-1">+{cumples.length - 6} más → Ver todos</Link>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>

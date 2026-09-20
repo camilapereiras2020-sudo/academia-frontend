@@ -5,6 +5,7 @@ import AppShell from "@/components/layout/AppShell"
 import LoginPage from "@/features/auth/pages/LoginPage"
 import RegisterPage from "@/features/auth/pages/RegisterPage"
 import DashboardPage from "@/features/dashboard/pages/DashboardPage"
+import BrandOverviewPage from "@/features/dashboard/pages/BrandOverviewPage"
 import AlumnosPage from "@/features/alumnos/pages/AlumnosPage"
 import AlumnoDetailPage from "@/features/alumnos/pages/AlumnoDetailPage"
 import GruposPage from "@/features/grupos/pages/GruposPage"
@@ -45,6 +46,8 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route index element={<DefaultRedirect />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/rangers-academy" element={<BrandOverviewPage marca="rangers_academy" titulo="Rangers Academy" />} />
+            <Route path="/cami-and-co" element={<BrandOverviewPage marca="cami_and_co" titulo="Cami & Co" />} />
             <Route path="/alumnos" element={<AlumnosPage />} />
             <Route path="/alumnos/:id" element={<AlumnoDetailPage />} />
             <Route path="/grupos" element={<GruposPage />} />
