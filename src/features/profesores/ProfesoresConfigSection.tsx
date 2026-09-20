@@ -99,6 +99,9 @@ export default function ProfesoresConfigSection() {
               ) : (
                 <span className="flex-1">{p.nombre}</span>
               )}
+              <span className="text-xs text-khaki-500 whitespace-nowrap">
+                {p.alumnos_count} alumno{p.alumnos_count === 1 ? "" : "s"} · {p.grupos_count} clase{p.grupos_count === 1 ? "" : "s"}
+              </span>
               {p.es_suplente && <span className="text-xs text-pine-600">(suplente)</span>}
               {!p.activo && <span className="text-xs text-khaki-400">(inactivo)</span>}
               {editingId !== p.id && (
