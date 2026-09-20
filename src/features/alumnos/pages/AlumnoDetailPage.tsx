@@ -9,6 +9,7 @@ import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/Pag
 import EmailModal from "@/components/shared/EmailModal"
 import WhatsappReplyModal from "../components/WhatsappReplyModal"
 import PagoDetailModal from "@/features/pagos/PagoDetailModal"
+import GenerarFacturaModal from "../components/GenerarFacturaModal"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
@@ -135,6 +136,7 @@ export default function AlumnoDetailPage() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showWhatsappModal, setShowWhatsappModal] = useState(false)
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
+  const [showGenerarFactura, setShowGenerarFactura] = useState(false)
   const [showFechaForm, setShowFechaForm] = useState(false)
   const [fechaForm, setFechaForm] = useState({ fecha: "", tipo: "examen" as TipoFechaImportante, descripcion: "" })
   const [showNotaForm, setShowNotaForm] = useState(false)
@@ -690,9 +692,15 @@ export default function AlumnoDetailPage() {
       {/* Cuota — cálculo automático (modules.tarifas.pricing.calcular_cuota_alumno)
           + clases a mayores (CargoExtra), sumadas aparte a la factura del mes. */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
-          Cuota
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+            Cuota
+          </h2>
+          <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
+            onClick={() => setShowGenerarFactura(true)}>
+            🧾 Generar factura
+          </button>
+        </div>
 
         <div className="grid-2col" style={{ marginBottom: "1rem" }}>
           <div>
@@ -835,22 +843,9 @@ export default function AlumnoDetailPage() {
       {/* Facturas y recibos — read-only, distinct from "Documentos y consentimientos"
           below (which is consent forms: image rights/data protection/enrollment). */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
-            Facturas y recibos
-          </h2>
-          <button
-            className="btn-ghost"
-            style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
-            onClick={() => {
-              const params = new URLSearchParams({ alumno: String(alumnoId) })
-              if (alumno?.pagador) params.set("pagador", String(alumno.pagador))
-              navigate(`/facturacion?${params.toString()}`)
-            }}
-          >
-            🧾 Generar factura
-          </button>
-        </div>
+        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+          Facturas y recibos
+        </h2>
         {downloadDocError && (
           <p style={{ fontSize: "0.8rem", color: "var(--terracotta)", marginBottom: "0.75rem" }}>{downloadDocError}</p>
         )}
@@ -1057,6 +1052,15 @@ export default function AlumnoDetailPage() {
             setSelectedPago(null)
             qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
           }}
+        />
+      )}
+      {showGenerarFactura && alumno && (
+        <GenerarFacturaModal
+          alumno={alumno}
+          cuota={cuota}
+          cargosExtra={cargosExtra}
+          pagador={pagador}
+          onClose={() => setShowGenerarFactura(false)}
         />
       )}
     </div>
