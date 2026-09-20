@@ -22,7 +22,7 @@ export const PAGE_ROLES: Record<string, Role[]> = {
   "/crm": ALL_ROLES,
   "/whatsapp-respuestas": ALL_ROLES,
   "/empresas": ["owner", "co_manager"],
-  "/facturacion": ["reception", "co_manager"],
+  "/facturacion": ALL_ROLES,
   "/precios": ALL_ROLES,
   "/payers": ["owner", "co_manager"],
 }
