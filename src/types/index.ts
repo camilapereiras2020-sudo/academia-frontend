@@ -195,10 +195,13 @@ export interface NotaDificultad {
 export interface PagadorCalculoItem {
   tipo: "clase_grupo" | "bono_familia"
   alumnos: string[]
-  dias_semana: number
-  duracion_min: number
+  dias_semana?: number
+  duracion_min?: number
   precio: number
-  descuento_pct: number
+  descuento_pct?: number
+  n_hermanos?: number
+  // bono_familia: reparto proporcional al tramo individual de cada hermano.
+  perfiles?: { alumno: string; dias_semana: number; duracion_min: number; cuota: number }[]
 }
 
 export interface PagadorCalculo {

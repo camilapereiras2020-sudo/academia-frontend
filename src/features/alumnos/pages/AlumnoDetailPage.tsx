@@ -741,7 +741,7 @@ export default function AlumnoDetailPage() {
         {cuota?.tipo === "bono_familia" && (
           <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>
             Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"},
-            repartido en partes iguales.
+            repartido en proporción al tramo individual de cada hermano.
           </p>
         )}
         {!!cuota?.avisos.length && (
@@ -835,9 +835,22 @@ export default function AlumnoDetailPage() {
       {/* Facturas y recibos — read-only, distinct from "Documentos y consentimientos"
           below (which is consent forms: image rights/data protection/enrollment). */}
       <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
-          Facturas y recibos
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+            Facturas y recibos
+          </h2>
+          <button
+            className="btn-ghost"
+            style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
+            onClick={() => {
+              const params = new URLSearchParams({ alumno: String(alumnoId) })
+              if (alumno?.pagador) params.set("pagador", String(alumno.pagador))
+              navigate(`/facturacion?${params.toString()}`)
+            }}
+          >
+            🧾 Generar factura
+          </button>
+        </div>
         {downloadDocError && (
           <p style={{ fontSize: "0.8rem", color: "var(--terracotta)", marginBottom: "0.75rem" }}>{downloadDocError}</p>
         )}
