@@ -12,12 +12,14 @@ import type { Alumno, AlumnoCuota, CargoExtra, Pago, Tarifa } from "@/types"
 // 1) Generar pago — crea el Pago de este alumno, sin ningún documento
 //    (un recibo es por cliente, y a veces hace falta una factura por
 //    marca, así que combinar/separar documentos no encaja en este paso).
-// 2) Generar recibo — una vez pagado, si el pagador tiene otros pagos de
-//    este mismo mes sin facturar (hermanos), se ofrece combinarlos en un
-//    solo recibo (misma regla que Payers: generarCombinado exige 2+ pagos
-//    y, si están repartidos entre las dos marcas, elegir el emisor a mano).
-//    Las facturas para Hacienda se siguen organizando aparte (Payers o
-//    "Generar pagos de mes").
+// 2) Generar documento — una vez pagado, si el pagador tiene otros pagos de
+//    este mismo mes sin facturar (hermanos), se ofrece combinarlos en una
+//    sola factura (misma regla que Payers: generarCombinado exige 2+ pagos,
+//    siempre genera "factura" — nunca recibo, es así en el backend — y si
+//    están repartidos entre las dos marcas, obliga a elegir el emisor a
+//    mano). Con un solo pago, se genera el documento individual de
+//    siempre (factura o recibo, según tipo_doc_for_metodo — no se
+//    reimplementa esa regla acá, es la fuente de verdad del backend).
 // Para editar un pago ya existente, seguir usando PagoDetailModal.
 
 const METODOS = ["efectivo", "transferencia", "bizum", "domiciliacion", "tarjeta"]
@@ -28,7 +30,7 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
 }
 
 interface ExtraLine { concepto: string; importe: number }
-interface DocumentoGenerado { id: number; num_doc: string }
+interface DocumentoGenerado { id: number; num_doc: string; tipo: "factura" | "recibo"; combinada: boolean }
 
 export default function GenerarFacturaModal({
   alumno, cuota, cargosExtra, onClose,
@@ -148,10 +150,11 @@ export default function GenerarFacturaModal({
 
   const generarReciboMut = useMutation({
     mutationFn: async () => {
-      const res = elegidos.length >= 2
+      const combinada = elegidos.length >= 2
+      const res = combinada
         ? await documentosApi.generarCombinado([...seleccionados], necesitaElegirEmisor ? Number(emisorOverride) : undefined)
         : await documentosApi.generar((elegidos[0] ?? pagoCreado!).id)
-      return res.data as DocumentoGenerado
+      return { ...res.data, combinada } as DocumentoGenerado
     },
     onSuccess: (generado) => {
       setDoc(generado)
@@ -182,7 +185,7 @@ export default function GenerarFacturaModal({
       <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 pb-0">
           <h2 className="text-xl font-bold text-pine-900">
-            {pagoCreado ? "Generar recibo" : "Generar pago"} — {alumno.nombre}
+            {pagoCreado ? "Confirmar documento" : "Generar pago"} — {alumno.nombre}
           </h2>
           <button onClick={onClose} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
         </div>
@@ -307,7 +310,7 @@ export default function GenerarFacturaModal({
                 <>
                   <p className="text-xs text-pine-700">
                     Este pagador tiene {pendientes.length} pagos de {periodo} sin facturar (hermanos) — elegí cuáles van
-                    juntos en un mismo recibo:
+                    juntos en una misma factura combinada:
                   </p>
                   <div className="space-y-1.5">
                     {pendientes.map(p => (
@@ -331,18 +334,20 @@ export default function GenerarFacturaModal({
                       </select>
                     </div>
                   )}
-                  <p className="text-right font-semibold text-pine-900">Total del recibo: {formatEur(totalRecibo)}</p>
+                  <p className="text-right font-semibold text-pine-900">Total de la factura combinada: {formatEur(totalRecibo)}</p>
                 </>
               ) : (
                 <p className="text-xs text-pine-600">
-                  Sin otros pagos de {periodo} pendientes de facturar para este pagador — el recibo va a cubrir solo
-                  este pago.
+                  Sin otros pagos de {periodo} pendientes de facturar para este pagador — se genera el documento
+                  (factura o recibo, según el método de pago) solo para este pago.
                 </p>
               )}
             </div>
           ) : (
             <div className="border-t pt-4">
-              <p className="text-sm text-sage-700 mb-3">✓ Recibo generado correctamente.</p>
+              <p className="text-sm text-sage-700 mb-3">
+                ✓ {doc.tipo === "factura" ? "Factura" : "Recibo"}{doc.combinada ? " combinada" : ""} generad{doc.tipo === "factura" ? "a" : "o"} correctamente.
+              </p>
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <span className="font-mono text-sm bg-khaki-100 px-2 py-1 rounded">{doc.num_doc}</span>
                 <button onClick={handleDescargar} disabled={downloading}
@@ -359,7 +364,7 @@ export default function GenerarFacturaModal({
 
         <div className="flex justify-end gap-2 p-6 pt-0">
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200">
-            {doc ? "Cerrar" : pagoCreado ? "Cerrar sin recibo" : "Cancelar"}
+            {doc ? "Cerrar" : pagoCreado ? "Cerrar sin generar documento" : "Cancelar"}
           </button>
           {!pagoCreado && (
             <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || sinPagador || !periodo}
@@ -372,7 +377,9 @@ export default function GenerarFacturaModal({
               onClick={() => generarReciboMut.mutate()}
               disabled={generarReciboMut.isPending || !elegidos.length || (necesitaElegirEmisor && !emisorOverride)}
               className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
-              {generarReciboMut.isPending ? "Generando..." : "🧾 Generar recibo"}
+              {generarReciboMut.isPending
+                ? "Generando..."
+                : elegidos.length >= 2 ? "🧾 Generar factura combinada" : "🧾 Generar documento"}
             </button>
           )}
         </div>
