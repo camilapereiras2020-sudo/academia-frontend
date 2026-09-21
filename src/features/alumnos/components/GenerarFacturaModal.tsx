@@ -1,17 +1,26 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { pagosApi } from "@/features/pagos/api"
+import { pagosApi, documentosApi, emisoresApi } from "@/features/pagos/api"
 import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
-import type { Alumno, AlumnoCuota, CargoExtra, Tarifa } from "@/types"
+import { descargarDocumento } from "@/lib/descargarDocumento"
+import { formatEur } from "@/lib/utils"
+import type { Alumno, AlumnoCuota, CargoExtra, Pago, Tarifa } from "@/types"
 
-// Atajo desde la sección "Cuota" de la ficha: arma un Pago nuevo con la
-// cuota calculada + clases a mayores ya cargadas. Deliberadamente NO genera
-// factura ni recibo acá — un recibo es por cliente, y a veces hace falta
-// una factura por marca, así que combinar/separar documentos se sigue
-// decidiendo aparte, desde Pagos o Payers. Para editar un pago ya
-// existente, seguir usando PagoDetailModal.
+// Atajo desde la sección "Cuota" de la ficha, en dos pasos:
+// 1) Generar pago — crea el Pago de este alumno, sin ningún documento
+//    (un recibo es por cliente, y a veces hace falta una factura por
+//    marca, así que combinar/separar documentos no encaja en este paso).
+// 2) Generar documento — una vez pagado, si el pagador tiene otros pagos de
+//    este mismo mes sin facturar (hermanos), se ofrece combinarlos en una
+//    sola factura (misma regla que Payers: generarCombinado exige 2+ pagos,
+//    siempre genera "factura" — nunca recibo, es así en el backend — y si
+//    están repartidos entre las dos marcas, obliga a elegir el emisor a
+//    mano). Con un solo pago, se genera el documento individual de
+//    siempre (factura o recibo, según tipo_doc_for_metodo — no se
+//    reimplementa esa regla acá, es la fuente de verdad del backend).
+// Para editar un pago ya existente, seguir usando PagoDetailModal.
 
 const METODOS = ["efectivo", "transferencia", "bizum", "domiciliacion", "tarjeta"]
 
@@ -21,6 +30,7 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
 }
 
 interface ExtraLine { concepto: string; importe: number }
+interface DocumentoGenerado { id: number; num_doc: string; tipo: "factura" | "recibo"; combinada: boolean }
 
 export default function GenerarFacturaModal({
   alumno, cuota, cargosExtra, onClose,
@@ -51,7 +61,11 @@ export default function GenerarFacturaModal({
     cargosExtra.map(c => ({ concepto: c.concepto, importe: Number(c.monto) }))
   )
   const [error, setError] = useState("")
-  const [creado, setCreado] = useState(false)
+  const [pagoCreado, setPagoCreado] = useState<Pago | null>(null)
+  const [doc, setDoc] = useState<DocumentoGenerado | null>(null)
+  const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set())
+  const [emisorOverride, setEmisorOverride] = useState<number | "">("")
+  const [downloading, setDownloading] = useState(false)
 
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
@@ -77,8 +91,8 @@ export default function GenerarFacturaModal({
       periodo, mensualidad, descuento, extras, total, metodo, estado, notas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
     }),
-    onSuccess: () => {
-      setCreado(true)
+    onSuccess: (res) => {
+      setPagoCreado(res.data)
       setError("")
       qc.invalidateQueries({ queryKey: ["alumno-resumen", alumno.id] })
     },
@@ -91,16 +105,93 @@ export default function GenerarFacturaModal({
       ),
   })
 
+  // Paso 2 — otros pagos del mismo pagador y periodo, sin facturar todavía
+  // (hermanos), para ofrecer combinarlos en un solo recibo. Solo tiene
+  // sentido consultarlo cuando hay un pagador real de por medio.
+  const { data: pagosPagadorRaw } = useQuery({
+    queryKey: ["pagos", "pagador-periodo", alumno.pagador, periodo],
+    queryFn: () => pagosApi.list({ pagador: alumno.pagador as number, periodo }).then(r => r.data),
+    enabled: !!pagoCreado && !!alumno.pagador,
+  })
+  const pagosPagador: Pago[] = Array.isArray(pagosPagadorRaw) ? pagosPagadorRaw : []
+  const pendientes = pagoCreado
+    ? (alumno.pagador
+        ? pagosPagador.filter(p => p.estado_carga === "completo" && !p.num_doc)
+        : [pagoCreado])
+    : []
+
+  const { data: emisoresRaw } = useQuery({
+    queryKey: ["emisores"],
+    queryFn: () => emisoresApi.list().then(r => r.data),
+    enabled: !!pagoCreado && pendientes.length >= 2,
+  })
+  const emisores = Array.isArray(emisoresRaw) ? emisoresRaw : []
+
+  // Todos preseleccionados apenas se conocen — staff puede destildar si
+  // alguno de los hermanos no va en este recibo.
+  useEffect(() => {
+    if (pendientes.length) setSeleccionados(new Set(pendientes.map(p => p.id)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagosPagadorRaw, pagoCreado])
+
+  function toggleSeleccion(id: number) {
+    setSeleccionados(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const elegidos = pendientes.filter(p => seleccionados.has(p.id))
+  const emisorIds = new Set(elegidos.map(p => p.emisor).filter((e): e is number => !!e))
+  const necesitaElegirEmisor = emisorIds.size > 1
+  const totalRecibo = elegidos.reduce((s, p) => s + Number(p.total), 0)
+
+  const generarReciboMut = useMutation({
+    mutationFn: async () => {
+      const combinada = elegidos.length >= 2
+      const res = combinada
+        ? await documentosApi.generarCombinado([...seleccionados], necesitaElegirEmisor ? Number(emisorOverride) : undefined)
+        : await documentosApi.generar((elegidos[0] ?? pagoCreado!).id)
+      return { ...res.data, combinada } as DocumentoGenerado
+    },
+    onSuccess: (generado) => {
+      setDoc(generado)
+      setError("")
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumno.id] })
+      qc.invalidateQueries({ queryKey: ["documentos", "alumno", alumno.id] })
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+    },
+    onError: (err: any) =>
+      setError(err.response?.data?.error ?? "Error generando el recibo."),
+  })
+
+  async function handleDescargar() {
+    if (!doc) return
+    setDownloading(true)
+    setError("")
+    try {
+      await descargarDocumento(doc, alumno.nombre)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al descargar el documento.")
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 pb-0">
-          <h2 className="text-xl font-bold text-pine-900">Generar pago — {alumno.nombre}</h2>
+          <h2 className="text-xl font-bold text-pine-900">
+            {pagoCreado ? "Confirmar documento" : "Generar pago"} — {alumno.nombre}
+          </h2>
           <button onClick={onClose} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
         </div>
 
         <div className="p-6 space-y-4">
-          {sinPagador && (
+          {sinPagador && !pagoCreado && (
             <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
               ⚠ Este alumno no tiene pagador vinculado (y no es adulto que pague por sí mismo). Cargá un pagador en
               "Datos generales" antes de crear el pago.
@@ -108,7 +199,7 @@ export default function GenerarFacturaModal({
           )}
           {error && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{error}</p>}
 
-          {!creado ? (
+          {!pagoCreado ? (
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -180,11 +271,6 @@ export default function GenerarFacturaModal({
                 </div>
               </div>
 
-              <p className="text-xs text-pine-600 -mt-1">
-                Este pago queda pendiente de facturar — nadie recibe número ni email hasta que confirmes la factura
-                desde Pagos o desde Payers (si es para combinar con hermanos).
-              </p>
-
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-semibold text-pine-700">Extras (clases a mayores, etc.)</label>
@@ -216,30 +302,88 @@ export default function GenerarFacturaModal({
                 <p className="text-2xl font-bold text-pine-900 mt-1">Total: {total.toFixed(2)} €</p>
               </div>
             </>
+          ) : !doc ? (
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-sm text-sage-700">✓ Pago registrado por {formatEur(total)}.</p>
+
+              {pendientes.length >= 2 ? (
+                <>
+                  <p className="text-xs text-pine-700">
+                    Este pagador tiene {pendientes.length} pagos de {periodo} sin facturar (hermanos) — elegí cuáles van
+                    juntos en una misma factura combinada:
+                  </p>
+                  <div className="space-y-1.5">
+                    {pendientes.map(p => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm bg-khaki-50 border rounded-lg px-3 py-2">
+                        <input type="checkbox" checked={seleccionados.has(p.id)} onChange={() => toggleSeleccion(p.id)} />
+                        <span className="flex-1">{p.alumno_nombre ?? "—"}</span>
+                        <span className="font-mono text-xs text-pine-600">{p.marca_display}</span>
+                        <span className="font-semibold">{formatEur(Number(p.total))}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {necesitaElegirEmisor && (
+                    <div>
+                      <label className="block text-xs font-semibold text-pine-700 mb-1">
+                        Emisor (los seleccionados están repartidos entre las dos marcas)
+                      </label>
+                      <select value={emisorOverride} onChange={e => setEmisorOverride(e.target.value ? +e.target.value : "")}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                        <option value="">Elegir...</option>
+                        {emisores.map((em: any) => <option key={em.id} value={em.id}>{em.nombre}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <p className="text-right font-semibold text-pine-900">Total de la factura combinada: {formatEur(totalRecibo)}</p>
+                </>
+              ) : (
+                <p className="text-xs text-pine-600">
+                  Sin otros pagos de {periodo} pendientes de facturar para este pagador — se genera el documento
+                  (factura o recibo, según el método de pago) solo para este pago.
+                </p>
+              )}
+            </div>
           ) : (
-            <p className="text-sm text-sage-700 border-t pt-4">
-              ✓ Pago registrado por {formatEurLocal(total)}. Generá la factura o el recibo cuando corresponda, desde
-              Pagos o Payers.
-            </p>
+            <div className="border-t pt-4">
+              <p className="text-sm text-sage-700 mb-3">
+                ✓ {doc.tipo === "factura" ? "Factura" : "Recibo"}{doc.combinada ? " combinada" : ""} generad{doc.tipo === "factura" ? "a" : "o"} correctamente.
+              </p>
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="font-mono text-sm bg-khaki-100 px-2 py-1 rounded">{doc.num_doc}</span>
+                <button onClick={handleDescargar} disabled={downloading}
+                  className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50">
+                  {downloading ? "..." : "📥 Ver / Descargar"}
+                </button>
+              </div>
+              <p className="text-xs text-pine-600">
+                Las facturas para Hacienda se generan aparte, por marca, desde Payers o "Generar pagos de mes".
+              </p>
+            </div>
           )}
         </div>
 
         <div className="flex justify-end gap-2 p-6 pt-0">
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200">
-            {creado ? "Cerrar" : "Cancelar"}
+            {doc ? "Cerrar" : pagoCreado ? "Cerrar sin generar documento" : "Cancelar"}
           </button>
-          {!creado && (
+          {!pagoCreado && (
             <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || sinPagador || !periodo}
               className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
               {crearMut.isPending ? "Creando..." : "💳 Crear pago"}
+            </button>
+          )}
+          {pagoCreado && !doc && (
+            <button
+              onClick={() => generarReciboMut.mutate()}
+              disabled={generarReciboMut.isPending || !elegidos.length || (necesitaElegirEmisor && !emisorOverride)}
+              className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+              {generarReciboMut.isPending
+                ? "Generando..."
+                : elegidos.length >= 2 ? "🧾 Generar factura combinada" : "🧾 Generar documento"}
             </button>
           )}
         </div>
       </div>
     </div>
   )
-}
-
-function formatEurLocal(n: number) {
-  return n.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
 }
