@@ -127,13 +127,13 @@ function OwnerDashboard() {
         <StatItem label="Grupos activos" value={String(grupos.length)} sub="en curso" />
       </div>
 
-      {/* Trail Log calendar (full monthly view, compact) + Today's Timetable
-          side by side. `items-start` (not `items-stretch`) so the Trail Log
-          card stays sized to its own content (a fixed 7-row calendar grid)
-          instead of stretching its background down to match whatever height
-          Today's Timetable happens to need — with the bigger fonts that grid
-          could otherwise end up with a lot of empty background below it. */}
+      {/* Trail Log calendar + Quick Actions stacked on the left, Today's
+          Timetable + Upcoming Birthdays stacked on the right. `items-start`
+          (not `items-stretch`) so each column stays sized to its own
+          content instead of stretching to match the other column's height. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5 items-start">
+
+      <div className="flex flex-col gap-5">
 
       <div className="relative bg-pine-800 border-2 border-pine-800 rounded-md p-4 pb-3 overflow-hidden">
         {/* Toned way down (was 0.08, four rings) — this is the highest-contrast
@@ -188,6 +188,29 @@ function OwnerDashboard() {
         </div>
       </div>
 
+        {/* Quick actions */}
+        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
+          <div className="font-head text-[15px] text-pine-800 mb-3.5">⚡ Quick Actions</div>
+          <div className="flex flex-col gap-2">
+            <Link to="/asistencia" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+              ✅ Pasar lista
+            </Link>
+            <Link to="/pagos/nuevo" className="px-3.5 py-2.5 rounded-[5px] bg-pine-800 text-khaki-100 text-sm font-semibold no-underline hover:bg-pine-700 text-center">
+              + Nuevo pago
+            </Link>
+            <Link to="/horario" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+              📅 Ver Horario
+            </Link>
+            <Link to="/crm" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
+              🧭 Ver CRM
+            </Link>
+          </div>
+        </div>
+
+      </div>
+
+      <div className="flex flex-col gap-5">
+
       <div className="bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden flex flex-col">
         <div className="px-5 py-4 bg-pine-800 font-head text-[16px] text-khaki-100 flex-shrink-0">🧭 Today's Timetable</div>
         <div className="px-5 py-2 pb-4 overflow-y-auto flex-1 min-h-0">
@@ -205,6 +228,31 @@ function OwnerDashboard() {
             </div>
           ))}
         </div>
+      </div>
+
+        {/* Upcoming birthdays */}
+        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
+          <div className="font-head text-[15px] text-pine-800 mb-3">🎂 Upcoming Birthdays</div>
+          {!cumples.length && (
+            <p className="text-[13.5px] text-pine-700">Sin cumpleaños en los próximos 30 días.</p>
+          )}
+          {!!cumples.length && (
+            <div className="flex flex-col gap-2">
+              {cumples.slice(0, 6).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
+                  <Link to={`/alumnos/${c.id}`} className="text-pine-900 font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
+                  <span className="text-pine-700 flex-shrink-0">
+                    {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos}d`}
+                  </span>
+                </div>
+              ))}
+              {cumples.length > 6 && (
+                <Link to="/cumpleanos" className="text-xs font-bold text-brass-700 no-underline mt-1">+{cumples.length - 6} más → Ver todos</Link>
+              )}
+            </div>
+          )}
+        </div>
+
       </div>
 
       </div>
@@ -248,53 +296,6 @@ function OwnerDashboard() {
         document.body
       )}
 
-      {/* Side panels — antes compartían la fila con la tabla de "Últimos
-          pagos" (financiero, movido a las vistas por marca); ahora ocupan
-          todo el ancho entre sí. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
-
-        {/* Quick actions */}
-        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
-          <div className="font-head text-[15px] text-pine-800 mb-3.5">⚡ Quick Actions</div>
-          <div className="flex flex-col gap-2">
-            <Link to="/asistencia" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-              ✅ Pasar lista
-            </Link>
-            <Link to="/pagos/nuevo" className="px-3.5 py-2.5 rounded-[5px] bg-pine-800 text-khaki-100 text-sm font-semibold no-underline hover:bg-pine-700 text-center">
-              + Nuevo pago
-            </Link>
-            <Link to="/horario" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-              📅 Ver Horario
-            </Link>
-            <Link to="/crm" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-              🧭 Ver CRM
-            </Link>
-          </div>
-        </div>
-
-        {/* Upcoming birthdays */}
-        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
-          <div className="font-head text-[15px] text-pine-800 mb-3">🎂 Upcoming Birthdays</div>
-          {!cumples.length && (
-            <p className="text-[13.5px] text-pine-700">Sin cumpleaños en los próximos 30 días.</p>
-          )}
-          {!!cumples.length && (
-            <div className="flex flex-col gap-2">
-              {cumples.slice(0, 6).map((c: any) => (
-                <div key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
-                  <Link to={`/alumnos/${c.id}`} className="text-pine-900 font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
-                  <span className="text-pine-700 flex-shrink-0">
-                    {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos}d`}
-                  </span>
-                </div>
-              ))}
-              {cumples.length > 6 && (
-                <Link to="/cumpleanos" className="text-xs font-bold text-brass-700 no-underline mt-1">+{cumples.length - 6} más → Ver todos</Link>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   )
 }
