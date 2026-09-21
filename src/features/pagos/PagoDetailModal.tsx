@@ -6,6 +6,7 @@ import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
+import { descargarDocumento } from "@/lib/descargarDocumento"
 import type { Pago, Tarifa } from "@/types"
 
 const METODOS = ["efectivo", "transferencia", "bizum", "domiciliacion", "tarjeta"]
@@ -170,24 +171,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
     setDownloadingId(d.id)
     setError("")
     try {
-      const token = localStorage.getItem("access_token")
-      const base = import.meta.env.VITE_API_URL ?? "/api/v1"
-      const res = await fetch(`${base}/documentos/${d.id}/descargar/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) {
-        throw new Error(`No se pudo descargar el documento (código ${res.status}).`)
-      }
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.target = "_blank"
-      a.rel = "noopener noreferrer"
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+      await descargarDocumento(d, pago.alumno_nombre ?? pago.pagador_nombre)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al descargar el documento.")
     } finally {

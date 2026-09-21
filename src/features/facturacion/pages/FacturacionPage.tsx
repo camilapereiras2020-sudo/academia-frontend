@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "@/features/pagos/api"
 import { formatMonth } from "@/lib/utils"
+import { descargarDocumento } from "@/lib/descargarDocumento"
 import type { Pago } from "@/types"
 
 type DocumentoLite = { id: number; pago: number; num_doc: string; tipo: string }
@@ -39,25 +40,11 @@ export default function FacturacionPage() {
     onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al generar el documento."),
   })
 
-  async function handleDescargar(doc: DocumentoLite) {
+  async function handleDescargar(doc: DocumentoLite, cliente?: string | null) {
     setDownloadingId(doc.id)
     setDownloadError("")
     try {
-      const token = localStorage.getItem("access_token")
-      const base = import.meta.env.VITE_API_URL ?? "/api/v1"
-      const res = await fetch(`${base}/documentos/${doc.id}/descargar/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error(`No se pudo descargar el documento (código ${res.status}).`)
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `${doc.num_doc}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+      await descargarDocumento(doc, cliente)
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : "Error al descargar el documento.")
     } finally {
@@ -159,7 +146,7 @@ export default function FacturacionPage() {
                     <td className="px-4 py-3 text-xs text-pine-600 font-mono whitespace-nowrap">{doc.num_doc}</td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleDescargar(doc)}
+                        onClick={() => handleDescargar(doc, p.alumno_nombre ?? p.pagador_nombre)}
                         disabled={downloadingId === doc.id}
                         className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50 whitespace-nowrap"
                       >

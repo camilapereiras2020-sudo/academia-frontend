@@ -13,6 +13,7 @@ import GenerarFacturaModal from "../components/GenerarFacturaModal"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
+import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
 import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase } from "@/types"
 
@@ -195,17 +196,7 @@ export default function AlumnoDetailPage() {
     setDownloadingDocId(d.id)
     setDownloadDocError("")
     try {
-      const res = await api.get(`/documentos/${d.id}/descargar/`, { responseType: "blob" })
-      const url = window.URL.createObjectURL(res.data as Blob)
-      const cliente = d.pago_info?.alumno || d.pago_info?.pagador || ""
-      const filename = `${d.num_doc || d.nombre}${cliente ? " " + cliente : ""}.pdf`.replace(/[\\/:*?"<>|]/g, "")
-      const a = document.createElement("a")
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+      await descargarDocumento(d, d.pago_info?.alumno || d.pago_info?.pagador || alumno?.nombre)
     } catch {
       setDownloadDocError("No se pudo descargar el documento.")
     } finally {
