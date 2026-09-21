@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "@/features/pagos/api"
+import { descargarDocumento } from "@/lib/descargarDocumento"
 import type { Alumno, AlumnoCuota, CargoExtra, Pagador } from "@/types"
 
 // Atajo desde la sección "Cuota" de la ficha: arma un Pago nuevo con la
@@ -75,22 +76,7 @@ export default function GenerarFacturaModal({
     setDownloading(true)
     setError("")
     try {
-      const token = localStorage.getItem("access_token")
-      const base = import.meta.env.VITE_API_URL ?? "/api/v1"
-      const res = await fetch(`${base}/documentos/${doc.id}/descargar/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error(`No se pudo descargar el documento (código ${res.status}).`)
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.target = "_blank"
-      a.rel = "noopener noreferrer"
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+      await descargarDocumento(doc, alumno.nombre)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al descargar el documento.")
     } finally {
