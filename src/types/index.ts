@@ -58,7 +58,10 @@ export type Curso =
   | "bach_1" | "bach_2"
   | "fp" | "adulto" | "otro"
 
-export type CodigoClase = "HORA" | "HORA_Y_MEDIA" | "PRIVADA" | "PRIVADA_PROFESIONAL" | ""
+// En blanco = clase grupo: días/semana y duración se calculan solos del
+// horario asignado, no hay nada que elegir acá. Las dos opciones restantes
+// solo marcan clase privada (precio manual, ver Alumno.cuota_manual).
+export type CodigoClase = "PRIVADA" | "PRIVADA_PROFESIONAL" | ""
 
 export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
