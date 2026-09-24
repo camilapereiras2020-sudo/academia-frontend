@@ -10,7 +10,7 @@ export default function RegisterPage() {
 
   const mutation = useMutation({
     mutationFn: () => authApi.register(form),
-    onSuccess: () => { alert("Cuenta creada. Inicia sesion."); navigate("/login") },
+    onSuccess: () => { alert("Cuenta creada. Inicia sesión."); navigate("/login") },
     onError: () => setError("Error al crear la cuenta"),
   })
 
@@ -27,7 +27,7 @@ export default function RegisterPage() {
             { k: "email", label: "Email", type: "email" },
             { k: "username", label: "Usuario", type: "text" },
             { k: "password", label: "Contrasena", type: "password" },
-            { k: "password2", label: "Confirmar contrasena", type: "password" },
+            { k: "password2", label: "Confirmar contraseña", type: "password" },
           ].map(({ k, label, type }) => (
             <div key={k}>
               <label className="block text-xs font-semibold uppercase tracking-wide text-pine-700 mb-1">{label}</label>
@@ -40,7 +40,7 @@ export default function RegisterPage() {
             {mutation.isPending ? "Creando cuenta..." : "Crear cuenta"}
           </button>
           <p className="text-center text-sm text-pine-700">
-            Ya tienes cuenta? <Link to="/login" className="text-brass-700 underline">Iniciar sesion</Link>
+            ¿Ya tienes cuenta? <Link to="/login" className="text-brass-700 underline">Iniciar sesión</Link>
           </p>
         </div>
       </div>

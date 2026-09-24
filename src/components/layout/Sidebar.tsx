@@ -1,150 +1,141 @@
-
 import { NavLink } from "react-router-dom"
-import { useBrandStore } from "@/store/brandStore"
 import { useAuthStore } from "@/store/authStore"
 import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, CreditCard, Building2,
-  Compass, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
+  Users, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
   Coins, FileText, MessageCircle, Cake, Settings, X,
 } from "lucide-react"
 
-const LOGO_SRC = {
-  cami_and_co: "/logos/camico-logo-navy-gold.png",
-  rangers_academy: "/logos/rangers-academy-logo.png",
-} as const
+const LOGO_SRC = "/logos/rangers-academy-logo.png"
 
-// `to: null` marks a nav item from the new IA that doesn't have a page yet —
-// rendered disabled with a "Soon" tag rather than a broken link.
 const NAV_SECTIONS = [
   {
-    label: "Front Desk",
+    label: "Diario",
     items: [
-      { to: "/dashboard", icon: LayoutDashboard, label: "Overview" },
-      { to: "/alumnos", icon: GraduationCap, label: "Students" },
-      { to: "/payers", icon: CreditCard, label: "Payers" },
-      { to: "/empresas", icon: Building2, label: "Companies" },
+      { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+      { to: "/horario", icon: CalendarClock, label: "Horario" },
+      { to: "/calendario", icon: CalendarDays, label: "Calendario" },
+      { to: "/asistencia", icon: CheckSquare, label: "Asistencia" },
     ]
   },
   {
-    label: "Trail Ops",
+    label: "Personas",
     items: [
-      { to: "/grupos", icon: Compass, label: "Groups" },
-      { to: "/calendario", icon: CalendarDays, label: "Calendar" },
-      { to: "/horario", icon: CalendarClock, label: "Schedule" },
-      { to: "/asistencia", icon: CheckSquare, label: "Attendance" },
-      { to: "/precios", icon: Tag, label: "Rates" },
+      { to: "/alumnos", icon: GraduationCap, label: "Alumnos" },
+      { to: "/grupos", icon: Users, label: "Grupos" },
       { to: "/crm", icon: UserSearch, label: "CRM" },
+      { to: "/cumpleanos", icon: Cake, label: "Cumpleaños" },
+      { to: "/payers", icon: CreditCard, label: "Pagadores" },
+      { to: "/empresas", icon: Building2, label: "Empresas" },
     ]
   },
   {
-    label: "Ledger",
+    label: "Comunicación",
     items: [
-      { to: "/pagos", icon: Coins, label: "Payments" },
-      { to: "/documentos", icon: FileText, label: "Invoicing" },
       { to: "/whatsapp-respuestas", icon: MessageCircle, label: "WhatsApp" },
-      { to: "/cumpleanos", icon: Cake, label: "Birthdays" },
+    ]
+  },
+  {
+    label: "Dinero",
+    items: [
+      { to: "/pagos", icon: Coins, label: "Pagos" },
+      { to: "/documentos", icon: FileText, label: "Documentos" },
+      { to: "/precios", icon: Tag, label: "Precios" },
     ]
   },
 ]
 
 // `open`/`onClose` only matter below `xl` — that's when the sidebar is an
 // overlay drawer instead of always-visible. Above `xl` the sidebar renders
-// in flow regardless of `open`, same as before this feature existed.
+// in flow regardless of `open`.
 export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const activeBrand = useBrandStore((s) => s.activeBrand)
-  const brand = activeBrand ?? "cami_and_co"
   const role = useAuthStore((s) => s.user?.role)
   const user = useAuthStore((s) => s.user)
   const navSections = NAV_SECTIONS
-    .map((section) => ({ ...section, items: section.items.filter((item) => item.to === null || canAccess(role, item.to)) }))
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(role, item.to)) }))
     .filter((section) => section.items.length > 0)
 
   return (
     <aside className={`
-      w-[250px] flex-shrink-0 bg-pine-900 flex flex-col h-screen border-r-4 border-brass-500 overflow-hidden
+      w-[248px] flex-shrink-0 bg-pine-900 flex flex-col h-screen overflow-hidden
       fixed xl:static inset-y-0 left-0 z-50 transition-transform duration-200
       ${open ? "translate-x-0" : "-translate-x-full"} xl:translate-x-0
     `}>
       <button
         onClick={onClose}
         aria-label="Cerrar menú"
-        className="xl:hidden absolute top-3 right-3 z-10 text-khaki-100/70 hover:text-khaki-100 p-1"
+        className="xl:hidden absolute top-2 right-2 z-10 w-11 h-11 flex items-center justify-center rounded-[10px] text-khaki-100/70 hover:text-khaki-100 hover:bg-white/10"
       >
         <X size={20} strokeWidth={2} />
       </button>
-      {/* Logo / crest */}
-      <div className="relative px-6 pt-8 pb-10 border-b border-white/10 overflow-hidden">
-        <svg viewBox="0 0 250 90" preserveAspectRatio="none" className="pointer-events-none absolute left-0 right-0 bottom-0 w-full h-[82px] opacity-50">
-          <path d="M0 90 L30 38 L55 68 L85 18 L115 60 L150 28 L185 65 L215 34 L250 62 L250 90 Z" fill="#52654f" />
-          <path d="M0 90 L45 60 L75 75 L110 44 L140 72 L175 52 L210 75 L250 55 L250 90 Z" fill="#465a48" />
-        </svg>
-        <div className="relative flex items-center gap-3.5 flex-wrap">
-          <img
-            src={LOGO_SRC[brand]}
-            alt={brand === "rangers_academy" ? "Rangers Academy" : "Cami & Co"}
-            className="w-[58px] h-[58px] object-contain flex-shrink-0"
-          />
-          <div className="font-head text-[19px] text-khaki-100 leading-tight whitespace-nowrap">
-            RANGERS
-            <br />
-            <span className="text-[13px] tracking-[0.2em] text-brass-300 font-body font-bold">STATION DESK</span>
-          </div>
+
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 pt-6 pb-5 border-b border-white/10">
+        <img
+          src={LOGO_SRC}
+          alt="Rangers Academy"
+          className="w-12 h-12 object-contain flex-shrink-0"
+        />
+        <div className="min-w-0">
+          <div className="font-head text-[20px] leading-none text-khaki-100">Rangers</div>
+          <div className="font-label text-[12px] font-semibold tracking-[0.18em] text-brass-500 mt-1.5">STATION DESK</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
         {navSections.map((section) => (
-          <div key={section.label} className="mb-4">
-            <div className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-brass-300 px-2 pt-3.5 pb-2">
+          <div key={section.label} className="mb-3">
+            <div className="font-label text-[12px] font-semibold uppercase tracking-[0.14em] text-khaki-100/55 px-3 pt-3 pb-1.5">
               {section.label}
             </div>
-            {section.items.map(({ to, icon: Icon, label }) =>
-              to === null ? (
-                <div
-                  key={label}
-                  className="flex items-center gap-3 px-3.5 py-3 rounded-[7px] font-head text-[16px] text-khaki-100/30 border-2 border-transparent mb-2 cursor-not-allowed"
-                >
-                  <Icon size={17} strokeWidth={2} />
-                  {label}
-                  <span className="ml-auto text-[11px] font-body font-bold uppercase tracking-wider text-khaki-100/40 border border-white/10 rounded px-1.5 py-0.5">
-                    Soon
-                  </span>
-                </div>
-              ) : (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-3 rounded-[7px] font-head text-[16px] mb-2 border-2 transition-colors ${
-                      isActive
-                        ? "text-pine-900 bg-brass-500 border-brass-700 shadow-[0_2px_0_#8A6B49]"
-                        : "text-khaki-100 bg-white/[0.04] border-white/10 hover:bg-white/10 hover:border-brass-500"
-                    }`
-                  }
-                >
-                  <Icon size={17} strokeWidth={2} />
-                  {label}
-                </NavLink>
-              )
-            )}
+            {section.items.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `group flex items-center gap-3 h-10 px-3 mb-0.5 rounded-[10px] font-body text-[15px] font-medium transition-colors ${
+                    isActive
+                      ? "bg-khaki-100/[0.14] text-khaki-100"
+                      : "text-khaki-100/80 hover:bg-white/[0.07] hover:text-khaki-100"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      size={18}
+                      strokeWidth={2}
+                      className={isActive ? "text-brass-500" : "text-khaki-100/60 group-hover:text-khaki-100/90"}
+                    />
+                    {label}
+                  </>
+                )}
+              </NavLink>
+            ))}
           </div>
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t border-white/10 flex items-center gap-2.5">
-        <div className="w-[34px] h-[34px] rounded-full bg-brass-500 flex items-center justify-center font-head text-pine-900 text-sm flex-shrink-0">
+      {/* Usuario */}
+      <div className="px-4 py-3.5 border-t border-white/10 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-brass-500 flex items-center justify-center font-head text-pine-900 text-sm flex-shrink-0">
           {(user?.username || "?").charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] text-khaki-200 font-semibold truncate">{user?.username || "Front Desk"}</div>
-          <NavLink to="/config" className="text-[13px] text-khaki-300 hover:text-brass-300 no-underline inline-flex items-center gap-1">
-            <Settings size={11} strokeWidth={2} />
-            Settings
-          </NavLink>
+          <div className="text-[14px] text-khaki-100 font-semibold truncate">{user?.username || "Recepción"}</div>
+          {canAccess(role, "/config") && (
+            <NavLink
+              to="/config"
+              onClick={onClose}
+              className="font-label text-[13px] text-khaki-100/60 hover:text-brass-500 no-underline inline-flex items-center gap-1"
+            >
+              <Settings size={12} strokeWidth={2} />
+              Configuración
+            </NavLink>
+          )}
         </div>
       </div>
     </aside>
