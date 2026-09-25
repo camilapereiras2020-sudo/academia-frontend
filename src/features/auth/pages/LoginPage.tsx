@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useMutation } from "@tanstack/react-query"
+import { isAxiosError } from "axios"
 import { useAuthStore } from "@/store/authStore"
 import { authApi } from "../api"
 
@@ -19,7 +20,13 @@ export default function LoginPage() {
       setUser(profile.data)
       navigate("/dashboard")
     },
-    onError: () => setError("Email o contraseña incorrectos"),
+    onError: (err) => {
+      const status = isAxiosError(err) ? err.response?.status : undefined
+      if (status === 401) setError("Email o contraseña incorrectos")
+      // No response, or the dev proxy / hosting reporting the API unreachable.
+      else if (status === undefined || [502, 503, 504].includes(status)) setError("No se puede conectar con el servidor. Comprueba que la API está arrancada.")
+      else setError(`Error del servidor (${status}). Inténtalo de nuevo.`)
+    },
   })
 
   return (
