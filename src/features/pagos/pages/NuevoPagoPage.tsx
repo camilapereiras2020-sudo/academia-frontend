@@ -167,15 +167,15 @@ export default function NuevoPagoPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900 mb-6">Nuevo pago</h1>
+      <h1 className="page-title mb-6">Nuevo pago</h1>
 
-      <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
-        {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
+      <div className="card !bg-white p-6 space-y-4">
+        {error && <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{error}</p>}
 
         <div>
-          <label className="block text-xs font-semibold text-pine-700 mb-1">Marca / Emisor *</label>
+          <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Marca / Emisor *</label>
           <select value={marca} onChange={e => setMarca(e.target.value as Marca)}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+            className="input">
             <option value="">Seleccionar...</option>
             {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
@@ -183,38 +183,38 @@ export default function NuevoPagoPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Alumno *</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Alumno *</label>
             <select value={alumno} onChange={e => onAlumnoChange(+e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+              className="input">
               <option value="">Seleccionar...</option>
               {alumnos.map((a: any) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Pagador{alumnoEsAdulto ? "" : " *"}
             </label>
             <select value={pagador} onChange={e => setPagador(e.target.value ? +e.target.value : "")}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+              className="input">
               <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
               {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
             </select>
             {alumnoEsAdulto && !pagador && (
-              <p className="text-xs text-khaki-500 mt-1">Alumno adulto — el pagador es opcional.</p>
+              <p className="text-[14px] text-ink-soft mt-1">Alumno adulto — el pagador es opcional.</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Grupo</label>
             <select value={grupo} onChange={e => setGrupo(+e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+              className="input">
               <option value="">Sin grupo</option>
               {grupos.map((g: any) => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Tarifa</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Tarifa</label>
             <select value={tarifa} onChange={e => onTarifaChange(+e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+              className="input">
               <option value="">Sin tarifa / manual</option>
               {tarifasLoading && <option value="" disabled>Cargando tarifas...</option>}
               {(["rangers_academy", "cami_and_co"] as const).map(marca => {
@@ -235,38 +235,38 @@ export default function NuevoPagoPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Horas</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Horas</label>
             <input type="number" value={horas} onChange={e => setHoras(e.target.value === "" ? "" : +e.target.value)} min="0" step="0.1"
               placeholder="Ej: 1.5"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+              className="input" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Periodo *</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Periodo *</label>
             <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+              className="input" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Mensualidad (€)</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Mensualidad (€)</label>
             <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)} min="0" step="0.01"
               disabled={!montoEditable}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 disabled:bg-khaki-100 disabled:text-khaki-400" />
+              className="input disabled:!bg-khaki-100 disabled:text-ink-soft" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Descuento (€)</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Descuento (€)</label>
             <input type="number" value={descuento} onChange={e => setDescuento(+e.target.value)} min="0" step="0.01"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+              className="input" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Metodo de pago</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Metodo de pago</label>
             <select value={metodo} onChange={e => setMetodo(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+              className="input">
               {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Estado</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Estado</label>
             <select value={estado} onChange={e => setEstado(e.target.value as "pagado" | "pendiente" | "parcial")}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+              className="input">
               <option value="pendiente">Pendiente</option>
               <option value="pagado">Pagado</option>
               <option value="parcial">Pago parcial</option>
@@ -274,84 +274,84 @@ export default function NuevoPagoPage() {
           </div>
         </div>
 
-        <p className="text-xs text-pine-600 -mt-1">
+        <p className="text-[14px] text-ink-soft -mt-1">
           Este pago queda pendiente de facturar — nadie recibe número ni email hasta que confirmes la factura desde Pagos o desde <b>Payers</b> (si es para combinar con hermanos).
         </p>
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-semibold text-pine-700">Extras</label>
-            <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="text-xs text-brass-700 hover:text-pine-900">+ Anadir extra</button>
+            <label className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700">Extras</label>
+            <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Añadir extra</button>
           </div>
           {extras.some(isMatriculaRow) && matriculaAutoAddedFor === alumno && (
-            <p className="text-xs text-pine-600 mb-2">
+            <p className="text-[14px] text-ink-soft mb-2">
               Matrícula añadida automáticamente — es el primer pago de este alumno. Quítala si no aplica.
             </p>
           )}
           {extras.map((ex, i) => (
             isMatriculaRow(ex) ? (
-              <div key={i} className="border rounded-lg p-2.5 mb-2 bg-khaki-50">
+              <div key={i} className="border border-pine-900/15 rounded-[10px] p-3 mb-2 bg-khaki-100">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium text-pine-900">Matrícula</span>
-                  <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} className="text-red-500 text-sm">✕</button>
+                  <span className="text-[15px] font-semibold text-ink">Matrícula</span>
+                  <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label="Quitar" className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-red-700 hover:bg-red-50 text-[15px]">✕</button>
                 </div>
                 <div className="flex gap-1.5 flex-wrap mb-2">
                   {MATRICULA_PRESETS.map(preset => (
                     <button key={preset} type="button"
                       onClick={() => { const n = [...extras]; n[i] = { ...n[i], importe: preset }; setExtras(n) }}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${
+                      className={`min-h-[40px] px-3.5 rounded-[10px] text-[14px] font-semibold border ${
                         ex.importe === preset
-                          ? "bg-brass-500 border-brass-700 text-white"
-                          : "bg-white border-khaki-300 text-pine-700 hover:border-brass-400"
+                          ? "bg-pine-900 border-pine-900 text-khaki-100"
+                          : "bg-white border-pine-900/20 text-pine-700 hover:bg-khaki-100"
                       }`}>
                       {preset}€
                     </button>
                   ))}
                   <input type="number" value={ex.importe} step="0.01"
                     onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
-                    className="w-20 border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input !w-24 !min-h-[40px] !px-2 text-[14px]" />
                 </div>
                 {ex.importe !== MATRICULA_FEE && (
                   <input type="text" placeholder="Motivo del descuento (ej. 3er hermano, alumno recurrente...)"
                     value={matriculaDetalle(ex.concepto)}
                     onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: matriculaConceptoFor(e.target.value) }; setExtras(n) }}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input" />
                 )}
               </div>
             ) : (
               <div key={i} className="flex gap-2 mb-2">
                 <input type="text" placeholder="Concepto" value={ex.concepto}
                   onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: e.target.value }; setExtras(n) }}
-                  className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                  className="input flex-1" />
                 <input type="number" placeholder="€" value={ex.importe} min="0" step="0.01"
                   onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
-                  className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-                <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} className="text-red-500 text-sm">✕</button>
+                  className="input !w-28" />
+                <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label="Quitar" className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-red-700 hover:bg-red-50 text-[15px]">✕</button>
               </div>
             )
           ))}
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
+          <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Notas</label>
           <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none" />
+            className="input !py-2.5 resize-none" />
         </div>
 
-        <div className="bg-khaki-100 rounded-lg p-4 text-right">
-          <p className="text-sm text-pine-700">Mensualidad: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
-          <p className="text-2xl font-bold text-pine-900 mt-1">Total: {total.toFixed(2)} €</p>
+        <div className="bg-khaki-100 border border-pine-900/10 rounded-[12px] p-4 text-right">
+          <p className="text-[15px] text-ink-soft">Mensualidad: {mensualidad.toFixed(2)}€ — Descuento: {descuento.toFixed(2)}€ — Extras: {extrasTotal.toFixed(2)}€</p>
+          <p className="font-head text-[28px] text-pine-900 mt-1">Total: {total.toFixed(2)} €</p>
         </div>
 
         <div className="flex justify-end gap-2">
-          <button onClick={() => navigate("/pagos")} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200">Cancelar</button>
+          <button onClick={() => navigate("/pagos")} className="btn-ghost">Cancelar</button>
           <button onClick={handleSaveDraft} disabled={saveMut.isPending}
             title="Guarda lo que tengas hasta ahora sin alumno/pagador/grupo definitivos — no genera factura ni reserva número, aparece en Pagos pendientes"
-            className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 text-sm hover:bg-orange-200 disabled:opacity-50">
+            className="min-h-[44px] px-4 rounded-[10px] bg-orange-100 text-orange-900 text-[15px] font-semibold hover:bg-orange-200 disabled:opacity-50">
             {saveMut.isPending ? "Guardando..." : "Guardar como borrador"}
           </button>
           <button onClick={handleSubmit} disabled={saveMut.isPending}
-            className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+            className="btn-primary disabled:opacity-50">
             {saveMut.isPending ? "Guardando..." : "Crear pago"}
           </button>
         </div>
