@@ -443,31 +443,31 @@ export default function CRMPage() {
         {/* Header */}
         <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
           <div>
-            <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">CRM</h1>
-            <p className="text-sm text-pine-700 mt-0.5">Gestión de consultas y leads</p>
+            <h1 className="page-title">CRM</h1>
+            <p className="page-subtitle">Gestión de consultas y leads</p>
           </div>
           <button onClick={openNew}
-            className="px-4 py-2 bg-pine-900 text-white rounded-lg text-sm font-medium hover:bg-pine-700">
+            className="min-h-[44px] px-5 rounded-[10px] bg-pine-900 text-khaki-100 text-[15px] font-bold hover:bg-pine-800">
             + Nueva consulta
           </button>
         </div>
 
         {actionError && (
-          <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{actionError}</p>
+          <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{actionError}</p>
         )}
 
         {/* Stat cards */}
         {dashboard && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
             {[
-              { label: "Nuevos hoy",          value: dashboard.nuevos_hoy,       color: "text-brass-700",   bg: "bg-khaki-100" },
-              { label: "Sin mover +24h",       value: dashboard.sin_mover,        color: "text-amber-600",  bg: "bg-amber-50" },
-              { label: "Clase de prueba",      value: dashboard.clases_prueba,    color: "text-orange-600", bg: "bg-orange-50" },
-              { label: "Matriculados este mes",value: dashboard.matriculados_mes, color: "text-green-600",  bg: "bg-green-50" },
+              { label: "Nuevos hoy",          value: dashboard.nuevos_hoy,       color: "text-brass-700",   bg: "border-l-brass-500" },
+              { label: "Sin mover +24h",       value: dashboard.sin_mover,        color: "text-amber-700",  bg: "border-l-amber-500" },
+              { label: "Clase de prueba",      value: dashboard.clases_prueba,    color: "text-orange-700", bg: "border-l-orange-500" },
+              { label: "Matriculados este mes",value: dashboard.matriculados_mes, color: "text-green-700",  bg: "border-l-green-600" },
             ].map(c => (
-              <div key={c.label} className={`${c.bg} rounded-xl p-4`}>
-                <p className="text-xs text-pine-700 mb-1">{c.label}</p>
-                <p className={`text-3xl font-bold ${c.color}`}>{c.value}</p>
+              <div key={c.label} className={`stat-card !px-4 !py-3.5 border-l-4 ${c.bg}`}>
+                <p className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-ink-soft mb-1">{c.label}</p>
+                <p className={`font-head text-[28px] leading-tight ${c.color}`}>{c.value}</p>
               </div>
             ))}
           </div>
@@ -481,18 +481,18 @@ export default function CRMPage() {
         <div className="mb-4 space-y-2">
           <input type="text" placeholder="Buscar por nombre o teléfono…" value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full max-w-xs border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+            className="input !w-full md:!w-[360px]" />
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setFiltroEtapa("")}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                filtroEtapa === "" ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
+              className={`min-h-[40px] px-4 rounded-full font-label text-[14px] font-semibold border transition-colors ${
+                filtroEtapa === "" ? "bg-pine-900 text-khaki-100 border-pine-900" : "bg-white text-pine-700 border-pine-900/20 hover:bg-khaki-100"
               }`}>
               Todos
             </button>
             {ETAPAS.filter(e => e.value !== "archivado").map(e => (
               <button key={e.value} onClick={() => setFiltroEtapa(e.value)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filtroEtapa === e.value ? "bg-pine-900 text-white border-pine-900" : "bg-white text-pine-600 border-khaki-200 hover:border-khaki-400"
+                className={`min-h-[40px] px-4 rounded-full font-label text-[14px] font-semibold border transition-colors ${
+                  filtroEtapa === e.value ? "bg-pine-900 text-khaki-100 border-pine-900" : "bg-white text-pine-700 border-pine-900/20 hover:bg-khaki-100"
                 }`}>
                 {e.value === "frio" ? "🗄 Guardados" : e.label}
               </button>
@@ -500,11 +500,10 @@ export default function CRMPage() {
           </div>
         </div>
 
-        {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
+        {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
         {!isLoading && !leads.length && (
-          <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
-            <span className="text-5xl mb-3">📋</span>
-            <p className="text-sm">
+          <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+            <p className="text-[15px]">
               {search ? "Sin resultados." : filtroEtapa === "frio" ? "Sin contactos guardados." : "Sin leads. Añade una consulta."}
             </p>
           </div>
@@ -526,45 +525,45 @@ export default function CRMPage() {
             return (
               <div key={lead.id}
                 onClick={() => selectLead(lead.id)}
-                className={`bg-white rounded-xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow ${
-                  selectedId === lead.id ? "border-khaki-400 ring-1 ring-khaki-300" : ""
+                className={`card !bg-white p-4 cursor-pointer hover:!border-brass-500 ${
+                  selectedId === lead.id ? "!border-brass-500 ring-2 ring-brass-500/40" : ""
                 } ${borderClass}`}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-pine-900">{lead.nombre_alumno}</span>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ei.color}`}>
+                      <span className="text-[16px] font-semibold text-ink">{lead.nombre_alumno}</span>
+                      <span className={`badge normal-case tracking-normal !text-[13px] ${ei.color}`}>
                         {ei.label}
                       </span>
                       {badge && (
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
+                        <span className={`badge normal-case tracking-normal !text-[13px] ${badge.className}`}>
                           {badge.label}
                         </span>
                       )}
                       {vencido && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                        <span className="badge normal-case tracking-normal !text-[13px] bg-red-100 text-red-800">
                           📅 Seguimiento vencido
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-pine-700 mt-0.5 truncate">
+                    <p className="text-[14px] text-ink-soft mt-1 truncate">
                       {lead.nombre_contacto}
                       {lead.telefono && ` · ${lead.telefono}`}
                       {lead.objetivo && ` · ${OBJETIVOS.find(o => o.value === lead.objetivo)?.label ?? lead.objetivo}`}
                     </p>
                   </div>
                   {/* Quick stage advance / matricular */}
-                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                  <div className="flex gap-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
                     {lead.etapa === "matriculado" && !lead.alumno && canMatricular ? (
                       <button onClick={() => openMatricular(lead)}
-                        className="px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 whitespace-nowrap">
+                        className="inline-flex items-center justify-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold whitespace-nowrap border-green-700 bg-green-700 text-white hover:bg-green-800">
                         Matricular
                       </button>
                     ) : (
                       ETAPAS.filter(e => e.value !== lead.etapa && e.value !== "archivado" && e.value !== "frio").slice(0, 2).map(e => (
                         <button key={e.value}
                           onClick={() => cambiarEtapaMut.mutate({ id: lead.id, etapa: e.value })}
-                          className="px-2 py-1 border rounded-lg text-xs text-pine-600 hover:bg-khaki-100 whitespace-nowrap">
+                          className="inline-flex items-center justify-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold whitespace-nowrap border-pine-900/25 text-pine-900 hover:bg-khaki-100">
                           → {e.label}
                         </button>
                       ))
@@ -579,38 +578,38 @@ export default function CRMPage() {
 
       {/* ── RIGHT PANEL — detail ─────────────────────────────────────────── */}
       {selectedId && (
-        <div className="w-80 shrink-0 bg-white rounded-xl border shadow-sm self-start sticky top-6 overflow-y-auto max-h-[calc(100vh-6rem)]">
-          {loadingDetail && <p className="p-5 text-sm text-khaki-400">Cargando...</p>}
+        <div className="fixed xl:sticky top-0 xl:top-0 right-0 z-40 h-full xl:h-auto w-[340px] max-w-[92vw] shrink-0 bg-white xl:rounded-[12px] border-l xl:border border-pine-900/15 shadow-xl xl:shadow-[var(--shadow-card)] self-start overflow-y-auto xl:max-h-[calc(100vh-10rem)]">
+          {loadingDetail && <p className="p-5 text-[15px] text-ink-soft">Cargando...</p>}
 
           {detalle && (
             <>
               {/* Panel header */}
-              <div className="px-5 py-4 border-b flex items-start justify-between gap-2">
+              <div className="pl-5 pr-2 py-4 border-b border-pine-900/10 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h2 className="font-bold text-pine-900 text-base leading-tight">{detalle.nombre_alumno}</h2>
-                  <p className="text-xs text-pine-700 mt-0.5">{detalle.nombre_contacto}</p>
-                  <span className={`inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-full ${etapaInfo(detalle.etapa).color}`}>
+                  <h2 className="font-head text-[20px] leading-tight text-pine-900">{detalle.nombre_alumno}</h2>
+                  <p className="text-[14px] text-ink-soft mt-0.5">{detalle.nombre_contacto}</p>
+                  <span className={`inline-block mt-2 badge normal-case tracking-normal !text-[13px] ${etapaInfo(detalle.etapa).color}`}>
                     {etapaInfo(detalle.etapa).label}
                   </span>
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-1 items-center flex-shrink-0">
                   {detalle.etapa === "matriculado" && !detalle.alumno && canMatricular && (
                     <button onClick={() => openMatricular(detalle)}
-                      className="px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700">
+                      className="inline-flex items-center justify-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold whitespace-nowrap border-green-700 bg-green-700 text-white hover:bg-green-800">
                       Matricular
                     </button>
                   )}
                   <button onClick={() => openEdit(detalle)}
-                    className="px-2 py-1 border rounded-lg text-xs text-pine-600 hover:bg-khaki-100">
+                    className="inline-flex items-center justify-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold whitespace-nowrap border-pine-900/25 text-pine-900 hover:bg-khaki-100">
                     Editar
                   </button>
                   <button onClick={() => setSelectedId(null)}
-                    className="text-khaki-400 hover:text-pine-600 px-1 text-lg leading-none">✕</button>
+                    className="w-10 h-10 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
                 </div>
               </div>
 
               {/* Fields */}
-              <div className="px-5 py-4 space-y-2.5 text-sm border-b">
+              <div className="px-5 py-4 space-y-2.5 text-[15px] border-b border-pine-900/10">
                 {[
                   ["📞", detalle.telefono],
                   ["✉", detalle.email],
@@ -627,29 +626,29 @@ export default function CRMPage() {
                 ].filter(([, v]) => v).map(([icon, value]) => (
                   <div key={icon as string} className="flex gap-2">
                     <span className="flex-shrink-0">{icon as string}</span>
-                    <span className="text-pine-700 text-xs">{value as string}</span>
+                    <span className="text-ink text-[14px]">{value as string}</span>
                   </div>
                 ))}
               </div>
 
               {/* WhatsApp reply generator */}
-              <div className="px-5 py-4 border-b">
+              <div className="px-5 py-4 border-b border-pine-900/10">
                 <button
                   onClick={() => navigate("/whatsapp-respuestas", { state: { context: buildWhatsappContext(detalle) } })}
-                  className="w-full px-3 py-1.5 border rounded-lg text-xs font-medium text-pine-600 hover:bg-khaki-100">
-                  💬 Generar respuesta WhatsApp
+                  className="btn-ghost w-full">
+                  Generar respuesta WhatsApp
                 </button>
               </div>
 
               {/* Change stage */}
-              <div className="px-5 py-4 border-b">
-                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-2">Cambiar etapa</p>
+              <div className="px-5 py-4 border-b border-pine-900/10">
+                <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700 mb-2">Cambiar etapa</p>
                 <div className="flex flex-wrap gap-1.5">
                   {ETAPAS.filter(e => e.value !== detalle.etapa).map(e => (
                     <button key={e.value}
                       onClick={() => cambiarEtapaMut.mutate({ id: detalle.id, etapa: e.value })}
                       disabled={cambiarEtapaMut.isPending}
-                      className={`px-2 py-1 rounded-lg text-xs font-medium border hover:opacity-80 disabled:opacity-50 ${e.color}`}>
+                      className={`min-h-[40px] px-3 rounded-[10px] text-[14px] font-semibold border hover:opacity-80 disabled:opacity-50 ${e.color}`}>
                       {e.label}
                     </button>
                   ))}
@@ -657,22 +656,22 @@ export default function CRMPage() {
               </div>
 
               {/* Log interaction */}
-              <div className="px-5 py-4 border-b">
-                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-2">Registrar interacción</p>
-                {iError && <p className="text-xs text-red-600 mb-2">{iError}</p>}
+              <div className="px-5 py-4 border-b border-pine-900/10">
+                <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700 mb-2">Registrar interacción</p>
+                {iError && <p className="text-[14px] text-red-700 mb-2">{iError}</p>}
                 <div className="space-y-2">
                   <select value={iForm.tipo} onChange={e => setIForm(f => ({ ...f, tipo: e.target.value }))}
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brass-500">
+                    className="input">
                     {TIPOS_INTERACCION.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                   <textarea rows={2} placeholder="Resumen de la interacción…" value={iForm.resumen}
                     onChange={e => setIForm(f => ({ ...f, resumen: e.target.value }))}
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input !py-2.5 resize-none" />
                   <input type="text" placeholder="Próxima acción (opcional)" value={iForm.proxima_accion}
                     onChange={e => setIForm(f => ({ ...f, proxima_accion: e.target.value }))}
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input" />
                   <button onClick={handleLogInteraccion} disabled={interaccionMut.isPending}
-                    className="w-full px-3 py-1.5 bg-pine-900 text-white rounded-lg text-xs font-medium hover:bg-pine-700 disabled:opacity-50">
+                    className="w-full min-h-[44px] rounded-[10px] bg-pine-900 text-khaki-100 text-[15px] font-bold hover:bg-pine-800 disabled:opacity-50">
                     {interaccionMut.isPending ? "Guardando..." : "Registrar"}
                   </button>
                 </div>
@@ -680,22 +679,22 @@ export default function CRMPage() {
 
               {/* Interaction history */}
               {(detalle.interacciones ?? []).length > 0 && (
-                <div className="px-5 py-4 border-b">
-                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-2">Historial</p>
+                <div className="px-5 py-4 border-b border-pine-900/10">
+                  <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700 mb-2">Historial</p>
                   <div className="space-y-2">
                     {detalle.interacciones.map(i => (
-                      <div key={i.id} className="bg-khaki-100 rounded-lg p-2.5">
+                      <div key={i.id} className="bg-khaki-100 rounded-[10px] px-3 py-2.5">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-semibold text-pine-700">
+                          <span className="font-label text-[14px] font-semibold text-pine-900">
                             {TIPOS_INTERACCION.find(t => t.value === i.tipo)?.label ?? i.tipo}
                           </span>
-                          <span className="text-xs text-pine-600">
+                          <span className="text-[14px] text-ink-soft">
                             {new Date(i.fecha).toLocaleDateString("es-ES")}
                           </span>
                         </div>
-                        <p className="text-xs text-pine-600">{i.resumen}</p>
+                        <p className="text-[14px] text-ink-soft">{i.resumen}</p>
                         {i.proxima_accion && (
-                          <p className="text-xs text-brass-700 mt-1">→ {i.proxima_accion}</p>
+                          <p className="text-[14px] text-brass-700 mt-1">→ {i.proxima_accion}</p>
                         )}
                       </div>
                     ))}
@@ -707,20 +706,20 @@ export default function CRMPage() {
               <div className="px-5 py-4">
                 {!confirmDeletePanel ? (
                   <button onClick={() => setConfirmDeletePanel(true)}
-                    className="w-full px-3 py-1.5 border border-red-200 text-red-600 rounded-lg text-xs hover:bg-red-50">
+                    className="w-full min-h-[44px] rounded-[10px] border border-red-200 text-red-700 text-[15px] font-semibold hover:bg-red-50">
                     Eliminar lead
                   </button>
                 ) : (
-                  <div className="border border-red-200 rounded-lg p-3 bg-red-50">
-                    <p className="text-xs text-red-700 mb-2 font-medium">¿Eliminar este lead? No se puede deshacer.</p>
-                    {deleteError && <p className="text-xs text-red-700 mb-2">{deleteError}</p>}
+                  <div className="border border-red-200 rounded-[10px] p-3 bg-red-50">
+                    <p className="text-[14px] text-red-700 mb-2 font-semibold">¿Eliminar este lead? No se puede deshacer.</p>
+                    {deleteError && <p className="text-[14px] text-red-700 mb-2">{deleteError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setConfirmDeletePanel(false); setDeleteError("") }}
-                        className="flex-1 px-2 py-1.5 border rounded-lg text-xs text-pine-600 bg-white hover:bg-khaki-100">
+                        className="btn-ghost flex-1 !bg-white">
                         Cancelar
                       </button>
                       <button onClick={() => deleteMut.mutate(detalle.id)} disabled={deleteMut.isPending}
-                        className="flex-1 px-2 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50">
+                        className="flex-1 min-h-[44px] rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                         {deleteMut.isPending ? "..." : "Eliminar"}
                       </button>
                     </div>
@@ -734,57 +733,57 @@ export default function CRMPage() {
 
       {/* ── MODAL — create / edit ─────────────────────────────────────────── */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+        <div className="modal-overlay"
           {...modalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-pine-900">
+            <div className="pl-6 pr-3 py-3 border-b border-pine-900/10 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">
                 {editingId ? "Editar consulta" : "Nueva consulta"}
               </h2>
-              <button onClick={closeModal} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+              <button onClick={closeModal} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
 
             {/* Body */}
             <div className="p-6 overflow-y-auto space-y-4">
               {formError && (
-                <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{formError}</p>
+                <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{formError}</p>
               )}
 
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Datos rápidos</p>
+                <p className="font-label text-[14px] font-semibold uppercase tracking-[0.12em] text-brass-700 mb-3">Datos rápidos</p>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">
+                    <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
                       {form.es_adulto ? "Nombre contacto (opcional)" : "Nombre padre/madre *"}
                     </label>
                     <input value={form.nombre_contacto} placeholder="Ana García"
                       onChange={e => setForm(p => ({ ...p, nombre_contacto: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      className="input" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Nombre del alumno *</label>
+                    <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Nombre del alumno *</label>
                     <input value={form.nombre_alumno} placeholder="Carlos García"
                       onChange={e => setForm(p => ({ ...p, nombre_alumno: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      className="input" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Teléfono</label>
+                    <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Teléfono</label>
                     <input value={form.telefono} placeholder="666 123 456"
                       onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))}
-                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                      className={`input ${
                         form.telefono.trim() && !isValidSpanishPhone(form.telefono)
-                          ? "border-red-300 focus:ring-red-400"
-                          : "focus:ring-brass-500"
+                          ? "!border-red-400"
+                          : ""
                       }`} />
                     {form.telefono.trim() && !isValidSpanishPhone(form.telefono) && (
-                      <p className="text-xs text-red-600 mt-1">Debe tener 9 dígitos y empezar por 6, 7 o 9.</p>
+                      <p className="text-[14px] text-red-700 mt-1">Debe tener 9 dígitos y empezar por 6, 7 o 9.</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">¿Cómo contactó?</label>
+                    <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">¿Cómo contactó?</label>
                     <select value={form.origen} onChange={e => setForm(p => ({ ...p, origen: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                      className="input">
                       {ORIGENES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
@@ -795,17 +794,17 @@ export default function CRMPage() {
                           const checked = e.target.checked
                           setForm(p => ({ ...p, es_adulto: checked, pagador_es_alumno: checked ? p.pagador_es_alumno : false }))
                         }}
-                        className="w-4 h-4 rounded border-khaki-300 focus:ring-2 focus:ring-brass-500" />
+                        className="w-5 h-5 accent-pine-900" />
                       El alumno es adulto / paga el mismo
                     </label>
                   </div>
                   {form.es_adulto && (
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Pagador</label>
+                      <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Pagador</label>
                       <select
                         value={form.pagador_es_alumno ? "mismo" : "otro"}
                         onChange={e => setForm(p => ({ ...p, pagador_es_alumno: e.target.value === "mismo" }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                        className="input">
                         <option value="mismo">El mismo alumno es el pagador</option>
                         <option value="otro">Otro pagador</option>
                       </select>
@@ -816,30 +815,30 @@ export default function CRMPage() {
 
               <section>
                 <button type="button" onClick={() => setShowOptional(v => !v)}
-                  className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-pine-600 mb-3 hover:text-pine-900">
+                  className="flex items-center gap-1.5 min-h-[44px] font-label text-[14px] font-semibold uppercase tracking-[0.12em] text-brass-700 mb-1 hover:text-pine-900">
                   <span className="text-[11px]">{showOptional ? "▾" : "▸"}</span> Más detalles (opcional)
                 </button>
                 {showOptional && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Objetivo</label>
+                      <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Objetivo</label>
                       <select value={form.objetivo} onChange={e => setForm(p => ({ ...p, objetivo: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                        className="input">
                         {OBJETIVOS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-pine-700 mb-1">Edad alumno</label>
+                        <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Edad alumno</label>
                         <input type="number" placeholder="12" value={form.edad_alumno}
                           onChange={e => setForm(p => ({ ...p, edad_alumno: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                          className="input" />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-pine-700 mb-1">Curso escolar</label>
+                        <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Curso escolar</label>
                         <input placeholder="1º ESO" value={form.curso_escolar}
                           onChange={e => setForm(p => ({ ...p, curso_escolar: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                          className="input" />
                       </div>
                     </div>
                     {[
@@ -850,23 +849,23 @@ export default function CRMPage() {
                       { key: "necesidades_especiales", label: "Necesidades especiales", placeholder: "TDAH, dislexia…" },
                     ].map(f => (
                       <div key={f.key}>
-                        <label className="block text-xs font-semibold text-pine-700 mb-1">{f.label}</label>
+                        <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">{f.label}</label>
                         <input value={form[f.key as keyof LeadForm] as string} placeholder={f.placeholder}
                           onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                          className="input" />
                       </div>
                     ))}
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Próximo seguimiento</label>
+                      <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Próximo seguimiento</label>
                       <input type="date" value={form.proximo_seguimiento}
                         onChange={e => setForm(p => ({ ...p, proximo_seguimiento: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                        className="input" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
+                      <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Notas</label>
                       <textarea rows={3} placeholder="Cualquier detalle relevante…" value={form.notas}
                         onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none" />
+                        className="input !py-2.5 resize-none" />
                     </div>
                   </div>
                 )}
@@ -874,13 +873,13 @@ export default function CRMPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t flex gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-pine-900/10 flex gap-3 flex-shrink-0">
               <button onClick={closeModal}
-                className="flex-1 px-4 py-2 border rounded-lg text-sm text-pine-600 hover:bg-khaki-100">
+                className="btn-ghost flex-1">
                 Cancelar
               </button>
               <button onClick={handleSubmit} disabled={saveMut.isPending}
-                className="flex-1 px-4 py-2 bg-pine-900 text-white rounded-lg text-sm font-medium hover:bg-pine-700 disabled:opacity-50">
+                className="flex-1 min-h-[44px] rounded-[10px] bg-pine-900 text-khaki-100 text-[15px] font-bold hover:bg-pine-800 disabled:opacity-50">
                 {saveMut.isPending ? "Guardando..." : editingId ? "Guardar cambios" : "Crear consulta"}
               </button>
             </div>
@@ -890,27 +889,27 @@ export default function CRMPage() {
 
       {/* ── MODAL — matricular (convertir a alumno) ───────────────────────── */}
       {matricularLead && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+        <div className="modal-overlay"
           {...matricularOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
-            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-pine-900">Matricular a {matricularLead.nombre_alumno}</h2>
-              <button onClick={closeMatricular} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+            <div className="pl-6 pr-3 py-3 border-b border-pine-900/10 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">Matricular a {matricularLead.nombre_alumno}</h2>
+              <button onClick={closeMatricular} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4">
               {mError && (
-                <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{mError}</p>
+                <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{mError}</p>
               )}
               {matricularLead.es_adulto && matricularLead.pagador_es_alumno && (
-                <p className="text-xs text-brass-700 bg-khaki-100 border border-khaki-300 p-3 rounded-lg">
+                <p className="text-[14px] text-brass-700 bg-khaki-100 border border-pine-900/10 px-4 py-3 rounded-[10px]">
                   El pagador se creará automáticamente con los datos del alumno.
                 </p>
               )}
               <div>
-                <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
+                <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Grupo</label>
                 <select value={mForm.grupo_id} onChange={e => onGrupoChange(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                  className="input">
                   <option value="">Selecciona un grupo…</option>
                   {grupos.map(g => (
                     <option key={g.id} value={g.id}>{grupoLabel(g)} — {Number(g.tarifa).toFixed(2)}€</option>
@@ -918,26 +917,26 @@ export default function CRMPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-pine-700 mb-1">Mensualidad (€)</label>
+                <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Mensualidad (€)</label>
                 <input type="number" value={mForm.mensualidad}
                   onChange={e => setMForm(f => ({ ...f, mensualidad: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                  className="input" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-pine-700 mb-1">Fecha de inicio</label>
+                <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Fecha de inicio</label>
                 <input type="date" value={mForm.fecha_inicio}
                   onChange={e => setMForm(f => ({ ...f, fecha_inicio: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                  className="input" />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t flex gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-pine-900/10 flex gap-3 flex-shrink-0">
               <button onClick={closeMatricular}
-                className="flex-1 px-4 py-2 border rounded-lg text-sm text-pine-600 hover:bg-khaki-100">
+                className="btn-ghost flex-1">
                 Cancelar
               </button>
               <button onClick={handleMatricular} disabled={matricularMut.isPending}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+                className="flex-1 min-h-[44px] rounded-[10px] bg-green-700 text-white text-[15px] font-bold hover:bg-green-800 disabled:opacity-50">
                 {matricularMut.isPending ? "Matriculando..." : "Matricular"}
               </button>
             </div>
@@ -947,35 +946,35 @@ export default function CRMPage() {
 
       {/* ── MODAL — matricula confirmada ──────────────────────────────────── */}
       {matriculaResult && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+        <div className="modal-overlay"
           {...matriculaResultOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
-            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-pine-900">¡Matrícula completada!</h2>
-              <button onClick={() => setMatriculaResult(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+            <div className="pl-6 pr-3 py-3 border-b border-pine-900/10 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">¡Matrícula completada!</h2>
+              <button onClick={() => setMatriculaResult(null)} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
             <div className="p-6 space-y-3">
-              <p className="text-sm text-pine-700">
+              <p className="text-[15px] text-ink-soft">
                 Alumno creado: <span className="font-semibold">{matriculaResult.alumno_nombre}</span>
               </p>
-              <p className="text-sm text-pine-700">
+              <p className="text-[15px] text-ink-soft">
                 Pagador: <span className="font-semibold">
                   {matriculaResult.pagador_nombre ?? "se añadirá en la ficha del alumno"}
                 </span>
               </p>
               {matriculaResult.pagador_autocompletado && (
-                <p className="text-xs text-brass-700 bg-khaki-100 border border-khaki-300 p-3 rounded-lg">
+                <p className="text-[14px] text-brass-700 bg-khaki-100 border border-pine-900/10 px-4 py-3 rounded-[10px]">
                   Pagador creado automáticamente con los datos del alumno.
                 </p>
               )}
             </div>
-            <div className="px-6 py-4 border-t flex gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-pine-900/10 flex gap-3 flex-shrink-0">
               <button onClick={() => setMatriculaResult(null)}
-                className="flex-1 px-4 py-2 border rounded-lg text-sm text-pine-600 hover:bg-khaki-100">
+                className="btn-ghost flex-1">
                 Cerrar
               </button>
               <button onClick={() => navigate(`/alumnos/${matriculaResult.alumno_id}`)}
-                className="flex-1 px-4 py-2 bg-pine-900 text-white rounded-lg text-sm font-medium hover:bg-pine-700">
+                className="flex-1 min-h-[44px] rounded-[10px] bg-pine-900 text-khaki-100 text-[15px] font-bold hover:bg-pine-800">
                 Ver perfil del alumno
               </button>
             </div>
@@ -985,36 +984,36 @@ export default function CRMPage() {
 
       {/* ── MODAL — decidir qué hacer con un lead recién creado ───────────── */}
       {postCreateLead && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+        <div className="modal-overlay"
           {...postCreateLeadOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="px-6 py-4 border-b">
-              <h2 className="text-lg font-bold text-pine-900">{postCreateLead.nombre_alumno}</h2>
-              <p className="text-xs text-pine-600 mt-0.5">Contacto guardado. ¿Qué hacemos?</p>
+            <div className="px-6 py-4 border-b border-pine-900/10">
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">{postCreateLead.nombre_alumno}</h2>
+              <p className="text-[14px] text-ink-soft mt-0.5">Contacto guardado. ¿Qué hacemos?</p>
             </div>
             <div className="p-6 grid grid-cols-2 gap-2">
               {canMatricular && (
                 <button onClick={() => decidirNuevoLead("matricular")}
-                  className="px-3 py-3 border rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 flex flex-col items-center gap-1">
+                  className="min-h-[72px] px-3 py-3 border rounded-[12px] text-[15px] font-semibold text-green-800 hover:bg-green-50 flex flex-col items-center justify-center gap-1">
                   <span className="text-lg">🎓</span> Matricular
                 </button>
               )}
               <button onClick={() => decidirNuevoLead("esperar")}
-                className="px-3 py-3 border rounded-lg text-sm font-medium text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1">
+                className="min-h-[72px] px-3 py-3 border rounded-[12px] text-[15px] font-semibold text-yellow-800 hover:bg-yellow-50 flex flex-col items-center justify-center gap-1">
                 <span className="text-lg">⏳</span> Esperar
               </button>
               <button onClick={() => decidirNuevoLead("contactar")}
-                className="px-3 py-3 border rounded-lg text-sm font-medium text-purple-700 hover:bg-purple-50 flex flex-col items-center gap-1">
+                className="min-h-[72px] px-3 py-3 border rounded-[12px] text-[15px] font-semibold text-purple-800 hover:bg-purple-50 flex flex-col items-center justify-center gap-1">
                 <span className="text-lg">💬</span> Contactar
               </button>
               <button onClick={() => decidirNuevoLead("guardar")}
-                className="px-3 py-3 border rounded-lg text-sm font-medium text-pine-600 hover:bg-khaki-100 flex flex-col items-center gap-1">
+                className="min-h-[72px] px-3 py-3 border rounded-[12px] text-[15px] font-semibold text-pine-900 hover:bg-khaki-100 flex flex-col items-center justify-center gap-1">
                 <span className="text-lg">🗄</span> Guardar
               </button>
             </div>
             <div className="px-6 pb-5">
               <button onClick={() => setPostCreateLead(null)}
-                className="w-full text-xs text-pine-500 hover:text-pine-700 underline">
+                className="w-full min-h-[40px] text-[14px] text-ink-soft hover:text-pine-900 underline">
                 Decidir más tarde
               </button>
             </div>
