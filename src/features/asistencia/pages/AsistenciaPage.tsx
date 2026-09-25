@@ -113,22 +113,21 @@ function DiaTab() {
     <div>
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <button onClick={() => setFecha(today)}
-          className="px-3 py-1.5 rounded-lg border border-khaki-300 text-sm font-medium text-pine-700 hover:bg-khaki-100">
+          className="btn-ghost">
           Hoy
         </button>
         <button onClick={() => shiftDay(-1)} aria-label="Día anterior"
-          className="w-8 h-8 rounded-lg border border-khaki-300 text-pine-700 hover:bg-khaki-100">‹</button>
-        <span className="font-head font-normal text-lg text-pine-900 min-w-[220px] text-center capitalize">
+          className="w-11 h-11 flex items-center justify-center rounded-[10px] border border-pine-900/20 bg-white text-pine-900 hover:bg-khaki-100 text-[20px] leading-none">‹</button>
+        <span className="font-head text-[22px] text-pine-900 min-w-[240px] text-center first-letter:uppercase">
           {new Date(fecha + "T00:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
         </span>
         <button onClick={() => shiftDay(1)} aria-label="Día siguiente"
-          className="w-8 h-8 rounded-lg border border-khaki-300 text-pine-700 hover:bg-khaki-100">›</button>
+          className="w-11 h-11 flex items-center justify-center rounded-[10px] border border-pine-900/20 bg-white text-pine-900 hover:bg-khaki-100 text-[20px] leading-none">›</button>
       </div>
 
       {clasesHoy.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
-          <span className="text-5xl mb-3">📋</span>
-          <p className="text-sm">Sin clases programadas este día.</p>
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+          <p className="text-[15px]">Sin clases programadas este día.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -137,71 +136,71 @@ function DiaTab() {
             const activa = isToday && nowStr >= horario.ini && nowStr < horario.fin
             return (
               <div key={`${grupo.id}-${i}`}
-                className={`bg-white rounded-xl border overflow-hidden ${activa ? "border-brass-500 ring-2 ring-brass-200" : "border-khaki-300"}`}>
-                <div className="px-4 py-3 border-b bg-khaki-50">
-                  <p className="font-head font-normal text-base text-pine-900 flex items-center gap-2 flex-wrap">
+                className={`bg-white rounded-[12px] border overflow-hidden shadow-[var(--shadow-card)] ${activa ? "border-brass-500 ring-2 ring-brass-500/40" : "border-pine-900/15"}`}>
+                <div className={`px-4 py-3 border-b border-pine-900/10 ${activa ? "bg-pine-900" : "bg-khaki-100"}`}>
+                  <p className={`font-head text-[18px] flex items-center gap-2 flex-wrap ${activa ? "text-khaki-100" : "text-pine-900"}`}>
                     {grupo.nombre}
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    <span className="font-label text-[12px] font-bold px-2 py-0.5 rounded"
                       style={{ background: BRAND_META[grupo.marca].bg, color: BRAND_META[grupo.marca].text }}>
                       {BRAND_META[grupo.marca].tag}
                     </span>
-                    {activa && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-brass-500 text-white">AHORA</span>}
+                    {activa && <span className="font-label text-[12px] font-bold px-2 py-0.5 rounded bg-brass-500 text-pine-900">AHORA</span>}
                   </p>
-                  <p className="text-xs text-pine-600 mt-0.5">
+                  <p className={`font-label text-[14px] font-medium mt-0.5 ${activa ? "text-khaki-100/80" : "text-ink-soft"}`}>
                     {grupo.profesor_nombre ? `Prof. ${grupo.profesor_nombre} · ` : ""}{horario.ini}–{horario.fin}
                   </p>
                 </div>
                 <div className="p-3 space-y-2">
                   {roster.length === 0 ? (
-                    <p className="text-xs text-pine-500 italic px-1">Sin alumnos en esta clase.</p>
+                    <p className="text-[14px] text-ink-soft italic px-1">Sin alumnos en esta clase.</p>
                   ) : roster.map(a => {
                     const reg = registroFor(grupo.id, a.id)
                     const key = `${grupo.id}-${a.id}`
                     const notaAbierta = notaOpenFor === key
                     const esEspecial = !!reg && reg.estado !== "present" && reg.estado !== "absent"
                     return (
-                      <div key={a.id} className="bg-khaki-100 rounded-lg px-3 py-2">
-                        <div className="flex items-center justify-between text-sm">
+                      <div key={a.id} className="bg-khaki-100 rounded-[10px] px-3 py-2">
+                        <div className="flex items-center justify-between gap-2 text-[15px] font-semibold text-ink">
                           <span className="flex items-center gap-2 min-w-0">
-                            <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                            <span className="w-8 h-8 rounded-full bg-pine-900 text-khaki-100 text-[12px] font-bold flex items-center justify-center flex-shrink-0">
                               {initials(a.nombre)}
                             </span>
                             <span className="truncate">{a.nombre}</span>
                           </span>
-                          <span className="flex items-center gap-1 flex-shrink-0">
+                          <span className="flex items-center gap-1.5 flex-shrink-0">
                             <button onClick={() => marcarRapido(grupo.id, a.id, "present")} title="Presente"
-                              className={`w-7 h-7 rounded-full text-xs font-bold ${reg?.estado === "present" ? "bg-green-500 text-white" : "bg-white border border-khaki-300 text-pine-600 hover:bg-green-100"}`}>
+                              className={`w-11 h-11 rounded-full text-[17px] font-bold ${reg?.estado === "present" ? "bg-green-600 text-white" : "bg-white border border-pine-900/20 text-pine-700 hover:bg-green-100"}`}>
                               ✓
                             </button>
                             <button onClick={() => marcarRapido(grupo.id, a.id, "absent")} title="Ausente"
-                              className={`w-7 h-7 rounded-full text-xs font-bold ${reg?.estado === "absent" ? "bg-red-500 text-white" : "bg-white border border-khaki-300 text-pine-600 hover:bg-red-100"}`}>
+                              className={`w-11 h-11 rounded-full text-[17px] font-bold ${reg?.estado === "absent" ? "bg-red-600 text-white" : "bg-white border border-pine-900/20 text-pine-700 hover:bg-red-100"}`}>
                               ✗
                             </button>
                             <button onClick={() => abrirNota(grupo.id, a.id)} title="Caso especial / comentario"
-                              className={`w-7 h-7 rounded-full text-xs font-bold ${esEspecial ? "bg-amber-500 text-white" : "bg-white border border-khaki-300 text-pine-600 hover:bg-amber-100"}`}>
+                              className={`w-11 h-11 rounded-full text-[17px] font-bold ${esEspecial ? "bg-amber-500 text-white" : "bg-white border border-pine-900/20 text-pine-700 hover:bg-amber-100"}`}>
                               ?
                             </button>
                           </span>
                         </div>
                         {esEspecial && !notaAbierta && (
-                          <p className="text-[11px] text-pine-600 mt-1 pl-7">
+                          <p className="text-[14px] text-ink-soft mt-1 pl-10">
                             {ESTADO_LABELS[reg!.estado]}{reg!.nota ? ` — ${reg!.nota}` : ""}
                           </p>
                         )}
                         {notaAbierta && (
-                          <div className="mt-2 pl-7 space-y-1.5">
+                          <div className="mt-2 pl-10 space-y-2">
                             <select value={notaDraft.estado}
                               onChange={e => setNotaDraft(prev => ({ ...prev, estado: e.target.value as "makeup" | "guest" | "other" }))}
-                              className="text-xs border border-khaki-300 rounded px-2 py-1 w-full">
+                              className="input">
                               {OTRO_OPCIONES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <textarea value={notaDraft.nota} placeholder="Comentario (opcional)..." rows={2}
                               onChange={e => setNotaDraft(prev => ({ ...prev, nota: e.target.value }))}
-                              className="text-xs border border-khaki-300 rounded px-2 py-1 w-full resize-none" />
+                              className="input !py-2.5 resize-none" />
                             <div className="flex justify-end gap-2">
-                              <button onClick={() => setNotaOpenFor(null)} className="text-[11px] text-pine-600 px-2 py-1">Cancelar</button>
+                              <button onClick={() => setNotaOpenFor(null)} className="btn-ghost !min-h-[40px] !text-[14px]">Cancelar</button>
                               <button onClick={() => guardarNota(grupo.id, a.id)} disabled={marcarMut.isPending}
-                                className="text-[11px] font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded px-2 py-1 disabled:opacity-50">
+                                className="btn-primary !min-h-[40px] !text-[14px] disabled:opacity-50">
                                 Guardar
                               </button>
                             </div>
@@ -277,51 +276,51 @@ function HistorialTab() {
     <div>
       <div className="flex gap-3 mb-6 flex-wrap items-end">
         <div>
-          <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
+          <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Grupo</label>
           <select value={grupoId} onChange={e => { setGrupoId(+e.target.value); setShowForm(false) }}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+            className="input !w-auto">
             <option value="">Seleccionar grupo...</option>
             {grupos.map(g => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-pine-700 mb-1">Fecha</label>
+          <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Fecha</label>
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+            className="input !w-auto" />
         </div>
         {grupoId && !showForm && (
-          <button onClick={startNewSession} className="bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700">
+          <button onClick={startNewSession} className="btn-primary">
             + Pasar lista
           </button>
         )}
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <h2 className="font-semibold text-pine-900 mb-4">Pasar lista — {fecha}</h2>
-          {!grupoAlumnos.length && <p className="text-pine-600 text-sm">No hay alumnos en este grupo.</p>}
+        <div className="card !bg-white p-6 mb-6">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900 mb-4">Pasar lista — {fecha}</h2>
+          {!grupoAlumnos.length && <p className="text-ink-soft text-[15px]">No hay alumnos en este grupo.</p>}
           <div className="space-y-2">
             {registros.map((r, idx) => {
               const alumno = allAlumnos.find(a => a.id === r.alumno)
               return (
                 <div key={r.alumno} className="flex items-center gap-3 flex-wrap">
-                  <span className="font-medium text-sm w-48">{alumno?.nombre}</span>
+                  <span className="font-semibold text-[15px] text-ink w-48">{alumno?.nombre}</span>
                   <button onClick={() => toggleEstado(idx)}
-                    className={`text-xs font-semibold px-3 py-1 rounded-full min-w-[120px] text-center ${ESTADO_COLORS[r.estado]}`}>
+                    className={`min-h-[40px] px-4 rounded-full min-w-[140px] text-center font-label text-[14px] font-semibold ${ESTADO_COLORS[r.estado]}`}>
                     {ESTADO_LABELS[r.estado]}
                   </button>
                   <input type="text" placeholder="Nota..." value={r.nota}
                     onChange={e => { const n = [...registros]; n[idx] = { ...n[idx], nota: e.target.value }; setRegistros(n) }}
-                    className="border rounded px-2 py-1 text-xs flex-1 min-w-[150px]" />
+                    className="input !w-auto flex-1 min-w-[150px]" />
                 </div>
               )
             })}
           </div>
-          {saveError && <p className="text-red-600 text-xs mt-3">{saveError}</p>}
+          {saveError && <p className="text-red-700 text-[14px] mt-3">{saveError}</p>}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => { setShowForm(false); setSaveError("") }} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm">Cancelar</button>
+            <button onClick={() => { setShowForm(false); setSaveError("") }} className="btn-ghost">Cancelar</button>
             <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
-              className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+              className="btn-primary disabled:opacity-50">
               {saveMut.isPending ? "Guardando..." : "Guardar asistencia"}
             </button>
           </div>
@@ -330,18 +329,18 @@ function HistorialTab() {
 
       {grupoId && !showForm && (
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h2 className="font-semibold text-pine-900">
+          <div className="px-6 py-4 border-b border-pine-900/10">
+            <h2 className="font-head text-[20px] leading-tight text-pine-900">
               Historial — {(() => { const g = grupos.find(g => g.id === grupoId); return g ? grupoLabel(g) : "" })()}
             </h2>
           </div>
-          {!sesiones.length && <p className="p-6 text-pine-600 text-sm">Sin sesiones este mes.</p>}
+          {!sesiones.length && <p className="p-6 text-ink-soft text-[15px]">Sin sesiones este mes.</p>}
           {sesiones.map(s => (
-            <div key={s.id} className="border-b last:border-b-0 px-6 py-3">
-              <p className="text-sm font-semibold text-pine-700">{s.fecha} {s.hora && `— ${s.hora}`}</p>
+            <div key={s.id} className="border-b border-pine-900/10 last:border-b-0 px-6 py-3.5">
+              <p className="font-label text-[14px] font-semibold uppercase tracking-[0.08em] text-pine-700">{s.fecha} {s.hora && `— ${s.hora}`}</p>
               <div className="flex flex-wrap gap-2 mt-1">
                 {(s.registros ?? []).map(r => (
-                  <span key={r.id} className={`text-xs px-2 py-0.5 rounded-full ${ESTADO_COLORS[r.estado]}`}>
+                  <span key={r.id} className={`text-[13px] font-semibold px-2.5 py-1 rounded-full ${ESTADO_COLORS[r.estado]}`}>
                     {r.alumno_nombre}: {ESTADO_LABELS[r.estado]}
                   </span>
                 ))}
@@ -352,8 +351,8 @@ function HistorialTab() {
       )}
 
       {!grupoId && (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
-          <span className="text-5xl mb-3">📋</span><p className="text-sm">Selecciona un grupo para ver o registrar asistencia.</p>
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+          <p className="text-[15px]">Selecciona un grupo para ver o registrar asistencia.</p>
         </div>
       )}
     </div>
@@ -365,14 +364,14 @@ export default function AsistenciaPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Asistencia</h1>
-        <div className="flex gap-1 bg-khaki-100 rounded-lg p-1">
+        <h1 className="page-title">Asistencia</h1>
+        <div className="flex rounded-[10px] border border-pine-900/20 overflow-hidden">
           <button onClick={() => setTab("dia")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${tab === "dia" ? "bg-white shadow-sm text-pine-900" : "text-pine-600"}`}>
+            className={`min-h-[44px] px-5 font-label text-[15px] font-semibold ${tab === "dia" ? "bg-pine-900 text-khaki-100" : "bg-white text-pine-700 hover:bg-khaki-100"}`}>
             Hoy
           </button>
           <button onClick={() => setTab("historial")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${tab === "historial" ? "bg-white shadow-sm text-pine-900" : "text-pine-600"}`}>
+            className={`min-h-[44px] px-5 border-l border-pine-900/20 font-label text-[15px] font-semibold ${tab === "historial" ? "bg-pine-900 text-khaki-100" : "bg-white text-pine-700 hover:bg-khaki-100"}`}>
             Historial
           </button>
         </div>
