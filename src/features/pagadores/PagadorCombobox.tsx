@@ -58,11 +58,11 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
           onFocus={() => { setQuery(selected?.nombre ?? ""); setOpen(true) }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Buscar o crear pagador..."
-          className={gold ? "input" : "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"}
+          className="input"
         />
         {selected && (
           <button type="button" onClick={clearSelection}
-            className={gold ? "btn-ghost" : "text-pine-600 hover:text-pine-600 text-sm flex-shrink-0"}
+            className={gold ? "btn-ghost" : "w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 flex-shrink-0"}
             style={gold ? { padding: "0.25rem 0.5rem", flexShrink: 0 } : undefined}>
             ✕
           </button>
@@ -71,7 +71,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
 
       {open && (
         <div
-          className={gold ? "card" : "absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-56 overflow-y-auto"}
+          className={gold ? "card" : "absolute z-10 mt-1 w-full bg-white border border-pine-900/15 rounded-[10px] shadow-lg max-h-64 overflow-y-auto"}
           style={gold ? { position: "absolute", zIndex: 10, marginTop: "0.25rem", width: "100%", maxHeight: "14rem", overflowY: "auto" } : undefined}
         >
           {matches.map(p => (
@@ -80,13 +80,13 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
               type="button"
               onMouseDown={e => e.preventDefault()}
               onClick={() => selectPagador(p)}
-              className={gold ? "combobox-option" : "w-full text-left px-3 py-2 text-sm hover:bg-khaki-100 text-pine-700"}
+              className={gold ? "combobox-option" : "w-full min-h-[44px] text-left px-3.5 text-[15px] hover:bg-khaki-100 text-ink"}
             >
               {p.nombre}{p.metodo ? ` · ${p.metodo}` : ""}
             </button>
           ))}
           {!matches.length && (
-            <p className={gold ? undefined : "px-3 py-2 text-xs text-pine-600"}
+            <p className={gold ? undefined : "px-3.5 py-3 text-[14px] text-ink-soft"}
               style={gold ? { padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--text-dim)" } : undefined}>
               Sin pagadores registrados.
             </p>
@@ -97,7 +97,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
               onMouseDown={e => e.preventDefault()}
               disabled={createMut.isPending}
               onClick={() => createMut.mutate(query.trim())}
-              className={gold ? "combobox-option" : "w-full text-left px-3 py-2 text-sm text-brass-700 hover:bg-khaki-100 border-t disabled:opacity-50"}
+              className={gold ? "combobox-option" : "w-full min-h-[44px] text-left px-3.5 text-[15px] font-semibold text-brass-700 hover:bg-khaki-100 border-t border-pine-900/10 disabled:opacity-50"}
               style={gold ? { color: "var(--gold)", borderTop: "1px solid var(--border-subtle)", opacity: createMut.isPending ? 0.5 : 1 } : undefined}
             >
               {createMut.isPending ? "Creando..." : `+ Crear pagador "${query.trim()}"`}
