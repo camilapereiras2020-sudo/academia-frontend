@@ -318,3 +318,55 @@ h1, h2, h3, label {
   padding: 1.5rem;
   animation: fadeUp 0.25s ease forwards;
 }
+
+/* Horario (FullCalendar time grid) — Station Desk skin, scoped to the
+   builder page's calendars so other FullCalendar views are untouched. */
+.fc-horario .fc {
+  --fc-border-color: rgba(63, 82, 66, 0.14);
+  --fc-page-bg-color: #FFFFFF;
+  --fc-neutral-bg-color: #F6F1E7;
+  --fc-today-bg-color: rgba(200, 164, 90, 0.10);
+  --fc-now-indicator-color: #C8A45A;
+  font-family: 'Barlow', system-ui, sans-serif;
+  background: #FFFFFF;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.fc-horario .fc-scrollgrid {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.fc-horario .fc-col-header-cell {
+  background: #EEF2EE;
+  padding: 0.5rem 0;
+}
+.fc-horario .fc-col-header-cell-cushion {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3F5242;
+  text-decoration: none;
+}
+.fc-horario .fc-timegrid-slot-label-cushion {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.fc-horario .fc-timegrid-slot {
+  height: 2.25rem;
+}
+.fc-horario .fc-timegrid-slot-minor {
+  border-top-style: dotted;
+}
+.fc-horario .fc-timegrid-event {
+  border-radius: 8px;
+  border-width: 0 0 0 4px;
+  box-shadow: 0 1px 2px rgba(63, 82, 66, 0.12);
+}
+.fc-horario .fc-timegrid-event .fc-event-main {
+  padding: 3px 4px;
+}
