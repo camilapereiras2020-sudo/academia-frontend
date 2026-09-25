@@ -28,6 +28,9 @@ const TIPO_CLS: Record<string, string> = {
 const TIPO_LABEL: Record<string, string> = {
   factura: "Facturas", recibo: "Recibos", recibo_efectivo: "Recibos (efectivo)",
 }
+const TIPO_LABEL_SINGULAR: Record<string, string> = {
+  factura: "Factura", recibo: "Recibo", recibo_efectivo: "Recibo (efectivo)",
+}
 
 export default function DocumentosPage() {
   const qc = useQueryClient()
@@ -180,7 +183,7 @@ export default function DocumentosPage() {
                     {d.num_doc || d.nombre}
                   </span>
                   <span className={`badge ${TIPO_CLS[d.tipo] ?? "bg-khaki-100 text-pine-700"}`}>
-                    {d.tipo}
+                    {TIPO_LABEL_SINGULAR[d.tipo] ?? d.tipo}
                   </span>
                   {d.estado === "anulada" && (
                     <span className="badge bg-red-100 text-red-800">
@@ -190,7 +193,7 @@ export default function DocumentosPage() {
                 </div>
                 <p className="text-[14px] text-ink mt-1 truncate">
                   {d.pago_info
-                    ? `${d.pago_info.alumno} · ${d.pago_info.pagador} · ${d.pago_info.periodo} · ${Number(d.pago_info.total).toFixed(2)} €`
+                    ? [d.pago_info.alumno, d.pago_info.pagador, d.pago_info.periodo, `${Number(d.pago_info.total).toFixed(2)} €`].filter(Boolean).join(" · ")
                     : null
                   }
                 </p>
