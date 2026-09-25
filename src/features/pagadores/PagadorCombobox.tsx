@@ -62,8 +62,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
         />
         {selected && (
           <button type="button" onClick={clearSelection}
-            className={gold ? "btn-ghost" : "w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 flex-shrink-0"}
-            style={gold ? { padding: "0.25rem 0.5rem", flexShrink: 0 } : undefined}>
+            className="w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 flex-shrink-0">
             ✕
           </button>
         )}

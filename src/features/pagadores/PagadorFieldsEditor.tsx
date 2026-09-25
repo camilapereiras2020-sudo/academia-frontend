@@ -23,10 +23,8 @@ interface Props {
 export default function PagadorFieldsEditor({ value, onChange, theme = "tailwind", onBlur }: Props) {
   const gold = theme === "gold"
   const inputCls = "input"
-  const labelCls = gold
-    ? undefined
-    : "block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1"
-  const labelStyle = gold ? { fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.35rem", display: "block" } : undefined
+  const labelCls = "block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1"
+  const labelStyle = undefined
 
   return (
     <div className={gold ? undefined : "grid grid-cols-1 sm:grid-cols-2 gap-3"}
