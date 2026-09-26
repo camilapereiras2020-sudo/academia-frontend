@@ -71,38 +71,37 @@ export default function FacturacionPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Facturación</h1>
-        <p className="text-sm text-pine-700 mt-1">Generá facturas o recibos para pagos ya cobrados.</p>
+        <h1 className="page-title">Facturación</h1>
+        <p className="page-subtitle">Generá facturas o recibos para pagos ya cobrados.</p>
       </div>
 
       {downloadError && (
-        <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{downloadError}</p>
+        <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{downloadError}</p>
       )}
       {actionError && (
-        <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{actionError}</p>
+        <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{actionError}</p>
       )}
 
-      {isLoading && <p className="text-khaki-400 text-sm py-4">Cargando...</p>}
+      {isLoading && <p className="text-ink-soft text-[15px] py-4">Cargando...</p>}
 
       {!isLoading && !pagos.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
-          <span className="text-4xl mb-3">🧾</span>
-          <p className="text-sm">Sin pagos cobrados todavía.</p>
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+          <p className="text-[15px]">Sin pagos cobrados todavía.</p>
         </div>
       )}
 
       {!!pendientes.length && (
-        <div className="bg-white rounded-xl shadow-sm border overflow-x-auto mb-6">
+        <div className="card !bg-white overflow-x-auto mb-6">
           <div className="px-4 py-3 border-b bg-khaki-100">
-            <span className="text-xs uppercase tracking-wide text-pine-700 font-semibold">
+            <span className="font-label text-[14px] uppercase tracking-[0.1em] text-pine-700 font-semibold">
               Pendientes de facturar ({pendientes.length})
             </span>
           </div>
-          <table className="w-full text-sm">
+          <table className="data-table">
             <thead className="bg-khaki-100 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Marca", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-pine-700 font-semibold whitespace-nowrap">
+                  <th key={h}>
                     {h}
                   </th>
                 ))}
@@ -111,17 +110,17 @@ export default function FacturacionPage() {
             <tbody className="divide-y divide-khaki-100">
               {pendientes.map(p => (
                 <tr key={p.id} className="hover:bg-khaki-100">
-                  <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{p.marca_display ?? "—"}</td>
+                  <td className="font-semibold">{p.alumno_nombre ?? "—"}</td>
+                  <td className="!text-ink-soft">{p.pagador_nombre ?? "—"}</td>
+                  <td className="!text-ink-soft">{formatMonth(p.periodo)}</td>
+                  <td className="!text-ink-soft">{p.marca_display ?? "—"}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => generarMut.mutate(p)}
                       disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
-                      className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50 whitespace-nowrap"
+                      className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-brass-500/50 text-[14px] font-semibold text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
                     >
-                      {generarMut.isPending && (generarMut.variables as Pago)?.id === p.id ? "Confirmando..." : "🧾 Confirmar factura"}
+                      {generarMut.isPending && (generarMut.variables as Pago)?.id === p.id ? "Confirmando..." : "Confirmar factura"}
                     </button>
                   </td>
                 </tr>
@@ -132,17 +131,17 @@ export default function FacturacionPage() {
       )}
 
       {!!listos.length && (
-        <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
+        <div className="card !bg-white overflow-x-auto">
           <div className="px-4 py-3 border-b bg-khaki-100">
-            <span className="text-xs uppercase tracking-wide text-pine-700 font-semibold">
+            <span className="font-label text-[14px] uppercase tracking-[0.1em] text-pine-700 font-semibold">
               Ya facturados ({listos.length})
             </span>
           </div>
-          <table className="w-full text-sm">
+          <table className="data-table">
             <thead className="bg-khaki-100 border-b">
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Doc", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-pine-700 font-semibold whitespace-nowrap">
+                  <th key={h}>
                     {h}
                   </th>
                 ))}
@@ -153,17 +152,17 @@ export default function FacturacionPage() {
                 const doc = docByPago.get(p.id)!
                 return (
                   <tr key={p.id} className="hover:bg-khaki-100">
-                    <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">{p.alumno_nombre ?? "—"}</td>
-                    <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                    <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                    <td className="px-4 py-3 text-xs text-pine-600 font-mono whitespace-nowrap">{doc.num_doc}</td>
+                    <td className="font-semibold">{p.alumno_nombre ?? "—"}</td>
+                    <td className="!text-ink-soft">{p.pagador_nombre ?? "—"}</td>
+                    <td className="!text-ink-soft">{formatMonth(p.periodo)}</td>
+                    <td className="font-mono !text-[13px] !text-ink-soft whitespace-nowrap">{doc.num_doc}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleDescargar(doc)}
                         disabled={downloadingId === doc.id}
-                        className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 font-medium disabled:opacity-50 whitespace-nowrap"
+                        className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-brass-500/50 text-[14px] font-semibold text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
                       >
-                        {downloadingId === doc.id ? "..." : "📥 Descargar"}
+                        {downloadingId === doc.id ? "..." : "Descargar"}
                       </button>
                     </td>
                   </tr>

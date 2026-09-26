@@ -18,29 +18,30 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-khaki-100">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm border-2 border-khaki-300">
-        <h1 className="font-serif font-light text-[2rem] leading-none tracking-[-0.01em] text-center text-pine-900 mb-6">Crear cuenta</h1>
-        {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded-lg">{error}</p>}
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm border border-pine-900/10 border-t-4 border-t-pine-900">
+        <img src="/logos/rangers-academy-logo.png" alt="Rangers Academy" className="w-16 h-16 object-contain mx-auto mb-3" />
+        <h1 className="font-head text-[28px] leading-tight text-center text-pine-900 mb-6">Crear cuenta</h1>
+        {error && <p className="text-red-700 text-[15px] mb-4 bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{error}</p>}
         <div className="space-y-3">
           {[
             { k: "academia_nombre", label: "Nombre academia", type: "text" },
             { k: "email", label: "Email", type: "email" },
             { k: "username", label: "Usuario", type: "text" },
-            { k: "password", label: "Contrasena", type: "password" },
+            { k: "password", label: "Contraseña", type: "password" },
             { k: "password2", label: "Confirmar contraseña", type: "password" },
           ].map(({ k, label, type }) => (
             <div key={k}>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-pine-700 mb-1">{label}</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">{label}</label>
               <input type={type} value={form[k as keyof typeof form]} onChange={setF(k)}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                className="input" />
             </div>
           ))}
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-            className="w-full bg-brass-500 text-pine-900 py-2 rounded-lg text-sm font-medium hover:bg-brass-700 hover:text-white disabled:opacity-50">
+            className="w-full h-12 rounded-[10px] bg-pine-900 text-khaki-100 text-[16px] font-bold hover:bg-pine-800 disabled:opacity-50">
             {mutation.isPending ? "Creando cuenta..." : "Crear cuenta"}
           </button>
-          <p className="text-center text-sm text-pine-700">
-            ¿Ya tienes cuenta? <Link to="/login" className="text-brass-700 underline">Iniciar sesión</Link>
+          <p className="text-center text-[15px] text-ink-soft">
+            ¿Ya tienes cuenta? <Link to="/login" className="text-brass-700 font-semibold underline">Iniciar sesión</Link>
           </p>
         </div>
       </div>

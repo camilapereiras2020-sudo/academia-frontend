@@ -67,31 +67,31 @@ export default function ProfesoresConfigSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4 mt-6">
+    <div className="card !bg-white p-6 space-y-4 mt-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-pine-600">Profesores</p>
-        <p className="text-xs text-pine-600 mt-1">
+        <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700">Profesores</p>
+        <p className="text-[14px] text-ink-soft mt-1">
           El listado de profesores disponible en Grupos, Horario y Calendario.
         </p>
       </div>
 
-      {error && <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{error}</p>}
+      {error && <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{error}</p>}
 
       {isLoading ? (
-        <p className="text-sm text-pine-600">Cargando…</p>
+        <p className="text-[15px] text-ink-soft">Cargando…</p>
       ) : (
         <div className="space-y-1">
           {profesores.map((p, idx) => (
             <div key={p.id}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${p.activo ? "bg-white" : "bg-khaki-100 opacity-60"}`}>
+              className={`flex items-center gap-2 min-h-[52px] px-3 py-1.5 rounded-[10px] border border-pine-900/15 text-[15px] ${p.activo ? "bg-white" : "bg-khaki-100 opacity-60"}`}>
               <div className="flex flex-col leading-none">
                 <button type="button" disabled={idx === 0} onClick={() => move(idx, -1)}
-                  className="text-khaki-400 hover:text-pine-700 disabled:opacity-30 text-xs" aria-label="Subir">▲</button>
+                  className="w-9 h-9 flex items-center justify-center rounded-[8px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 disabled:opacity-30 text-[13px]" aria-label="Subir">▲</button>
                 <button type="button" disabled={idx === profesores.length - 1} onClick={() => move(idx, 1)}
-                  className="text-khaki-400 hover:text-pine-700 disabled:opacity-30 text-xs" aria-label="Bajar">▼</button>
+                  className="w-9 h-9 flex items-center justify-center rounded-[8px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 disabled:opacity-30 text-[13px]" aria-label="Bajar">▼</button>
               </div>
               {editingId === p.id ? (
-                <input autoFocus className="flex-1 border rounded px-2 py-1 text-sm"
+                <input autoFocus className="input flex-1 !min-h-[40px]"
                   value={editingNombre}
                   onChange={e => setEditingNombre(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") saveEditing(); if (e.key === "Escape") setEditingId(null) }}
@@ -99,19 +99,19 @@ export default function ProfesoresConfigSection() {
               ) : (
                 <span className="flex-1">{p.nombre}</span>
               )}
-              {p.es_suplente && <span className="text-xs text-pine-600">(suplente)</span>}
-              {!p.activo && <span className="text-xs text-khaki-400">(inactivo)</span>}
+              {p.es_suplente && <span className="text-[14px] text-ink-soft">(suplente)</span>}
+              {!p.activo && <span className="text-[14px] text-ink-soft">(inactivo)</span>}
               {editingId !== p.id && (
-                <button type="button" className="text-xs text-pine-600 hover:text-pine-900"
+                <button type="button" className="min-h-[40px] px-2 rounded-[8px] font-label text-[14px] font-semibold text-pine-700 hover:bg-khaki-100 hover:text-pine-900"
                   onClick={() => startEditing(p)}>Renombrar</button>
               )}
-              <button type="button" className="text-xs text-pine-600 hover:text-red-600"
+              <button type="button" className="min-h-[40px] px-2 rounded-[8px] font-label text-[14px] font-semibold text-pine-700 hover:bg-red-50 hover:text-red-700"
                 onClick={() => toggleActivo(p)}>
                 {p.activo ? "Desactivar" : "Activar"}
               </button>
             </div>
           ))}
-          {!profesores.length && <p className="text-xs text-khaki-400">Sin profesores.</p>}
+          {!profesores.length && <p className="text-[14px] text-ink-soft">Sin profesores.</p>}
         </div>
       )}
 
@@ -120,14 +120,14 @@ export default function ProfesoresConfigSection() {
           value={nuevoNombre}
           onChange={e => setNuevoNombre(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") addProfesor() }}
-          className="flex-1 min-w-[160px] border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-        <label className="flex items-center gap-1.5 text-xs text-pine-700">
-          <input type="checkbox" checked={nuevoSuplente} onChange={e => setNuevoSuplente(e.target.checked)} />
+          className="input flex-1 min-w-[160px]" />
+        <label className="flex items-center gap-2 min-h-[44px] text-[15px] text-pine-900">
+          <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={nuevoSuplente} onChange={e => setNuevoSuplente(e.target.checked)} />
           Suplente
         </label>
         <button type="button" onClick={addProfesor}
           disabled={!nuevoNombre.trim() || createMut.isPending}
-          className="px-3 py-1.5 rounded-lg bg-brass-500 text-white text-xs hover:bg-brass-700 disabled:opacity-50">
+          className="btn-primary disabled:opacity-50">
           Añadir
         </button>
       </div>

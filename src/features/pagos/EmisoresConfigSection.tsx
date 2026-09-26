@@ -46,9 +46,9 @@ function EmisorCard({ emisor }: { emisor: Emisor }) {
   const dirty = FIELDS.some(f => form[f.key] !== (emisor[f.key] ?? ""))
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
+    <div className="border border-pine-900/15 rounded-[12px] p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-pine-900">{emisor.nombre}</p>
+        <p className="text-[15px] font-semibold text-ink">{emisor.nombre}</p>
         <span className="text-[11px] font-bold uppercase tracking-wide text-pine-500 bg-khaki-100 px-2 py-0.5 rounded">
           Facturas {emisor.factura_prefix} · Recibos {emisor.recibo_prefix}
         </span>
@@ -56,23 +56,23 @@ function EmisorCard({ emisor }: { emisor: Emisor }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {FIELDS.map(f => (
           <div key={f.key} className={f.key === "direccion" ? "sm:col-span-2" : undefined}>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">{f.label}</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">{f.label}</label>
             <input
               type="text"
               value={form[f.key]}
               onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+              className="input"
             />
           </div>
         ))}
       </div>
       <div className="flex items-center justify-end gap-3 pt-1">
-        {saveState === "saved" && <span className="text-green-600 text-xs font-medium">✓ Guardado</span>}
-        {saveState === "error" && <span className="text-red-600 text-xs">Error al guardar.</span>}
+        {saveState === "saved" && <span className="font-label text-[14px] font-semibold text-green-700">✓ Guardado</span>}
+        {saveState === "error" && <span className="text-[14px] text-red-700">Error al guardar.</span>}
         <button
           onClick={() => { setSaveState("idle"); saveMut.mutate() }}
           disabled={!dirty || saveMut.isPending}
-          className="px-4 py-1.5 rounded-lg bg-brass-500 text-white text-xs font-medium hover:bg-brass-700 disabled:opacity-50">
+          className="btn-primary !min-h-[40px] !px-3 !text-[14px] disabled:opacity-50">
           {saveMut.isPending ? "Guardando..." : "Guardar cambios"}
         </button>
       </div>
@@ -97,16 +97,16 @@ export default function EmisoresConfigSection() {
   if (isError) return null
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+    <div className="card !bg-white p-6 space-y-4">
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-pine-600">Datos de facturación</p>
-        <p className="text-xs text-pine-600 mt-1">
+        <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700">Datos de facturación</p>
+        <p className="text-[14px] text-ink-soft mt-1">
           Un apartado por marca — cada una es una identidad fiscal distinta (NIF, dirección, numeración propia).
         </p>
       </div>
-      {isLoading && <p className="text-xs text-pine-600">Cargando…</p>}
+      {isLoading && <p className="text-[14px] text-ink-soft">Cargando…</p>}
       {!isLoading && !emisores.length && (
-        <p className="text-xs text-pine-600 italic">Sin emisores configurados todavía.</p>
+        <p className="text-[14px] text-ink-soft italic">Sin emisores configurados todavía.</p>
       )}
       {emisores.map(e => <EmisorCard key={e.id} emisor={e} />)}
     </div>
