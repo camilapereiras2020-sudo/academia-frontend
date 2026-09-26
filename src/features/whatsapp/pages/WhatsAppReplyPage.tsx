@@ -57,29 +57,29 @@ export default function WhatsAppReplyPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Respuestas WhatsApp</h1>
-          <p className="text-sm text-pine-700 mt-1">
+          <h1 className="page-title">Respuestas WhatsApp</h1>
+          <p className="page-subtitle">
             Generá un borrador de respuesta con el tono de Rangers Academy.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl border shadow-sm p-6 space-y-4">
+        <div className="card !bg-white p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Mensaje recibido
             </label>
             <textarea
               value={incoming}
               onChange={(e) => setIncoming(e.target.value)}
               placeholder="Pega el mensaje de WhatsApp aquí..."
-              className="w-full min-h-[120px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+              className="input !min-h-[120px] !py-2.5"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-2">
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-2">
               Situación
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -88,10 +88,10 @@ export default function WhatsAppReplyPage() {
                   key={s.value}
                   type="button"
                   onClick={() => setSituation(s.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  className={`min-h-[40px] px-4 rounded-full font-label text-[14px] font-semibold border transition-colors ${
                     situation === s.value
-                      ? "bg-brass-500 text-white border-brass-500"
-                      : "bg-white text-pine-600 border-khaki-300 hover:border-brass-500"
+                      ? "bg-pine-900 text-khaki-100 border-pine-900"
+                      : "bg-white text-pine-700 border-pine-900/20 hover:bg-khaki-100"
                   }`}
                 >
                   {s.label}
@@ -101,14 +101,14 @@ export default function WhatsAppReplyPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-pine-700 mb-1">
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Contexto adicional (opcional)
             </label>
             <textarea
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="Ej: horario disponible martes y jueves 11-12:30, es para B2..."
-              className="w-full min-h-[70px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+              className="input !min-h-[70px] !py-2.5"
             />
           </div>
 
@@ -116,32 +116,32 @@ export default function WhatsAppReplyPage() {
             type="button"
             onClick={handleGenerate}
             disabled={generarMut.isPending}
-            className="w-full px-4 py-2.5 rounded-lg bg-brass-500 text-white text-sm font-medium hover:bg-brass-700 disabled:opacity-50"
+            className="btn-primary w-full disabled:opacity-50"
           >
             {generarMut.isPending ? "Generando..." : "Generar respuesta"}
           </button>
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-red-700 text-[15px]">{error}</p>}
         </div>
 
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <label className="block text-xs font-semibold text-pine-700 mb-1">
+        <div className="card !bg-white p-6">
+          <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
             Respuesta sugerida
           </label>
           <textarea
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             placeholder="Aquí aparecerá la respuesta generada."
-            className="w-full min-h-[200px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+            className="input !min-h-[200px] !py-2.5"
           />
           <button
             type="button"
             onClick={handleCopy}
             disabled={!reply}
-            className={`mt-3 w-full px-4 py-2 rounded-lg border text-sm transition-colors ${
+            className={`mt-3 w-full min-h-[44px] px-4 rounded-[10px] border text-[15px] font-semibold transition-colors ${
               copied
-                ? "border-green-300 text-green-700 bg-green-50"
-                : "border-khaki-300 text-pine-600 hover:border-brass-500"
+                ? "border-green-300 text-green-800 bg-green-50"
+                : "border-pine-900/25 text-pine-900 hover:bg-khaki-100"
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {copied ? "Copiado" : "Copiar"}
