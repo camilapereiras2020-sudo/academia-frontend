@@ -174,7 +174,6 @@ export interface PagadorCalculoItem {
   dias_semana: number
   duracion_min: number
   precio: number
-  descuento_pct: number
 }
 
 export interface PagadorCalculo {

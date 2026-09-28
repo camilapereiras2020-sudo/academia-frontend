@@ -9,6 +9,7 @@ import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
 import type { Tarifa, Marca } from "@/types"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
+import { MATRICULA } from "@/features/tarifas/tarifa"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
 const MARCAS: { value: Marca; label: string }[] = [
@@ -24,14 +25,13 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
 
 interface ExtraLine { concepto: string; importe: number }
 
-// One-time enrollment fee — same figure as CalculadoraPage.tsx's MATRICULA
-// and modules/tarifas/pricing.py (kept in sync by hand across all three).
-const MATRICULA_FEE = 20
+// One-time enrollment fee, from the official tarifa (features/tarifas/tarifa.ts,
+// mirrored in academia-api modules/tarifas/pricing.py).
+const MATRICULA_FEE = MATRICULA
 const MATRICULA_CONCEPTO = "Matrícula"
-// Common amounts staff actually charge (full price down to waived) — for
-// siblings, returning students, etc. Always a judgment call, not an
-// automated rule — this just beats typing a number by hand every time.
-const MATRICULA_PRESETS = [0, 10, 20, 30, 40]
+// Tarifa: matrícula completa, 50 % o gratis. Any other amount is typed in the
+// number field next to these — always a judgment call, not an automated rule.
+const MATRICULA_PRESETS = [MATRICULA, MATRICULA / 2, 0]
 
 // The "why" for a non-standard amount lives inside the extra's own concepto
 // — "Matrícula — 3er hermano" — so it prints right on the invoice, exactly
