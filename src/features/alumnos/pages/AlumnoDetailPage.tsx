@@ -149,7 +149,7 @@ export default function AlumnoDetailPage() {
   const [imprimiendoTipo, setImprimiendoTipo] = useState<TipoConsentimiento | null>(null)
   const [imprimirError, setImprimirError] = useState("")
   const [generalForm, setGeneralForm] = useState({
-    nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false,
+    nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false, fnac: "", direccion: "",
     colegio_origen: "", idioma_nativo: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
     nivel: "", nivel_objetivo: "" as NivelObjetivo | "", examen_objetivo: "" as ExamenObjetivo | "", curso: "" as Curso | "",
   })
@@ -216,7 +216,7 @@ export default function AlumnoDetailPage() {
       ? { telefono: pagador.telefono, email: pagador.email, direccion: pagador.direccion, nif: pagador.nif }
       : emptyPagadorDraft())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagador?.id])
+  }, [pagador?.id, pagador?.direccion])
 
   function openSaludEditing() {
     if (salud) setSaludForm({ alergias: salud.alergias, condiciones_medicas: salud.condiciones_medicas, medicacion: salud.medicacion })
@@ -228,6 +228,7 @@ export default function AlumnoDetailPage() {
       setGeneralForm({
         nombre: alumno.nombre, telefono: alumno.telefono ?? "", email: alumno.email ?? "",
         dni: alumno.dni ?? "", notas: alumno.notas ?? "", es_adulto: alumno.es_adulto ?? false,
+        fnac: alumno.fnac ?? "", direccion: pagador?.direccion ?? "",
         colegio_origen: alumno.colegio_origen ?? "", idioma_nativo: alumno.idioma_nativo ?? "",
         contacto_emergencia_nombre: alumno.contacto_emergencia_nombre ?? "",
         contacto_emergencia_telefono: alumno.contacto_emergencia_telefono ?? "",
@@ -244,8 +245,9 @@ export default function AlumnoDetailPage() {
   })
 
   const generalMut = useMutation({
-    mutationFn: () => {
-      const payload: Record<string, unknown> = { ...generalForm }
+    mutationFn: async () => {
+      const { direccion, ...rest } = generalForm
+      const payload: Record<string, unknown> = { ...rest, fnac: rest.fnac || null }
       // Just switched from minor to adult self-pay: clear any existing payer
       // link so the backend auto-creates/links a fresh one from this alumno's
       // own (just-saved) contact data, instead of leaving a stale minor-payer
@@ -253,7 +255,15 @@ export default function AlumnoDetailPage() {
       if (generalForm.es_adulto && !alumno?.es_adulto) {
         payload.pagador = null
       }
-      return alumnosApi.update(alumnoId, payload)
+      const { data: guardado } = await alumnosApi.update(alumnoId, payload)
+      // La dirección vive en el Pagador (también el de un adulto que paga él
+      // mismo, que el backend crea/vincula al guardar) — por eso se guarda
+      // aparte, con el pagador que haya quedado vinculado tras el PATCH.
+      const pagadorId = guardado.pagador ?? null
+      if (pagadorId && direccion.trim() !== (pagador?.id === pagadorId ? pagador.direccion ?? "" : "")) {
+        await pagadoresApi.update(pagadorId, { direccion: direccion.trim() })
+      }
+      return guardado
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
@@ -573,6 +583,20 @@ export default function AlumnoDetailPage() {
               <TextInput label="Teléfono" value={generalForm.telefono} onChange={v => setGeneralForm(f => ({ ...f, telefono: v }))} />
               <TextInput label="Email" value={generalForm.email} onChange={v => setGeneralForm(f => ({ ...f, email: v }))} />
               <div>
+                <p className={LABEL_CLS}>Fecha de nacimiento</p>
+                <input type="date" className="input" value={generalForm.fnac}
+                  onChange={e => setGeneralForm(f => ({ ...f, fnac: e.target.value }))} />
+              </div>
+              <div>
+                <p className={LABEL_CLS}>Dirección</p>
+                <input type="text" className="input" value={generalForm.direccion}
+                  disabled={!pagador && !generalForm.es_adulto}
+                  onChange={e => setGeneralForm(f => ({ ...f, direccion: e.target.value }))} />
+                {!pagador && !generalForm.es_adulto && (
+                  <p className="text-[13px] text-ink-soft mt-1">Vincula primero un pagador: la dirección se guarda en él.</p>
+                )}
+              </div>
+              <div>
                 <TextInput label="Colegio de origen" value={generalForm.colegio_origen}
                   onChange={v => setGeneralForm(f => ({ ...f, colegio_origen: v }))} listId="colegios-sugeridos" />
                 <datalist id="colegios-sugeridos">
@@ -629,6 +653,9 @@ export default function AlumnoDetailPage() {
         <div className="grid-2col">
           <Field label="Contacto" value={[alumno.telefono, alumno.email].filter(Boolean).join(" · ") || "—"} />
           <Field label="DNI" value={alumno.dni || "—"} />
+          <Field label="Fecha de nacimiento"
+            value={alumno.fnac ? `${formatDate(alumno.fnac)}${yearsOld !== null ? ` · ${yearsOld} años` : ""}` : "—"} />
+          <Field label="Dirección" value={pagador?.direccion || "—"} />
           <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
           <Field label="Nivel actual" value={alumno.nivel || "—"} />
           <Field label="Nivel / examen objetivo"
