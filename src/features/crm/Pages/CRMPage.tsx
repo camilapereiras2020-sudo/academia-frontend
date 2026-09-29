@@ -110,49 +110,6 @@ function isSeguimientoVencido(lead: Lead): boolean {
   return lead.seguimiento_vencido && !ETAPAS_TERMINALES.includes(lead.etapa)
 }
 
-function buildWhatsappContext(lead: Lead): string {
-  const lineas: string[] = []
-
-  if (!lead.es_adulto && lead.nombre_contacto) {
-    lineas.push(`Contacto: ${lead.nombre_contacto}.`)
-  }
-
-  if (lead.es_adulto) {
-    lineas.push(`Alumno adulto: ${lead.nombre_alumno}.`)
-  } else {
-    const detalleAlumno = [
-      lead.edad_alumno ? `${lead.edad_alumno} años` : null,
-      lead.curso_escolar || null,
-    ].filter(Boolean).join(", ")
-    lineas.push(`Alumno: ${lead.nombre_alumno}${detalleAlumno ? `, ${detalleAlumno}` : ""}.`)
-  }
-
-  if (lead.objetivo && lead.objetivo !== "general") {
-    lineas.push(`Objetivo: ${lead.objetivo_display}.`)
-  }
-
-  if (lead.origen_display) {
-    lineas.push(`Canal: ${lead.origen_display}.`)
-  }
-
-  if (lead.necesidades_especiales) {
-    lineas.push(`Necesidades especiales: ${lead.necesidades_especiales}.`)
-  }
-
-  if (lead.notas) {
-    lineas.push(`Notas de seguimiento: ${lead.notas.trim().replace(/[.!?]$/, "")}.`)
-  }
-
-  const ultima = lead.interacciones?.[0]
-  if (ultima) {
-    const tipoLabel = TIPOS_INTERACCION.find(t => t.value === ultima.tipo)?.label ?? ultima.tipo
-    const fecha = new Date(ultima.fecha).toLocaleDateString("es-ES")
-    lineas.push(`Última interacción (${tipoLabel}, ${fecha}): ${ultima.resumen.trim().replace(/[.!?]$/, "")}.`)
-  }
-
-  return lineas.join(" ")
-}
-
 // ── component ──────────────────────────────────────────────────────────────
 
 export default function CRMPage() {
@@ -629,15 +586,6 @@ export default function CRMPage() {
                     <span className="text-ink text-[14px]">{value as string}</span>
                   </div>
                 ))}
-              </div>
-
-              {/* WhatsApp reply generator */}
-              <div className="px-5 py-4 border-b border-pine-900/10">
-                <button
-                  onClick={() => navigate("/whatsapp-respuestas", { state: { context: buildWhatsappContext(detalle) } })}
-                  className="btn-ghost w-full">
-                  Generar respuesta WhatsApp
-                </button>
               </div>
 
               {/* Change stage */}

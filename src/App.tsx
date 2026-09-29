@@ -21,7 +21,6 @@ import ConfigPage from "@/features/config/pages/ConfigPage"
 import PendientesPage from "@/features/pendientes/pages/PendientesPage"
 import CRMPage from "@/features/crm/Pages/CRMPage"
 import EmpresasPage from "@/features/empresas/pages/EmpresasPage"
-import WhatsAppReplyPage from "@/features/whatsapp/pages/WhatsAppReplyPage"
 import FacturacionPage from "@/features/facturacion/pages/FacturacionPage"
 import CalendarioPage from "@/features/calendario/pages/CalendarioPage"
 import PreciosPage from "@/features/tarifas/pages/PreciosPage"
@@ -63,7 +62,6 @@ export default function App() {
             <Route path="/config" element={<ConfigPage />} />
             <Route path="/pendientes" element={<PendientesPage />} />
             <Route path="/crm" element={<CRMPage />} />
-            <Route path="/whatsapp-respuestas" element={<WhatsAppReplyPage />} />
             <Route path="/empresas" element={<EmpresasPage />} />
             <Route path="/facturacion" element={<FacturacionPage />} />
             <Route path="/precios" element={<PreciosPage />} />
