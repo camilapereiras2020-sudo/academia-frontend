@@ -28,6 +28,13 @@ const BRAND_META: Record<Marca, { label: string; tag: string; bg: string; text: 
   rangers_academy: { label: "Rangers Academy", tag: "RA", bg: "#3F5242", text: "#F6F1E7", dot: "#3F5242" },
   cami_and_co: { label: "Cami & Co", tag: "C&Co", bg: "#1E3A5F", text: "#F6F1E7", dot: "#1E3A5F" },
 }
+// Station Desk UI tokens shared by the drawers and modals on this page.
+const LABEL_CLS = "block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1"
+const ICON_BTN = "w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 disabled:opacity-50"
+const SEG_BTN = "flex-1 min-h-[44px] px-2 font-label text-[14px] font-semibold"
+const SEG_ON = "bg-pine-900 text-khaki-100"
+const SEG_OFF = "bg-white text-pine-700 hover:bg-khaki-100"
+
 const MARCAS: { value: Marca; label: string }[] = [
   { value: "rangers_academy", label: "Rangers Academy" },
   { value: "cami_and_co", label: "Cami & Co" },
@@ -833,32 +840,31 @@ export default function HorarioBuilderPage() {
     // calendar stack instead of sitting side by side; there isn't enough
     // width to keep both usable at once. `lg` and up (iPad landscape,
     // desktop) keeps the original side-by-side layout.
-    <div className="flex flex-col lg:flex-row gap-5 lg:h-[calc(100vh-140px)]">
+    <div className="flex flex-col lg:flex-row gap-5 lg:h-[calc(100vh-150px)]">
       {/* Roster sidebar */}
-      <aside className="w-full lg:w-64 lg:flex-shrink-0 flex flex-col gap-3">
+      <aside className="w-full lg:w-72 lg:flex-shrink-0 flex flex-col gap-3">
         <div>
-          <div className="flex items-start justify-between gap-2">
-            <h1 className="font-serif font-light text-[1.75rem] leading-none tracking-[-0.01em] text-pine-900">Horario</h1>
-            <button onClick={openNuevaClase}
-              className="text-xs font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded-lg px-2.5 py-1 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="page-title !text-[28px]">Horario</h1>
+            <button onClick={openNuevaClase} className="btn-primary flex-shrink-0">
               + Nueva clase
             </button>
           </div>
-          <p className="text-xs text-pine-600 mt-0.5">
+          <p className="text-[14px] leading-snug text-ink-soft mt-2">
             Arrastra alumnos para probar huecos, o crea una clase vacía directamente. Nada se guarda hasta que pulses "Guardar cambios".
           </p>
         </div>
 
         {profesoresActivos.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-[11px]">
+          <div className="flex flex-wrap gap-1.5 font-label text-[13px] font-semibold">
             {profesoresActivos.map(p => (
-              <span key={p.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+              <span key={p.id} className="flex items-center gap-1.5 px-2 py-1 rounded-md"
                 style={{ background: colorForProfesor(p.id).bg, color: colorForProfesor(p.id).text }}>
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colorForProfesor(p.id).accent }} />
                 {p.nombre}
               </span>
             ))}
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md"
               style={{ background: SIN_PROFESOR_COLOR.bg, color: SIN_PROFESOR_COLOR.text }}>
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SIN_PROFESOR_COLOR.accent }} />
               Sin profe
@@ -866,14 +872,14 @@ export default function HorarioBuilderPage() {
           </div>
         )}
 
-        <div className="flex rounded-lg border border-khaki-300 overflow-hidden text-xs font-semibold">
+        <div className="flex rounded-[10px] border border-pine-900/20 overflow-hidden">
           <button onClick={() => setMarcaFilter("")}
-            className={`flex-1 px-2 py-1.5 ${marcaFilter === "" ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
+            className={`${SEG_BTN} ${marcaFilter === "" ? SEG_ON : SEG_OFF}`}>
             Todas
           </button>
           {MARCAS.map(m => (
             <button key={m.value} onClick={() => setMarcaFilter(m.value)}
-              className={`flex-1 px-2 py-1.5 border-l border-khaki-300 flex items-center justify-center gap-1 ${marcaFilter === m.value ? "text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}
+              className={`${SEG_BTN} border-l border-pine-900/20 flex items-center justify-center gap-1.5 ${marcaFilter === m.value ? "text-khaki-100" : SEG_OFF}`}
               style={marcaFilter === m.value ? { background: BRAND_META[m.value].bg } : undefined}>
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: marcaFilter === m.value ? "#fff" : BRAND_META[m.value].dot }} />
               {BRAND_META[m.value].tag}
@@ -881,35 +887,35 @@ export default function HorarioBuilderPage() {
           ))}
         </div>
 
-        <div className="flex rounded-lg border border-khaki-300 overflow-hidden text-xs font-semibold">
+        <div className="flex rounded-[10px] border border-pine-900/20 overflow-hidden">
           <button onClick={() => setVistaProfesor(false)}
-            className={`flex-1 px-2 py-1.5 ${!vistaProfesor ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
+            className={`${SEG_BTN} ${!vistaProfesor ? SEG_ON : SEG_OFF}`}>
             Vista semana
           </button>
           <button onClick={() => setVistaProfesor(true)}
-            className={`flex-1 px-2 py-1.5 border-l border-khaki-300 ${vistaProfesor ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}
+            className={`${SEG_BTN} border-l border-pine-900/20 ${vistaProfesor ? SEG_ON : SEG_OFF}`}
             title="Cada día se divide en una columna por profesor/a">
             Por profesor
           </button>
         </div>
 
         <input type="text" placeholder="Buscar alumno…" value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
-        <p className="text-[13px] font-bold uppercase tracking-widest text-pine-600">
+          className="input" />
+        <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700">
           Alumnos ({visibleCount})
-          <span className="font-normal normal-case text-khaki-400"> · {unassignedCount} sin asignar</span>
+          <span className="font-normal normal-case tracking-normal text-ink-soft"> · {unassignedCount} sin asignar</span>
         </p>
-        <div ref={sidebarRef} className="max-h-[220px] lg:max-h-none lg:flex-1 overflow-y-auto flex flex-col gap-3 border-2 border-dashed border-khaki-300 rounded-lg p-2">
+        <div ref={sidebarRef} className="max-h-[240px] lg:max-h-none lg:flex-1 overflow-y-auto flex flex-col gap-3 bg-white border border-pine-900/15 rounded-[12px] p-3">
           {loadingAlumnos ? (
-            <p className="text-xs text-pine-600">Cargando…</p>
+            <p className="text-[14px] text-ink-soft">Cargando…</p>
           ) : visibleCount === 0 ? (
-            <p className="text-xs text-pine-600 italic">{search.trim() ? "Sin resultados." : "Sin alumnos."}</p>
+            <p className="text-[14px] text-ink-soft italic">{search.trim() ? "Sin resultados." : "Sin alumnos."}</p>
           ) : (
             // Every student shows here, grouped by age — arrastra a un
             // hueco para añadir una clase más, tenga ya alguna o no.
             AGE_GROUP_ORDER.filter(g => alumnosByAge[g].length > 0).map(g => (
               <div key={g}>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-khaki-400 mb-1">
+                <p className="font-label text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-soft mb-1.5">
                   {AGE_GROUP_LABELS[g]} ({alumnosByAge[g].length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -919,12 +925,12 @@ export default function HorarioBuilderPage() {
                     // la vista en el listado, en vez de mezclarse con el resto.
                     return (
                       <span key={a.id}
-                        className={`student-pill touch-none flex items-center gap-1.5 text-xs font-semibold rounded-full pl-2 pr-2.5 py-1 cursor-grab select-none ${
+                        className={`student-pill touch-none flex items-center gap-1.5 min-h-[36px] text-[13px] font-semibold rounded-full pl-3 pr-1 cursor-grab select-none ${
                           highlightAlumnoId === a.id
-                            ? "bg-brass-50 border-2 border-brass-500 text-brass-900"
+                            ? "bg-brass-300/30 border-2 border-brass-500 text-pine-900"
                             : n === 0
                             ? "bg-amber-50 border border-amber-300 text-amber-900"
-                            : "bg-white border border-khaki-300 text-pine-800"
+                            : "bg-khaki-100 border border-pine-900/15 text-pine-900"
                         }`}
                         data-name={a.nombre} data-alumno-id={a.id}
                         onDoubleClick={() => { setSelectedGrupoId(null); setHighlightAlumnoId(a.id) }}
@@ -932,10 +938,10 @@ export default function HorarioBuilderPage() {
                         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: BRAND_META[a.marca].dot }} />
                         {a.nombre}
                         {n > 0 && (
-                          <span className="text-[11px] font-normal text-pine-500">· {n} clase{n === 1 ? "" : "s"}</span>
+                          <span className="text-[12px] font-normal text-ink-soft">· {n} clase{n === 1 ? "" : "s"}</span>
                         )}
                         <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                          className="text-pine-400 hover:text-brass-700 text-[11px] leading-none">↗</button>
+                          className="w-7 h-7 flex items-center justify-center rounded-full text-ink-soft hover:text-brass-700 hover:bg-white text-[13px] leading-none">↗</button>
                       </span>
                     )
                   })}
@@ -954,13 +960,13 @@ export default function HorarioBuilderPage() {
           instead of squeezing illegibly — you scroll sideways instead. */}
       <div className="min-w-0 flex flex-col h-[70vh] lg:flex-1 lg:h-auto">
         {loadingGrupos ? (
-          <p className="text-sm text-pine-600">Cargando…</p>
+          <p className="text-[15px] text-ink-soft">Cargando…</p>
         ) : vistaProfesor ? (
           <div className="flex-1 min-h-0 overflow-x-auto">
             <div className="flex gap-3 h-full" style={{ minWidth: `${teacherColumns.length * 380}px` }}>
               {teacherColumns.map(t => (
                 <div key={t.id ?? "none"} className="flex flex-col flex-shrink-0" style={{ width: 380 }}>
-                  <p className="text-xs font-bold uppercase tracking-wide text-pine-700 mb-1 text-center">{t.nombre}</p>
+                  <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700 mb-1.5 text-center">{t.nombre}</p>
                   <div className="fc-horario flex-1 min-h-0">
                     {renderCalendar({ filterProfesorId: t.id, dropColumnProfesorId: t.id, calKey: `prof-${t.id ?? "none"}` })}
                   </div>
@@ -989,35 +995,35 @@ export default function HorarioBuilderPage() {
           .map(gid => grupos.find(g => g.id === gid))
           .filter((g): g is Grupo => !!g)
         return (
-          <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-xl flex flex-col z-40 border-l-2 border-brass-500">
-            <div className="px-5 py-4 border-b flex items-start justify-between">
+          <div className="fixed top-0 right-0 h-full w-[340px] max-w-[92vw] bg-white shadow-xl flex flex-col z-40 border-l-4 border-brass-500">
+            <div className="pl-5 pr-2 py-3 border-b border-pine-900/10 flex items-start justify-between gap-2">
               <div>
-                <p className="font-head font-normal text-lg text-pine-900">{alumnoResaltado.nombre}</p>
+                <p className="font-head text-[20px] leading-tight text-pine-900 pt-2">{alumnoResaltado.nombre}</p>
                 <span className="inline-block mt-1 text-[11px] font-bold px-1.5 py-0.5 rounded"
                   style={{ background: BRAND_META[alumnoResaltado.marca].bg, color: BRAND_META[alumnoResaltado.marca].text }}>
                   {BRAND_META[alumnoResaltado.marca].tag}
                 </span>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center flex-shrink-0">
                 <button onClick={() => navigate(`/alumnos/${alumnoResaltado.id}`)} title="Ver ficha del alumno"
-                  className="text-pine-400 hover:text-brass-700 text-xs">↗</button>
-                <button onClick={() => setHighlightAlumnoId(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+                  className={ICON_BTN}>↗</button>
+                <button onClick={() => setHighlightAlumnoId(null)} aria-label="Cerrar" className={`${ICON_BTN} text-xl`}>✕</button>
               </div>
             </div>
             <div className="p-5 overflow-y-auto flex-1">
-              <p className="text-[13px] font-bold uppercase tracking-widest text-pine-600 mb-2">
+              <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700 mb-2">
                 Sus clases ({susGrupos.length})
               </p>
-              <p className="text-[13px] text-pine-600 mb-3">Resaltadas en el calendario. Pulsa una para abrirla.</p>
+              <p className="text-[14px] text-ink-soft mb-3">Resaltadas en el calendario. Pulsa una para abrirla.</p>
               {susGrupos.length === 0 ? (
-                <p className="text-xs text-pine-600 italic">Sin clases asignadas todavía.</p>
+                <p className="text-[14px] text-ink-soft italic">Sin clases asignadas todavía.</p>
               ) : (
                 <div className="space-y-2">
                   {susGrupos.map(g => (
                     <button key={g.id} onClick={() => setSelectedGrupoId(g.id)}
-                      className="w-full text-left bg-khaki-100 hover:bg-khaki-200 rounded-lg px-3 py-2">
-                      <p className="text-sm font-semibold text-pine-900">{g.nombre}</p>
-                      <p className="text-xs text-pine-600 mt-0.5">
+                      className="w-full min-h-[56px] text-left bg-khaki-100 hover:bg-khaki-200 rounded-[10px] px-3.5 py-2.5">
+                      <p className="text-[15px] font-semibold text-pine-900">{g.nombre}</p>
+                      <p className="text-[13px] text-ink-soft mt-0.5">
                         {g.profesor_nombre ? `Prof. ${g.profesor_nombre} · ` : ""}
                         {(g.horarios ?? []).map((h, i) => (
                           <span key={i}>{DAY_LABELS[h.dia]?.slice(0, 3)} {h.ini}–{h.fin}{i < (g.horarios.length - 1) ? " · " : ""}</span>
@@ -1037,60 +1043,60 @@ export default function HorarioBuilderPage() {
           interactive and a student can be dragged straight from here onto
           a different class to reassign them. */}
       {selectedGrupo && (
-        <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-xl flex flex-col z-40 border-l border-khaki-300">
-            <div className="px-5 py-4 border-b flex items-start justify-between">
+        <div className="fixed top-0 right-0 h-full w-[340px] max-w-[92vw] bg-white shadow-xl flex flex-col z-40 border-l border-pine-900/15">
+            <div className="pl-5 pr-2 py-3 border-b border-pine-900/10 flex items-start justify-between gap-2">
               <div>
-                <p className="font-head font-normal text-lg text-pine-900 flex items-center gap-2">
+                <p className="font-head text-[20px] leading-tight text-pine-900 flex items-center gap-2 flex-wrap pt-2">
                   {selectedGrupo.nombre}
                   <span className="text-[11px] font-bold px-1.5 py-0.5 rounded"
                     style={{ background: BRAND_META[selectedGrupo.marca].bg, color: BRAND_META[selectedGrupo.marca].text }}>
                     {BRAND_META[selectedGrupo.marca].tag}
                   </span>
                 </p>
-                <p className="text-xs text-pine-600 mt-0.5">
+                <p className="text-[13px] text-ink-soft mt-1">
                   {selectedGrupo.profesor_nombre ? `Prof. ${selectedGrupo.profesor_nombre} · ` : ""}
                   {(selectedGrupo.horarios ?? []).map((h, i) => (
                     <span key={i}>{DAY_LABELS[h.dia]?.slice(0, 3)} {h.ini}–{h.fin}{i < (selectedGrupo.horarios.length - 1) ? " · " : ""}</span>
                   ))}
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={openEditarClase} title="Editar clase"
-                  className="text-pine-400 hover:text-brass-700 text-sm leading-none">✎</button>
-                <button onClick={() => selectedGrupo && setConfirmDeleteClase(selectedGrupo)} title="Eliminar clase"
-                  className="text-red-400 hover:text-red-600 text-sm leading-none">🗑</button>
-                <button onClick={() => setSelectedGrupoId(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+              <div className="flex items-center flex-shrink-0">
+                <button onClick={openEditarClase} title="Editar clase" aria-label="Editar clase"
+                  className={ICON_BTN}>✎</button>
+                <button onClick={() => selectedGrupo && setConfirmDeleteClase(selectedGrupo)} title="Eliminar clase" aria-label="Eliminar clase"
+                  className={`${ICON_BTN} !text-red-600 hover:!bg-red-50`}>🗑</button>
+                <button onClick={() => setSelectedGrupoId(null)} aria-label="Cerrar" className={`${ICON_BTN} text-xl`}>✕</button>
               </div>
             </div>
             <div className="p-5 overflow-y-auto flex-1">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[13px] font-bold uppercase tracking-widest text-pine-600">
+                <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700">
                   Alumnos ({selectedRoster.length}/{HARD_MAX_PER_CLASS})
                 </p>
                 {!addAlumnoOpen && (
                   <button onClick={() => setAddAlumnoOpen(true)}
-                    className="text-[13px] font-semibold text-brass-700 hover:text-brass-900 flex items-center gap-1 flex-shrink-0">
+                    className="min-h-[44px] px-2 -mr-2 rounded-[10px] font-label text-[14px] font-semibold text-brass-700 hover:bg-khaki-100 flex items-center gap-1 flex-shrink-0">
                     + Agregar alumno
                   </button>
                 )}
               </div>
               {addAlumnoOpen && (
-                <div className="border border-khaki-300 rounded-lg p-2 bg-khaki-50 mb-3">
+                <div className="border border-pine-900/15 rounded-[10px] p-2 bg-khaki-100 mb-3">
                   <div className="flex items-center gap-1 mb-2">
                     <input autoFocus type="text" placeholder="Buscar alumno..." value={addAlumnoQuery}
                       onChange={e => setAddAlumnoQuery(e.target.value)}
-                      className="flex-1 text-xs border border-khaki-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      className="input flex-1" />
                     <button onClick={() => { setAddAlumnoOpen(false); setAddAlumnoQuery("") }} title="Cerrar"
-                      className="text-khaki-400 hover:text-pine-600 text-sm leading-none px-1 flex-shrink-0">✕</button>
+                      className={`${ICON_BTN} flex-shrink-0`}>✕</button>
                   </div>
                   <div className="max-h-40 overflow-y-auto space-y-1">
                     {addAlumnoCandidates.length === 0 ? (
-                      <p className="text-[13px] text-pine-500 italic px-1">Sin resultados.</p>
+                      <p className="text-[14px] text-ink-soft italic px-1">Sin resultados.</p>
                     ) : addAlumnoCandidates.map(a => (
                       <button key={a.id}
                         onClick={() => selectedGrupoId != null && assignAlumnoToGrupo(a.id, a.nombre, selectedGrupoId)}
-                        className="w-full text-left text-xs flex items-center gap-2 px-2 py-1 rounded hover:bg-white">
-                        <span className="w-4 h-4 rounded-full bg-brass-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                        className="w-full min-h-[44px] text-left text-[14px] flex items-center gap-2 px-2 rounded-[8px] hover:bg-white">
+                        <span className="w-7 h-7 rounded-full bg-pine-900 text-khaki-100 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                           {initials(a.nombre)}
                         </span>
                         <span className="flex-1 truncate">{a.nombre}</span>
@@ -1103,9 +1109,9 @@ export default function HorarioBuilderPage() {
                   </div>
                 </div>
               )}
-              <p className="text-[13px] text-pine-600 mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
+              <p className="text-[14px] text-ink-soft mb-3">Arrastra a otra clase para reasignar, o pulsa ✕ para quitar.</p>
               {selectedRoster.length === 0 ? (
-                <p className="text-xs text-pine-600 italic">Sin alumnos todavía. Arrastra desde la izquierda, o usa "+ Agregar alumno".</p>
+                <p className="text-[14px] text-ink-soft italic">Sin alumnos todavía. Arrastra desde la izquierda, o usa "+ Agregar alumno".</p>
               ) : (
                 <div ref={drawerRosterRef} className="space-y-2">
                   {selectedRoster.map(a => {
@@ -1113,39 +1119,39 @@ export default function HorarioBuilderPage() {
                     const edit = timeEdits[a.id] ?? { ini: hp.ini, fin: hp.fin }
                     const dirtyTime = edit.ini !== hp.ini || edit.fin !== hp.fin
                     return (
-                      <div key={a.id} className="bg-khaki-100 rounded-lg px-3 py-2">
+                      <div key={a.id} className="bg-khaki-100 rounded-[10px] px-3 py-2">
                         <div
-                          className="roster-pill touch-none flex items-center justify-between text-sm cursor-grab select-none"
+                          className="roster-pill touch-none flex items-center justify-between min-h-[44px] text-[15px] font-semibold text-pine-900 cursor-grab select-none"
                           data-name={a.nombre} data-alumno-id={a.id} data-source-grupo-id={selectedGrupoId ?? undefined}>
                           <span className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-brass-500 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                            <span className="w-8 h-8 rounded-full bg-pine-900 text-khaki-100 text-[12px] font-bold flex items-center justify-center flex-shrink-0">
                               {initials(a.nombre)}
                             </span>
                             {a.nombre}
                           </span>
-                          <span className="flex items-center gap-2 flex-shrink-0">
+                          <span className="flex items-center flex-shrink-0">
                             <button onClick={() => navigate(`/alumnos/${a.id}`)} title="Ver ficha del alumno"
-                              className="text-pine-400 hover:text-brass-700 text-xs">↗</button>
-                            <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)}
-                              className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                              className={`${ICON_BTN} !w-10 !h-10`}>↗</button>
+                            <button onClick={() => selectedGrupoId != null && stageRemove(a.id, selectedGrupoId)} title="Quitar de la clase"
+                              className={`${ICON_BTN} !w-10 !h-10 !text-red-600 hover:!bg-red-50`}>✕</button>
                           </span>
                         </div>
                         {/* Personal window — a student who comes for part of
                             the session (e.g. class runs 17:00–19:00 but this
                             one only stays 17:00–18:00). Blank = full class. */}
-                        <div className="flex items-center gap-1.5 mt-1.5 pl-7">
+                        <div className="flex items-center gap-1.5 mt-1 pl-10 flex-wrap">
                           <input type="time" value={edit.ini}
                             onChange={e => setTimeEdits(prev => ({ ...prev, [a.id]: { ini: e.target.value, fin: edit.fin } }))}
-                            className="text-[13px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
-                          <span className="text-[11px] text-pine-500">–</span>
+                            className="input !w-[104px] !min-h-[40px] !px-2 text-[14px]" />
+                          <span className="text-[13px] text-ink-soft">–</span>
                           <input type="time" value={edit.fin}
                             onChange={e => setTimeEdits(prev => ({ ...prev, [a.id]: { ini: edit.ini, fin: e.target.value } }))}
-                            className="text-[13px] border border-khaki-300 rounded px-1 py-0.5 w-[72px]" />
+                            className="input !w-[104px] !min-h-[40px] !px-2 text-[14px]" />
                           {dirtyTime && (
                             <button
                               onClick={() => horarioPersonalMut.mutate({ alumnoId: a.id, grupoId: selectedGrupoId!, hora_inicio: edit.ini, hora_fin: edit.fin })}
                               disabled={horarioPersonalMut.isPending}
-                              className="text-[11px] font-semibold text-white bg-brass-500 hover:bg-brass-700 rounded px-1.5 py-0.5 disabled:opacity-50">
+                              className="btn-primary !min-h-[40px] !px-3 !text-[14px] disabled:opacity-50">
                               Guardar
                             </button>
                           )}
@@ -1154,7 +1160,7 @@ export default function HorarioBuilderPage() {
                               onClick={() => horarioPersonalMut.mutate({ alumnoId: a.id, grupoId: selectedGrupoId!, hora_inicio: null, hora_fin: null })}
                               disabled={horarioPersonalMut.isPending}
                               title="Volver al horario completo de la clase"
-                              className="text-[11px] text-pine-500 hover:text-pine-700 underline disabled:opacity-50">
+                              className="min-h-[40px] px-1 text-[13px] text-ink-soft hover:text-pine-900 underline disabled:opacity-50">
                               horario completo
                             </button>
                           )}
@@ -1170,14 +1176,14 @@ export default function HorarioBuilderPage() {
 
       {/* Pending-changes bar */}
       {draft.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-pine-900 text-white text-sm font-medium pl-4 pr-2 py-2 rounded-lg shadow-lg z-50 flex items-center gap-3">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-pine-900 text-khaki-100 text-[15px] font-semibold pl-5 pr-2 py-2 rounded-[12px] shadow-lg z-50 flex items-center gap-3 max-w-[calc(100vw-2rem)]">
           <span>{draft.size} cambio{draft.size === 1 ? "" : "s"} sin guardar</span>
           <button onClick={handleDescartar} disabled={saving}
-            className="px-3 py-1 rounded-md text-xs font-semibold bg-white/10 hover:bg-white/20 disabled:opacity-50">
+            className="min-h-[44px] px-4 rounded-[10px] text-[14px] font-semibold bg-white/10 hover:bg-white/20 disabled:opacity-50">
             Descartar
           </button>
           <button onClick={handleGuardar} disabled={saving}
-            className="px-3 py-1 rounded-md text-xs font-semibold bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
+            className="btn-primary disabled:opacity-50">
             {saving ? "Guardando…" : "Guardar cambios"}
           </button>
         </div>
@@ -1188,34 +1194,34 @@ export default function HorarioBuilderPage() {
           "Por profesor" column). A real modal (backdrop) since it needs
           undivided attention before it can save anything. */}
       {pendingCreate && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+        <div className="modal-overlay"
           {...pendingCreateOverlayGuard}>
-          <div className="bg-white rounded-xl shadow-xl w-96 p-5 space-y-3">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="font-head text-lg text-pine-900">Nueva clase</h2>
-                <p className="text-xs text-pine-600">
+                <h2 className="font-head text-[22px] leading-tight text-pine-900">Nueva clase</h2>
+                <p className="text-[14px] text-ink-soft mt-1">
                   {DAY_LABELS[pendingCreate.dia]} {pendingCreate.horaInicio}–{pendingCreate.horaFin}
                   {pendingCreate.alumnoNombre ? ` · ${pendingCreate.alumnoNombre}` : " · sin alumnos todavía"}
                   {" · "}{BRAND_META[pendingCreate.marca].label}
                 </p>
               </div>
               <button onClick={() => setPendingCreate(null)} disabled={crearClaseMut.isPending}
-                className="text-khaki-400 hover:text-pine-600 text-xl leading-none disabled:opacity-50">✕</button>
+                aria-label="Cerrar" className={`${ICON_BTN} text-xl -mt-2 -mr-2`}>✕</button>
             </div>
 
             {pendingCreateError && (
-              <p className="text-red-600 text-xs bg-red-50 border border-red-200 p-2 rounded-lg">{pendingCreateError}</p>
+              <p className="text-red-700 text-[14px] bg-red-50 border border-red-200 px-3 py-2 rounded-[10px]">{pendingCreateError}</p>
             )}
 
             <div>
-              <label className="text-xs font-semibold text-pine-700">Nombre</label>
+              <label className={LABEL_CLS}>Nombre</label>
               <input type="text" value={pendingCreate.nombre} placeholder="Clase B1 (Eco Rangers)…"
                 onChange={e => { setPendingCreate(p => p && { ...p, nombre: e.target.value }); setPendingCreateNameAdjusted(false) }}
                 onBlur={handlePendingNombreBlur}
-                className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+                className="input" />
               {pendingCreateNameAdjusted && (
-                <p className="text-[13px] text-brass-700 mt-1">
+                <p className="text-[14px] text-brass-700 mt-1">
                   Ya existe una clase con ese nombre — se agregó el horario para diferenciarla.
                 </p>
               )}
@@ -1225,18 +1231,18 @@ export default function HorarioBuilderPage() {
                 there's no dropped alumno to infer it from. */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-pine-700">Marca</label>
+                <label className={LABEL_CLS}>Marca</label>
                 <select value={pendingCreate.marca}
                   onChange={e => setPendingCreate(p => p && { ...p, marca: e.target.value as Marca })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  className="input">
                   {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-pine-700">Día</label>
+                <label className={LABEL_CLS}>Día</label>
                 <select value={pendingCreate.dia}
                   onChange={e => setPendingCreate(p => p && { ...p, dia: Number(e.target.value) })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  className="input">
                   {DAY_LABELS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                 </select>
               </div>
@@ -1244,41 +1250,41 @@ export default function HorarioBuilderPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-pine-700">Profesor/a</label>
+                <label className={LABEL_CLS}>Profesor/a</label>
                 <ProfesorSelect value={pendingCreate.profesorId}
                   onChange={v => setPendingCreate(p => p && { ...p, profesorId: v })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-pine-700">Aula</label>
+                <label className={LABEL_CLS}>Aula</label>
                 <AulaCombobox value={pendingCreate.aula}
                   onChange={v => setPendingCreate(p => p && { ...p, aula: v })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-pine-700">Hora inicio</label>
+                <label className={LABEL_CLS}>Hora inicio</label>
                 <input type="time" value={pendingCreate.horaInicio}
                   onChange={e => setPendingCreate(p => p && { ...p, horaInicio: e.target.value })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-pine-700">Hora fin</label>
+                <label className={LABEL_CLS}>Hora fin</label>
                 <input type="time" value={pendingCreate.horaFin}
                   onChange={e => setPendingCreate(p => p && { ...p, horaFin: e.target.value })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => setPendingCreate(null)} disabled={crearClaseMut.isPending}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-pine-600 hover:bg-khaki-100 disabled:opacity-50">
+                className="btn-ghost disabled:opacity-50">
                 Cancelar
               </button>
               <button onClick={handleCrearClase} disabled={crearClaseMut.isPending}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
+                className="btn-primary disabled:opacity-50">
                 {crearClaseMut.isPending ? "Creando…" : "Crear clase"}
               </button>
             </div>
@@ -1289,47 +1295,47 @@ export default function HorarioBuilderPage() {
       {/* Editar clase — mismo formulario que "Nueva clase", precargado desde
           selectedGrupo. Solo toca horarios[0] (ver nota en editarClaseMut). */}
       {editingClase && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+        <div className="modal-overlay"
           {...editingClaseOverlayGuard}>
-          <div className="bg-white rounded-xl shadow-xl w-96 p-5 space-y-3">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="font-head text-lg text-pine-900">Editar clase</h2>
+                <h2 className="font-head text-[22px] leading-tight text-pine-900">Editar clase</h2>
                 {(selectedGrupo?.horarios?.length ?? 0) > 1 && (
-                  <p className="text-xs text-brass-700">
+                  <p className="text-[14px] text-brass-700 mt-1">
                     Esta clase tiene más de un horario semanal — aquí solo se edita el primero. Los demás se editan desde Grupos.
                   </p>
                 )}
               </div>
               <button onClick={() => setEditingClase(null)} disabled={editarClaseMut.isPending}
-                className="text-khaki-400 hover:text-pine-600 text-xl leading-none disabled:opacity-50">✕</button>
+                aria-label="Cerrar" className={`${ICON_BTN} text-xl -mt-2 -mr-2`}>✕</button>
             </div>
 
             {editingClaseError && (
-              <p className="text-red-600 text-xs bg-red-50 border border-red-200 p-2 rounded-lg">{editingClaseError}</p>
+              <p className="text-red-700 text-[14px] bg-red-50 border border-red-200 px-3 py-2 rounded-[10px]">{editingClaseError}</p>
             )}
 
             <div>
-              <label className="text-xs font-semibold text-pine-700">Nombre</label>
+              <label className={LABEL_CLS}>Nombre</label>
               <input type="text" value={editingClase.nombre}
                 onChange={e => setEditingClase(p => p && { ...p, nombre: e.target.value })}
-                className="w-full border rounded-lg px-3 py-1.5 text-sm mt-0.5" />
+                className="input" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-pine-700">Marca</label>
+                <label className={LABEL_CLS}>Marca</label>
                 <select value={editingClase.marca}
                   onChange={e => setEditingClase(p => p && { ...p, marca: e.target.value as Marca })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  className="input">
                   {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-pine-700">Día</label>
+                <label className={LABEL_CLS}>Día</label>
                 <select value={editingClase.dia}
                   onChange={e => setEditingClase(p => p && { ...p, dia: Number(e.target.value) })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5">
+                  className="input">
                   {DAY_LABELS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                 </select>
               </div>
@@ -1337,41 +1343,41 @@ export default function HorarioBuilderPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-pine-700">Profesor/a</label>
+                <label className={LABEL_CLS}>Profesor/a</label>
                 <ProfesorSelect value={editingClase.profesorId}
                   onChange={v => setEditingClase(p => p && { ...p, profesorId: v })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-pine-700">Aula</label>
+                <label className={LABEL_CLS}>Aula</label>
                 <AulaCombobox value={editingClase.aula}
                   onChange={v => setEditingClase(p => p && { ...p, aula: v })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-pine-700">Hora inicio</label>
+                <label className={LABEL_CLS}>Hora inicio</label>
                 <input type="time" value={editingClase.horaInicio}
                   onChange={e => setEditingClase(p => p && { ...p, horaInicio: e.target.value })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-pine-700">Hora fin</label>
+                <label className={LABEL_CLS}>Hora fin</label>
                 <input type="time" value={editingClase.horaFin}
                   onChange={e => setEditingClase(p => p && { ...p, horaFin: e.target.value })}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm mt-0.5" />
+                  className="input" />
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => setEditingClase(null)} disabled={editarClaseMut.isPending}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-pine-600 hover:bg-khaki-100 disabled:opacity-50">
+                className="btn-ghost disabled:opacity-50">
                 Cancelar
               </button>
               <button onClick={handleGuardarClase} disabled={editarClaseMut.isPending}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700 disabled:opacity-50">
+                className="btn-primary disabled:opacity-50">
                 {editarClaseMut.isPending ? "Guardando…" : "Guardar cambios"}
               </button>
             </div>
@@ -1382,25 +1388,25 @@ export default function HorarioBuilderPage() {
       {/* Eliminar clase — mismo patrón que GruposPage: los alumnos no se
           eliminan, pierden la asignación (Inscripcion cae en cascada). */}
       {confirmDeleteClase && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-pine-900 mb-1">Eliminar clase</h3>
-            <p className="text-sm text-pine-800 mb-1">
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Eliminar clase</h3>
+            <p className="text-[15px] text-ink mb-1">
               ¿Eliminar <strong>{confirmDeleteClase.nombre}</strong>?
             </p>
-            <p className="text-xs text-pine-700 mb-4">
+            <p className="text-[14px] text-ink-soft mb-5">
               {selectedRoster.length > 0
                 ? `${selectedRoster.length} alumno${selectedRoster.length === 1 ? "" : "s"} perderá${selectedRoster.length === 1 ? "" : "n"} la asignación a esta clase (no se elimina al alumno). Esto no se puede deshacer.`
                 : "Esto no se puede deshacer."}
             </p>
-            {deleteClaseError && <p className="text-red-600 text-xs mb-3">{deleteClaseError}</p>}
+            {deleteClaseError && <p className="text-red-700 text-[14px] mb-3">{deleteClaseError}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmDeleteClase(null); setDeleteClaseError("") }}
-                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
+                className="btn-ghost">
                 Cancelar
               </button>
               <button onClick={() => eliminarClaseMut.mutate(confirmDeleteClase.id)} disabled={eliminarClaseMut.isPending}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                 {eliminarClaseMut.isPending ? "Eliminando…" : "Eliminar"}
               </button>
             </div>
@@ -1409,20 +1415,20 @@ export default function HorarioBuilderPage() {
       )}
 
       {pendingOverflow && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+        <div className="modal-overlay"
           {...pendingOverflowOverlayGuard}>
-          <div className="bg-white rounded-xl shadow-xl w-80 p-5 text-center space-y-3">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 text-center space-y-3">
             <p className="text-3xl">😏</p>
-            <p className="text-sm text-pine-800">
+            <p className="text-[15px] text-ink">
               La clase está completa, pero sabes que entra uno más… eh eh <span className="whitespace-nowrap">;)</span>
             </p>
             <div className="flex justify-center gap-2 pt-1">
               <button onClick={() => setPendingOverflow(null)}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-pine-600 hover:bg-khaki-100">
+                className="btn-ghost">
                 Mejor no
               </button>
               <button onClick={confirmOverflow}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-brass-500 hover:bg-brass-700">
+                className="btn-primary">
                 Que entre
               </button>
             </div>
@@ -1431,7 +1437,7 @@ export default function HorarioBuilderPage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-pine-900 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-pine-900 text-khaki-100 text-[15px] font-semibold px-5 py-3 rounded-[12px] shadow-lg z-50">
           {toast}
         </div>
       )}

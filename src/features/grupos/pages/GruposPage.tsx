@@ -128,12 +128,12 @@ export default function GruposPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Grupos</h1>
-          <p className="text-sm text-pine-800 mt-1">{all.length} grupos activos</p>
+          <h1 className="page-title">Grupos</h1>
+          <p className="page-subtitle">{all.length} grupos activos</p>
         </div>
         {!isReception && (
           <button onClick={openNew}
-            className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700">
+            className="btn-primary inline-flex items-center gap-2">
             + Nuevo grupo
           </button>
         )}
@@ -142,14 +142,13 @@ export default function GruposPage() {
       {/* Search */}
       <input type="text" placeholder="Buscar por nombre o nivel…" value={search}
         onChange={e => setSearch(e.target.value)}
-        className="mb-5 border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+        className="input mb-5 !w-full md:!w-[360px]" />
 
-      {isLoading && <p className="text-pine-300 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
 
       {!isLoading && !grupos.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-pine-300">
-          <span className="text-5xl mb-3">🗂️</span>
-          <p className="text-sm">{search ? "Sin resultados para esa búsqueda." : "Sin grupos. Crea el primero."}</p>
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+          <p className="text-[15px]">{search ? "Sin resultados para esa búsqueda." : "Sin grupos. Crea el primero."}</p>
         </div>
       )}
 
@@ -159,7 +158,7 @@ export default function GruposPage() {
           const c = PALETTE[g.color_idx % PALETTE.length]
           const horarios = g.horarios ?? []
           return (
-            <div key={g.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div key={g.id} className="card !bg-white overflow-hidden">
               {/* Card row */}
               <div className="flex items-stretch">
                 {/* Color accent bar */}
@@ -169,18 +168,18 @@ export default function GruposPage() {
                   cursor-pointer hover:bg-khaki-100 transition-colors"
                   onClick={() => navigate(`/grupos/${g.id}`)}>
                   <div className="flex items-center gap-3 flex-wrap min-w-0">
-                    <span className="font-bold text-pine-900">{g.nombre}</span>
+                    <span className="text-[16px] font-semibold text-ink">{g.nombre}</span>
                     {g.nivel && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      <span className="font-label text-[13px] font-semibold px-2.5 py-0.5 rounded-full"
                         style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
                         {g.nivel}
                       </span>
                     )}
-                    <span className="text-xs text-pine-800">👥 {g.alumnos_count} alumnos</span>
-                    {g.aula && <span className="text-xs text-pine-800">📍 {g.aula}</span>}
-                    {g.profesor_nombre && <span className="text-xs text-pine-800">🧑‍🏫 {g.profesor_nombre}</span>}
+                    <span className="font-label text-[14px] font-medium text-ink-soft">👥 {g.alumnos_count} alumnos</span>
+                    {g.aula && <span className="font-label text-[14px] font-medium text-ink-soft">📍 {g.aula}</span>}
+                    {g.profesor_nombre && <span className="font-label text-[14px] font-medium text-ink-soft">🧑‍🏫 {g.profesor_nombre}</span>}
                     {g.tarifa > 0 && (
-                      <span className="text-xs font-semibold text-pine-700">
+                      <span className="font-label text-[14px] font-semibold text-pine-900">
                         {Number(g.tarifa).toFixed(2)} €/mes
                       </span>
                     )}
@@ -191,7 +190,7 @@ export default function GruposPage() {
                     {horarios.length > 0 && (
                       <div className="hidden sm:flex flex-wrap gap-1">
                         {horarios.map((h, i) => (
-                          <span key={i} className="text-xs px-2 py-0.5 rounded-full"
+                          <span key={i} className="font-label text-[13px] font-medium px-2.5 py-1 rounded-full"
                             style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
                             {DIAS[h.dia]?.slice(0, 3)} {h.ini}
                           </span>
@@ -203,11 +202,12 @@ export default function GruposPage() {
                     {!isReception && (
                       <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
                         <button onClick={() => openEdit(g)}
-                          className="px-3 py-1.5 border rounded-lg text-xs text-pine-700 hover:bg-khaki-100">
+                          className="inline-flex items-center justify-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold border-pine-900/25 text-pine-900 hover:bg-khaki-100">
                           Editar
                         </button>
                         <button onClick={() => setConfirmDelete(g)}
-                          className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
+                          aria-label="Eliminar grupo" title="Eliminar grupo"
+                          className="inline-flex items-center justify-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold min-w-[40px] border-red-200 text-red-700 hover:bg-red-50">
                           ✕
                         </button>
                       </div>
@@ -222,29 +222,29 @@ export default function GruposPage() {
 
       {/* Create / Edit modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        <div className="modal-overlay"
           {...modalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-pine-900">{editing ? "Editar grupo" : "Nuevo grupo"}</h2>
-              <button onClick={closeModal} className="text-pine-300 hover:text-pine-700 text-xl leading-none">✕</button>
+            <div className="pl-6 pr-3 py-3 border-b border-pine-900/10 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">{editing ? "Editar grupo" : "Nuevo grupo"}</h2>
+              <button onClick={closeModal} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
 
             {/* Body */}
             <div className="p-6 overflow-y-auto space-y-5">
               {formError && (
-                <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{formError}</p>
+                <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{formError}</p>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-pine-800 mb-1">Nombre *</label>
+                <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Nombre *</label>
                 <input type="text" value={form.nombre} placeholder="Ej: B1 Martes tarde"
                   onChange={e => { setForm(f => ({ ...f, nombre: e.target.value })); setNameAutoAdjusted(false) }}
                   onBlur={handleNombreBlur}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                  className="input" />
                 {nameAutoAdjusted && (
-                  <p className="text-[13px] text-brass-700 mt-1">
+                  <p className="text-[14px] text-brass-700 mt-1">
                     Ya existe una clase con ese nombre — se agregó el horario para diferenciarla. Podés cambiarlo si querés otro nombre.
                   </p>
                 )}
@@ -252,34 +252,34 @@ export default function GruposPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-pine-800 mb-1">Nivel</label>
+                  <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Nivel</label>
                   <NivelSelect value={form.nivel} onChange={v => setForm(f => ({ ...f, nivel: v }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-pine-800 mb-1">Tarifa mensual (€)</label>
+                  <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Tarifa mensual (€)</label>
                   <input type="number" value={form.tarifa} min="0" step="0.01"
                     onChange={e => setForm(f => ({ ...f, tarifa: +e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-pine-800 mb-1">Aula</label>
+                  <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Aula</label>
                   <input type="text" value={form.aula} placeholder="Aula 1, Online…"
                     onChange={e => setForm(f => ({ ...f, aula: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-pine-800 mb-1">Profesor/a</label>
+                  <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Profesor/a</label>
                   <ProfesorSelect value={form.profesor} onChange={v => setForm(f => ({ ...f, profesor: v }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                    className="input" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-pine-800 mb-1">Color</label>
+                  <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Color</label>
                   <div className="flex gap-2 flex-wrap mt-1">
                     {PALETTE.map((c, i) => (
                       <button key={i} onClick={() => setForm(f => ({ ...f, color_idx: i }))}
                         title={`Color ${i + 1}`}
-                        className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
+                        className="w-10 h-10 rounded-full transition-transform hover:scale-110 focus:outline-none"
                         style={{
                           background: c.bg,
                           border: `3px solid ${form.color_idx === i ? c.accent : c.border}`,
@@ -293,30 +293,30 @@ export default function GruposPage() {
               {/* Schedule */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-semibold text-pine-800">Horario base</label>
-                  <button onClick={addHorario} className="text-xs text-brass-700 hover:text-brass-700">
+                  <label className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700">Horario base</label>
+                  <button onClick={addHorario} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">
                     + Añadir franja
                   </button>
                 </div>
                 {!form.horarios.length && (
-                  <p className="text-xs text-pine-700 italic">Sin franjas. Pulsa + Añadir franja.</p>
+                  <p className="text-[14px] text-ink-soft italic">Sin franjas. Pulsa + Añadir franja.</p>
                 )}
                 <div className="space-y-2">
                   {form.horarios.map((h, idx) => (
                     <div key={idx} className="flex items-center gap-2 flex-wrap">
                       <select value={h.dia} onChange={e => updateHorario(idx, "dia", +e.target.value)}
                         onBlur={idx === 0 ? handleNombreBlur : undefined}
-                        className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none">
+                        className="input !w-auto">
                         {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                       </select>
                       <input type="time" value={h.ini} onChange={e => updateHorario(idx, "ini", e.target.value)}
                         onBlur={idx === 0 ? handleNombreBlur : undefined}
-                        className="border rounded-lg px-2 py-1.5 text-sm w-28 focus:outline-none" />
-                      <span className="text-sm text-pine-300">→</span>
+                        className="input !w-36" />
+                      <span className="text-[15px] text-ink-soft">→</span>
                       <input type="time" value={h.fin} onChange={e => updateHorario(idx, "fin", e.target.value)}
-                        className="border rounded-lg px-2 py-1.5 text-sm w-28 focus:outline-none" />
+                        className="input !w-36" />
                       <button onClick={() => removeHorario(idx)}
-                        className="text-red-400 hover:text-red-600 text-sm">✕</button>
+                        className="w-10 h-10 flex items-center justify-center rounded-[10px] text-red-700 hover:bg-red-50 text-[15px]">✕</button>
                     </div>
                   ))}
                 </div>
@@ -324,26 +324,26 @@ export default function GruposPage() {
 
               {/* Color preview */}
               {form.nombre && (
-                <div className="rounded-lg p-3 border text-sm font-medium"
+                <div className="rounded-[10px] p-3 border text-[15px] font-medium"
                   style={{
                     background: PALETTE[form.color_idx]?.bg,
                     color: PALETTE[form.color_idx]?.text,
                     borderColor: PALETTE[form.color_idx]?.border,
                   }}>
                   Vista previa: {form.nombre}
-                  {form.nivel && <span className="ml-2 opacity-70 text-xs">{form.nivel}</span>}
+                  {form.nivel && <span className="ml-2 opacity-70 text-[13px]">{form.nivel}</span>}
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t flex justify-end gap-2 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-pine-900/10 flex justify-end gap-2 flex-shrink-0">
               <button onClick={closeModal}
-                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
+                className="btn-ghost">
                 Cancelar
               </button>
               <button onClick={handleSubmit} disabled={saveMut.isPending}
-                className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+                className="btn-primary disabled:opacity-50">
                 {saveMut.isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear grupo"}
               </button>
             </div>
@@ -353,23 +353,23 @@ export default function GruposPage() {
 
       {/* Delete confirmation modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-pine-900 mb-1">Eliminar grupo</h3>
-            <p className="text-sm text-pine-800 mb-1">
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Eliminar grupo</h3>
+            <p className="text-[15px] text-ink mb-1">
               ¿Eliminar <strong>{confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-pine-700 mb-4">
+            <p className="text-[14px] text-ink-soft mb-4">
               Los alumnos del grupo no se eliminarán, pero perderán la asignación.
             </p>
-            {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
+            {deleteError && <p className="text-red-700 text-[14px] mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
-                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
+                className="btn-ghost">
                 Cancelar
               </button>
               <button onClick={() => deleteMut.mutate(confirmDelete.id)} disabled={deleteMut.isPending}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                 {deleteMut.isPending ? "Eliminando..." : "Eliminar"}
               </button>
             </div>

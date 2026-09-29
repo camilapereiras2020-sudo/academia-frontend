@@ -11,25 +11,15 @@ function AttentionCard({
   return (
     <Link
       to={to}
-      className="card"
-      style={{
-        display: "flex", gap: "1rem", padding: "1.25rem", textDecoration: "none",
-        opacity: vacio ? 0.55 : 1,
-      }}
+      className={`card !bg-white flex gap-4 p-5 no-underline hover:!border-brass-500 ${vacio ? "opacity-60" : ""}`}
     >
-      <div style={{
-        width: "2.25rem", height: "2.25rem", borderRadius: "50%", flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: vacio ? "var(--dark-3)" : "var(--gold-muted)",
-        color: vacio ? "var(--text-dim)" : "var(--gold)",
-        fontWeight: 600, fontFamily: "Cormorant Garamond, serif", fontSize: "1.1rem",
-      }}>
+      <div className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center font-head text-[18px] ${
+        vacio ? "bg-khaki-100 text-ink-soft" : "bg-pine-900 text-brass-500"
+      }`}>
         {numero}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontWeight: 600, fontSize: "1.2rem", color: "var(--text)", marginBottom: "0.5rem" }}>
-          {titulo}
-        </p>
+      <div className="flex-1 min-w-0">
+        <p className="font-head text-[20px] leading-tight text-pine-900 mb-2">{titulo}</p>
         {children}
       </div>
     </Link>
@@ -47,53 +37,53 @@ export default function ReceptionSummary() {
   const incompletos = data?.alumnos_incompletos ?? []
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="page-title" style={{ fontSize: "3rem" }}>Qué hacer hoy</h1>
-        <p className="page-subtitle" style={{ fontSize: "1rem", color: "var(--text-muted)" }}>Lo que necesita tu atención, en orden de prioridad</p>
+        <h1 className="page-title">Qué hacer hoy</h1>
+        <p className="page-subtitle">Lo que necesita tu atención, en orden de prioridad</p>
       </div>
 
-      {isLoading && <p style={{ color: "var(--text-muted)", fontSize: "1rem" }}>Cargando…</p>}
+      {isLoading && <p className="text-[15px] text-ink-soft">Cargando…</p>}
 
       {!isLoading && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="flex flex-col gap-3 max-w-3xl">
           <AttentionCard numero={1} titulo="Cumpleaños próximos" to="/cumpleanos" vacio={!cumples.length}>
             {!cumples.length && (
-              <p style={{ fontSize: "1rem", color: "var(--text-muted)" }}>Nada pendiente</p>
+              <p className="text-[15px] text-ink-soft">Nada pendiente</p>
             )}
             {!!cumples.length && (
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <ul className="list-none flex flex-col gap-1">
                 {cumples.slice(0, 5).map(c => (
-                  <li key={c.id} style={{ fontSize: "1rem", color: "var(--text-muted)" }}>
+                  <li key={c.id} className="text-[15px] text-ink-soft">
                     {c.nombre} — {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos} días`}
                   </li>
                 ))}
                 {cumples.length > 5 && (
-                  <li style={{ fontSize: "0.9rem", color: "var(--gold-dim)" }}>+{cumples.length - 5} más</li>
+                  <li className="font-label text-[14px] font-semibold text-brass-700">+{cumples.length - 5} más</li>
                 )}
               </ul>
             )}
           </AttentionCard>
 
           <AttentionCard numero={2} titulo="WhatsApp pendientes" to="/whatsapp-respuestas" vacio={!whatsappCount}>
-            <p style={{ fontSize: "1rem", color: "var(--text-muted)" }}>
+            <p className="text-[15px] text-ink-soft">
               {whatsappCount ? `${whatsappCount} consulta${whatsappCount === 1 ? "" : "s"} sin responder` : "Nada pendiente"}
             </p>
           </AttentionCard>
 
           <AttentionCard numero={3} titulo="Alumnos con datos incompletos" to="/alumnos?incompletos=1" vacio={!incompletos.length}>
             {!incompletos.length && (
-              <p style={{ fontSize: "1rem", color: "var(--text-muted)" }}>Nada pendiente</p>
+              <p className="text-[15px] text-ink-soft">Nada pendiente</p>
             )}
             {!!incompletos.length && (
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <ul className="list-none flex flex-col gap-1">
                 {incompletos.slice(0, 5).map(a => (
-                  <li key={a.id} style={{ fontSize: "1rem", color: "var(--text-muted)" }}>
+                  <li key={a.id} className="text-[15px] text-ink-soft">
                     {a.nombre} — falta {!a.telefono && !a.email ? "teléfono y email" : !a.telefono ? "teléfono" : "email"}
                   </li>
                 ))}
                 {incompletos.length > 5 && (
-                  <li style={{ fontSize: "0.9rem", color: "var(--gold-dim)" }}>+{incompletos.length - 5} más</li>
+                  <li className="font-label text-[14px] font-semibold text-brass-700">+{incompletos.length - 5} más</li>
                 )}
               </ul>
             )}

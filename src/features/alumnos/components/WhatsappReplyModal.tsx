@@ -60,39 +60,40 @@ export default function WhatsappReplyModal({ alumno, pagadorNombre, grupoNombre,
 
   return createPortal(
     <div className="modal-overlay" {...overlayGuard}>
-      <div className="modal" style={{ maxWidth: "34rem" }}>
+      <div className="modal !bg-white" style={{ maxWidth: "34rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Generar respuesta WhatsApp</h2>
-          <button onClick={onClose} className="btn-ghost" style={{ padding: "0.25rem 0.6rem" }}>✕</button>
+          <h2 className="font-head text-[22px] leading-tight text-pine-900">Generar respuesta WhatsApp</h2>
+          <button onClick={onClose} aria-label="Cerrar" className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-          <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", background: "var(--surface)", padding: "0.6rem 0.75rem", borderRadius: "var(--radius-sm)" }}>
+          <p className="text-[14px] text-ink-soft bg-khaki-100 px-3.5 py-2.5 rounded-[10px]">
             Contexto: {context}
           </p>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.35rem" }}>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Mensaje recibido
             </label>
             <textarea
               rows={3} value={incoming} onChange={e => setIncoming(e.target.value)}
               placeholder="Pega el mensaje de WhatsApp aquí..."
-              className="input" style={{ resize: "none" }}
+              className="input !py-2.5 resize-none"
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.4rem" }}>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Situación
             </label>
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
               {SITUACIONES.map(s => (
                 <button key={s.value} type="button" onClick={() => setSituation(s.value)}
-                  className={situation === s.value ? "badge" : "btn-ghost"}
-                  style={situation === s.value
-                    ? { background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid var(--border)", cursor: "pointer" }
-                    : { fontSize: "0.7rem" }}>
+                  className={`min-h-[40px] px-3.5 rounded-full border font-label text-[14px] font-semibold transition-colors ${
+                    situation === s.value
+                      ? "bg-pine-900 border-pine-900 text-khaki-100"
+                      : "bg-white border-pine-900/20 text-pine-700 hover:bg-khaki-100"
+                  }`}>
                   {s.label}
                 </button>
               ))}
@@ -103,14 +104,14 @@ export default function WhatsappReplyModal({ alumno, pagadorNombre, grupoNombre,
             {generarMut.isPending ? "Generando..." : "Generar respuesta"}
           </button>
 
-          {error && <p style={{ fontSize: "0.8rem", color: "var(--terracotta)" }}>{error}</p>}
+          {error && <p className="text-[14px] text-red-700">{error}</p>}
 
           {reply && (
             <div>
-              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.35rem" }}>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
                 Respuesta sugerida
               </label>
-              <textarea rows={5} value={reply} onChange={e => setReply(e.target.value)} className="input" style={{ resize: "none" }} />
+              <textarea rows={5} value={reply} onChange={e => setReply(e.target.value)} className="input !py-2.5 resize-none" />
               <button onClick={handleCopy} className="btn-ghost" style={{ marginTop: "0.5rem", width: "100%" }}>
                 {copied ? "Copiado ✓" : "Copiar"}
               </button>

@@ -16,6 +16,7 @@ export default {
           500: "#7c8a68",
           300: "#a3ad8f",
           100: "#dde3d3",
+          50: "#EEF2EE",
         },
         khaki: {
           400: "#C8B896",
@@ -32,6 +33,11 @@ export default {
           600: "#8A6B49",
           500: "#a17f56",
           100: "#e6d8bc",
+        },
+        // Station Desk text inks
+        ink: {
+          DEFAULT: "#2B3A2F",
+          soft: "#5B6B5F",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -64,11 +70,12 @@ export default {
         // Tailwind's own gray-200 default, which nearly disappears against
         // the warm cream/khaki backgrounds and white cards used everywhere.
         // Give it a warm tone from the palette that's actually visible.
-        DEFAULT: "#B8A47E",
+        DEFAULT: "rgba(63, 82, 66, 0.25)",
       },
       fontFamily: {
         head: ["Bevan", "serif"],
-        body: ["'Barlow Semi Condensed'", "sans-serif"],
+        body: ["Barlow", "system-ui", "sans-serif"],
+        label: ["'Barlow Semi Condensed'", "sans-serif"],
         serif: ["'Cormorant Garamond'", "serif"],
       },
       borderRadius: {
@@ -79,4 +86,4 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+}

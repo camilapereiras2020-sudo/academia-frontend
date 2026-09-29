@@ -8,16 +8,16 @@ export default function ConfigPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900 mb-6">Configuración</h1>
+      <h1 className="page-title mb-6">Configuración</h1>
 
       {/* Account info */}
-      <div className="bg-khaki-100 border rounded-xl p-4 mb-5 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-brass-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+      <div className="card !bg-white p-4 mb-5 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-full bg-pine-900 flex items-center justify-center text-khaki-100 font-head text-[16px] flex-shrink-0">
           {user?.email?.[0]?.toUpperCase() ?? "U"}
         </div>
         <div>
-          <p className="font-semibold text-pine-900 text-sm">{user?.email}</p>
-          <p className="text-xs text-pine-700">Cuenta de academia</p>
+          <p className="text-[15px] font-semibold text-ink">{user?.email}</p>
+          <p className="text-[14px] text-ink-soft">Cuenta de academia</p>
         </div>
       </div>
 
@@ -32,14 +32,14 @@ export default function ConfigPage() {
       <ProfesoresConfigSection />
 
       {/* Danger zone */}
-      <div className="mt-6 bg-white rounded-xl shadow-sm border border-red-100 p-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-red-400 mb-3">Zona de peligro</p>
-        <p className="text-sm text-pine-700 mb-4">
+      <div className="mt-6 card !bg-white !border-red-200 p-6">
+        <p className="font-label text-[14px] font-semibold uppercase tracking-[0.12em] text-red-700 mb-3">Zona de peligro</p>
+        <p className="text-[15px] text-ink-soft mb-4">
           Para cerrar sesión o eliminar la cuenta, contacta con el administrador.
         </p>
         <button
           onClick={() => useAuthStore.getState().logout()}
-          className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50">
+          className="min-h-[44px] px-4 border border-red-200 text-red-700 rounded-[10px] text-[15px] font-semibold hover:bg-red-50">
           Cerrar sesión
         </button>
       </div>

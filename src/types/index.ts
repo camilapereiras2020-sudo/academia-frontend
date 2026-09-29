@@ -202,9 +202,8 @@ export interface PagadorCalculoItem {
   dias_semana?: number
   duracion_min?: number
   precio: number
-  descuento_pct?: number
   n_hermanos?: number
-  // bono_familia: reparto proporcional al tramo individual de cada hermano.
+  // bono_familia: precio de la tarifa repartido a partes iguales entre los 2 hermanos.
   perfiles?: { alumno: string; dias_semana: number; duracion_min: number; cuota: number }[]
 }
 

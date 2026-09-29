@@ -15,7 +15,10 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    // A 401 from the login endpoint means wrong credentials, not an expired
+    // token — let it reach the caller instead of refreshing and reloading /login.
+    const isLogin = original?.url?.includes("/auth/login/")
+    if (error.response?.status === 401 && !original._retry && !isLogin) {
       original._retry = true
       try {
         const refresh = localStorage.getItem("refresh_token")

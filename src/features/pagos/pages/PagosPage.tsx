@@ -27,7 +27,7 @@ const ESTADO_LABEL: Record<string, string> = {
 
 function Badge({ estado }: { estado: string }) {
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_CLS[estado] ?? "bg-khaki-100 text-pine-600"}`}>
+    <span className={`badge ${ESTADO_CLS[estado] ?? "bg-khaki-100 text-pine-700"}`}>
       {ESTADO_LABEL[estado] ?? estado}
     </span>
   )
@@ -183,27 +183,27 @@ export default function PagosPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Pagos</h1>
-          <p className="text-sm text-pine-700 mt-1">{pagos.length} registros</p>
+          <h1 className="page-title">Pagos</h1>
+          <p className="page-subtitle">{pagos.length} registros</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {pendientesCount > 0 && (
             <button
               onClick={() => navigate("/pagos/pendientes")}
-              className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-200"
+              className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-[10px] bg-orange-100 text-orange-900 text-[15px] font-semibold hover:bg-orange-200"
             >
               ⚠ Revisar {pendientesCount} pendiente{pendientesCount === 1 ? "" : "s"}
             </button>
           )}
           <button
             onClick={() => { setShowGenerarMes(true); setGenerarMesResult(null) }}
-            className="inline-flex items-center gap-2 bg-white border border-brass-300 text-brass-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-khaki-100"
+            className="btn-ghost inline-flex items-center gap-2"
           >
-            📅 Generar pagos del mes
+            Generar pagos del mes
           </button>
           <button
             onClick={showForm ? closeForm : openForm}
-            className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700"
+            className="btn-primary inline-flex items-center gap-2"
           >
             {showForm ? "✕ Cancelar" : "+ Nuevo pago"}
           </button>
@@ -212,39 +212,39 @@ export default function PagosPage() {
 
       {/* Generar pagos del mes modal */}
       {showGenerarMes && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" {...generarMesOverlayGuard}>
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" {...generarMesOverlayGuard}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-pine-900">Generar pagos del mes</h2>
-              <button onClick={() => setShowGenerarMes(false)} className="text-khaki-400 hover:text-pine-600 text-lg leading-none">✕</button>
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">Generar pagos del mes</h2>
+              <button onClick={() => setShowGenerarMes(false)} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
-            <p className="text-sm text-pine-700 mb-4">
+            <p className="text-[15px] text-ink-soft mb-4">
               Crea un pago pendiente de facturar por cada alumno matriculado, usando la tarifa de su grupo.
               No se genera ningún número ni PDF todavía — solo el pago, listo para que lo revisen y confirmen.
               Si un alumno ya tiene un pago para este período, se omite (podés correrlo de nuevo sin duplicar nada).
             </p>
             {!generarMesResult ? (
               <>
-                <label className="block text-xs font-semibold text-pine-700 mb-1">Período</label>
+                <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Período</label>
                 <input type="month" value={periodoMes} onChange={e => setPeriodoMes(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                  className="input mb-4" />
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setShowGenerarMes(false)} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-300">
+                  <button onClick={() => setShowGenerarMes(false)} className="btn-ghost">
                     Cancelar
                   </button>
                   <button onClick={() => generarMesMut.mutate(periodoMes)} disabled={generarMesMut.isPending}
-                    className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+                    className="btn-primary disabled:opacity-50">
                     {generarMesMut.isPending ? "Generando..." : "Generar"}
                   </button>
                 </div>
               </>
             ) : (
               <div>
-                <p className="text-sm font-medium text-pine-900 mb-2">
+                <p className="text-[16px] font-semibold text-ink mb-2">
                   {generarMesResult.creados.length} pago{generarMesResult.creados.length === 1 ? "" : "s"} creado{generarMesResult.creados.length === 1 ? "" : "s"} para {generarMesResult.periodo}
                 </p>
                 {generarMesResult.creados.length > 0 && (
-                  <ul className="text-xs text-pine-700 mb-3 max-h-32 overflow-y-auto space-y-0.5">
+                  <ul className="text-[14px] text-ink mb-3 max-h-40 overflow-y-auto space-y-1">
                     {generarMesResult.creados.map(c => (
                       <li key={c.pago_id}>✓ {c.alumno} — {formatEur(Number(c.total))}</li>
                     ))}
@@ -252,8 +252,8 @@ export default function PagosPage() {
                 )}
                 {generarMesResult.omitidos.length > 0 && (
                   <>
-                    <p className="text-xs font-semibold text-amber-700 mb-1">Omitidos — revisar a mano:</p>
-                    <ul className="text-xs text-amber-700 mb-3 max-h-32 overflow-y-auto space-y-0.5">
+                    <p className="font-label text-[14px] font-semibold text-amber-800 mb-1">Omitidos — revisar a mano:</p>
+                    <ul className="text-[14px] text-amber-800 mb-3 max-h-40 overflow-y-auto space-y-1">
                       {generarMesResult.omitidos.map((o, i) => (
                         <li key={i}>⚠ {o.alumno ? `${o.alumno}: ` : ""}{o.motivo}</li>
                       ))}
@@ -261,7 +261,7 @@ export default function PagosPage() {
                   </>
                 )}
                 <div className="flex justify-end">
-                  <button onClick={() => setShowGenerarMes(false)} className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700">
+                  <button onClick={() => setShowGenerarMes(false)} className="btn-primary">
                     Listo
                   </button>
                 </div>
@@ -273,17 +273,17 @@ export default function PagosPage() {
 
       {/* Create form */}
       {showForm && (
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <h2 className="font-semibold text-pine-900 mb-4">Nuevo pago</h2>
+        <div className="card !bg-white p-6 mb-6">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900 mb-4">Nuevo pago</h2>
           {formError && (
-            <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{formError}</p>
+            <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{formError}</p>
           )}
           <div className="mb-4">
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Marca / Emisor *</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Marca / Emisor *</label>
             <select
               value={form.marca}
               onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+              className="input"
             >
               <option value="">Seleccionar...</option>
               {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -291,61 +291,61 @@ export default function PagosPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Alumno *</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Alumno *</label>
               <select
                 value={form.alumno}
                 onChange={e => onAlumnoChange(e.target.value ? +e.target.value : "")}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                className="input"
               >
                 <option value="">Seleccionar...</option>
                 {alumnos.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Pagador *</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Pagador *</label>
               <select
                 value={form.pagador}
                 onChange={e => setForm(f => ({ ...f, pagador: e.target.value ? +e.target.value : "" }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                className="input"
               >
                 <option value="">Seleccionar...</option>
                 {pagadores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Importe (€) *</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Importe (€) *</label>
               <input
                 type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.mensualidad}
                 onChange={e => setForm(f => ({ ...f, mensualidad: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                className="input"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Método</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Método</label>
               <select
                 value={form.metodo}
                 onChange={e => setForm(f => ({ ...f, metodo: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                className="input"
               >
                 {METODOS.map(m => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Periodo *</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Periodo *</label>
               <input
                 type="month"
                 value={form.periodo}
                 onChange={e => setForm(f => ({ ...f, periodo: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                className="input"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-pine-700 mb-1">Grupo</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Grupo</label>
               <select
                 value={form.grupo}
                 onChange={e => setForm(f => ({ ...f, grupo: e.target.value ? +e.target.value : "" }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                className="input"
               >
                 <option value="">Sin grupo</option>
                 {grupos.map(g => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
@@ -353,25 +353,25 @@ export default function PagosPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Notas</label>
             <textarea
               rows={2} placeholder="Observaciones..."
               value={form.notas}
               onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none"
+              className="input !py-2.5 resize-none"
             />
           </div>
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeForm} className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200">
+            <button onClick={closeForm} className="btn-ghost">
               Cancelar
             </button>
             <button onClick={handleSaveDraft} disabled={createMut.isPending}
               title="Guarda lo que tengas hasta ahora sin alumno/pagador/grupo definitivos — no genera factura ni reserva número, aparece en Pagos pendientes"
-              className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 text-sm hover:bg-orange-200 disabled:opacity-50">
+              className="min-h-[44px] px-4 rounded-[10px] bg-orange-100 text-orange-900 text-[15px] font-semibold hover:bg-orange-200 disabled:opacity-50">
               {createMut.isPending ? "Guardando..." : "Guardar como borrador"}
             </button>
             <button onClick={handleSubmit} disabled={createMut.isPending}
-              className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+              className="btn-primary disabled:opacity-50">
               {createMut.isPending ? "Guardando..." : "Crear pago"}
             </button>
           </div>
@@ -383,7 +383,7 @@ export default function PagosPage() {
         <select
           value={estadoFilter}
           onChange={e => setEstadoFilter(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+          className="input !w-auto"
         >
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
@@ -393,21 +393,21 @@ export default function PagosPage() {
         <input
           type="month" value={periodoFilter}
           onChange={e => setPeriodoFilter(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+          className="input !w-auto"
         />
         {periodoFilter && (
-          <button onClick={() => setPeriodoFilter("")} className="text-xs text-brass-700 hover:text-pine-900">
+          <button onClick={() => setPeriodoFilter("")} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">
             Limpiar mes
           </button>
         )}
-        <div className="inline-flex rounded-lg border overflow-hidden text-sm">
+        <div className="inline-flex rounded-[10px] border border-pine-900/20 overflow-hidden">
           {([
             ["", "Todas"],
             ["rangers_academy", "Rangers Academy"],
             ["cami_and_co", "Cami & Co"],
           ] as const).map(([value, label]) => (
             <button key={value} onClick={() => setMarcaFilter(value)}
-              className={`px-3 py-2 ${marcaFilter === value ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
+              className={`min-h-[44px] px-4 font-label text-[14px] font-semibold border-l border-pine-900/20 first:border-l-0 ${marcaFilter === value ? "bg-pine-900 text-khaki-100" : "bg-white text-pine-700 hover:bg-khaki-100"}`}>
               {label}
             </button>
           ))}
@@ -415,62 +415,63 @@ export default function PagosPage() {
       </div>
 
       {actionError && (
-        <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{actionError}</p>
+        <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{actionError}</p>
       )}
 
       {/* List */}
-      {isLoading && <p className="text-khaki-400 text-sm py-4">Cargando...</p>}
+      {isLoading && <p className="text-ink-soft text-[15px] py-4">Cargando...</p>}
 
       {!isLoading && !pagos.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
-          <span className="text-4xl mb-3">💳</span>
-          <p className="text-sm">Sin pagos registrados.</p>
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+          <p className="text-[15px]">Sin pagos registrados.</p>
         </div>
       )}
 
       {!isLoading && !!pagos.length && (
-        <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-khaki-100 border-b">
+        <div className="card !bg-white overflow-x-auto">
+          <table className="data-table [&_td]:!px-3 [&_th]:!px-3">
+            <thead>
               <tr>
                 {["Alumno", "Pagador", "Periodo", "Fecha de pago", "Importe", "Método", "Doc", "Estado", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-wide text-pine-700 font-semibold whitespace-nowrap">
+                  <th key={h}>
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-khaki-100">
+            <tbody>
               {pagos.map(p => (
-                <tr key={p.id} onClick={() => setSelectedPago(p)} className="hover:bg-khaki-100 cursor-pointer">
-                  <td className="px-4 py-3 font-medium text-pine-900 whitespace-nowrap">
+                <tr key={p.id} onClick={() => setSelectedPago(p)} className="cursor-pointer">
+                  <td className="font-semibold whitespace-nowrap">
                     {p.alumno && p.alumno_nombre ? (
                       <Link to={`/alumnos/${p.alumno}`} onClick={e => e.stopPropagation()} className="hover:text-brass-700 hover:underline">
                         {p.alumno_nombre}
                       </Link>
                     ) : (p.alumno_nombre ?? "—")}
                   </td>
-                  <td className="px-4 py-3 text-pine-600 whitespace-nowrap">{p.pagador_nombre ?? "—"}</td>
-                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{formatMonth(p.periodo)}</td>
-                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
-                  <td className="px-4 py-3 font-semibold text-pine-900 whitespace-nowrap">{formatEur(Number(p.total))}</td>
-                  <td className="px-4 py-3 text-pine-700 text-xs whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
-                  <td className="px-4 py-3 text-xs text-pine-600 font-mono whitespace-nowrap">{p.num_doc || "—"}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="!text-ink-soft">{p.pagador_nombre ?? "—"}</td>
+                  <td className="!text-ink-soft">{formatMonth(p.periodo)}</td>
+                  <td className="!text-ink-soft" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
+                  <td className="font-semibold whitespace-nowrap">{formatEur(Number(p.total))}</td>
+                  <td className="!text-ink-soft whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
+                  <td className="font-mono !text-[13px] !text-ink-soft whitespace-nowrap">{p.num_doc || "—"}</td>
+                  <td>
+                    <div className="flex flex-wrap items-center gap-1">
                     <Badge estado={p.estado} />
                     {p.estado_carga === "pendiente_completar" && (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 ml-1 whitespace-nowrap">
+                      <span className="badge bg-orange-100 text-orange-900 whitespace-nowrap">
                         ⚠ Incompleto
                       </span>
                     )}
+                    </div>
                   </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <div className="flex gap-1 justify-end">
+                  <td onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-1.5 justify-end">
                       {p.estado !== "pagado" && (
                         <button
                           onClick={() => marcarMut.mutate(p.id)}
                           disabled={marcarMut.isPending && marcarMut.variables === p.id}
-                          className="px-2 py-1 border rounded text-xs text-green-700 hover:bg-green-50 disabled:opacity-50 whitespace-nowrap"
+                          className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-green-300 text-[14px] font-semibold text-green-800 hover:bg-green-50 disabled:opacity-50 whitespace-nowrap"
                         >
                           ✓ Cobrar
                         </button>
@@ -479,15 +480,15 @@ export default function PagosPage() {
                         <button
                           onClick={() => generarMut.mutate(p)}
                           disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
-                          className="px-2 py-1 border rounded text-xs text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
+                          className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] px-2 rounded-[10px] border border-brass-500/50 text-[15px] text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
                           title="Confirmar factura o recibo"
                         >
                           🧾
                         </button>
                       )}
                       <button
-                        onClick={() => setConfirmDelete(p.id)}
-                        className="px-2 py-1 border rounded text-xs text-red-600 hover:bg-red-50"
+                        onClick={() => setConfirmDelete(p.id)} aria-label="Eliminar pago" title="Eliminar pago"
+                        className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] rounded-[10px] border border-red-200 text-[14px] text-red-700 hover:bg-red-50"
                       >
                         ✕
                       </button>
@@ -502,24 +503,24 @@ export default function PagosPage() {
 
       {/* Delete confirm modal */}
       {confirmDelete !== null && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-pine-900 mb-1">Eliminar pago</h3>
-            <p className="text-sm text-pine-700 mb-4">Esta acción no se puede deshacer.</p>
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Eliminar pago</h3>
+            <p className="text-[15px] text-ink-soft mb-4">Esta acción no se puede deshacer.</p>
             {deleteError && (
-              <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg mb-4">{deleteError}</p>
+              <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{deleteError}</p>
             )}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => { setConfirmDelete(null); setDeleteError("") }}
-                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200"
+                className="btn-ghost"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => deleteMut.mutate(confirmDelete)}
                 disabled={deleteMut.isPending}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50"
+                className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50"
               >
                 {deleteMut.isPending ? "Eliminando..." : "Eliminar"}
               </button>

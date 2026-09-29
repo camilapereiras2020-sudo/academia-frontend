@@ -11,12 +11,18 @@ import EmailModal from "@/components/shared/EmailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import { useAuthStore } from "@/store/authStore"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
+import { Phone, Mail, CreditCard, GraduationCap } from "lucide-react"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
-  "bg-brass-500", "bg-green-600", "bg-rose-500", "bg-amber-500",
-  "bg-purple-600", "bg-teal-600", "bg-pink-500", "bg-indigo-600",
+  "bg-pine-900", "bg-brass-700", "bg-pine-600", "bg-rust-500",
+  "bg-pine-700", "bg-pine-500",
 ]
+
+// Station Desk UI tokens shared by the list, the form modal and the confirm.
+const LABEL_CLS = "block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1"
+const SECTION_CLS = "font-label text-[14px] font-semibold uppercase tracking-[0.12em] text-brass-700 mb-3"
+const ACTION_BTN = "inline-flex items-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold transition-colors"
 
 function initials(name: string) {
   return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
@@ -201,12 +207,11 @@ export default function AlumnosPage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Alumnos</h1>
-          <p className="text-sm text-pine-700 mt-1">{alumnosFiltrados.length} alumnos registrados</p>
+          <h1 className="page-title">Alumnos</h1>
+          <p className="page-subtitle">{alumnosFiltrados.length} alumnos registrados</p>
         </div>
         {!isReception && (
-          <button onClick={openNew}
-            className="inline-flex items-center gap-2 bg-brass-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brass-700">
+          <button onClick={openNew} className="btn-primary">
             + Nuevo alumno
           </button>
         )}
@@ -217,32 +222,32 @@ export default function AlumnosPage() {
         <input
           type="text" placeholder="Buscar por nombre, email o teléfono..." value={search}
           onChange={e => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+          className="input !w-full md:!w-[360px]"
         />
-        <div className="inline-flex rounded-lg border overflow-hidden text-sm">
+        <div className="inline-flex rounded-[10px] border border-pine-900/20 overflow-hidden">
           {([
             ["", "Todas"],
             ["rangers_academy", "Rangers Academy"],
             ["cami_and_co", "Cami & Co"],
           ] as const).map(([value, label]) => (
             <button key={value} onClick={() => setMarcaFilter(value)}
-              className={`px-3 py-2 ${marcaFilter === value ? "bg-brass-500 text-white" : "bg-white text-pine-600 hover:bg-khaki-100"}`}>
+              className={`min-h-[44px] px-4 font-label text-[14px] font-semibold border-l border-pine-900/20 first:border-l-0 ${marcaFilter === value ? "bg-pine-900 text-khaki-100" : "bg-white text-pine-700 hover:bg-khaki-100"}`}>
               {label}
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-1.5 text-sm text-pine-700 cursor-pointer select-none">
-          <input type="checkbox" checked={mostrarExAlumnos} onChange={e => setMostrarExAlumnos(e.target.checked)} />
+        <label className="flex items-center gap-2 min-h-[44px] text-[15px] text-pine-700 cursor-pointer select-none">
+          <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={mostrarExAlumnos} onChange={e => setMostrarExAlumnos(e.target.checked)} />
           Mostrar ex-alumnos
         </label>
       </div>
 
       {soloIncompletos && (
-        <div className="flex items-center gap-2 mb-4 text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-3 flex-wrap mb-4 text-[15px] bg-amber-50 text-amber-900 border border-amber-200 rounded-[10px] px-4 py-2">
           <span>Mostrando solo alumnos con teléfono o email incompleto.</span>
           <button
             onClick={() => setSearchParams(params => { params.delete("incompletos"); return params }, { replace: true })}
-            className="underline hover:no-underline"
+            className="min-h-[40px] font-semibold underline hover:no-underline"
           >
             Quitar filtro
           </button>
@@ -250,11 +255,11 @@ export default function AlumnosPage() {
       )}
 
       {/* States */}
-      {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
       {!isLoading && !alumnosFiltrados.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
-          <span className="text-5xl mb-3">🎓</span>
-          <p className="text-sm">
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
+          <GraduationCap size={40} strokeWidth={1.5} className="text-brass-500 mb-3" />
+          <p className="text-[15px]">
             {soloIncompletos ? "Ningún alumno con datos incompletos." : search ? "Sin resultados para esa búsqueda." : "Sin alumnos. Crea el primero."}
           </p>
         </div>
@@ -270,90 +275,90 @@ export default function AlumnosPage() {
           const gruposDetalle = a.grupos_detalle ?? []
           return (
             <div key={a.id} onClick={() => navigate(`/alumnos/${a.id}`)}
-              className="bg-white rounded-xl border shadow-sm p-4 flex items-start gap-4 cursor-pointer hover:border-brass-300 transition-colors">
+              className="card !bg-white p-4 flex items-start gap-4 cursor-pointer hover:!border-brass-500">
               {/* Avatar */}
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${color}`}>
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center text-khaki-100 text-[14px] font-bold flex-shrink-0 ${color}`}>
                 {initials(a.nombre)}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-semibold text-pine-900">{a.nombre}</span>
+                  <span className="text-[16px] font-semibold text-ink">{a.nombre}</span>
                   {a.activo === false && (
-                    <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-khaki-200 text-pine-600">
+                    <span className="badge bg-khaki-200 text-pine-700">
                       Ex-alumno
                     </span>
                   )}
                   {yearsOld !== null && (
-                    <span className="text-xs text-pine-600">{yearsOld} años</span>
+                    <span className="text-[14px] text-ink-soft">{yearsOld} años</span>
                   )}
                   {a.fnac && (
-                    <span className="text-xs text-pine-600">{new Date(a.fnac).toLocaleDateString("es-ES")}</span>
+                    <span className="text-[14px] text-ink-soft">{new Date(a.fnac).toLocaleDateString("es-ES")}</span>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
                   {a.telefono && (
-                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="text-xs text-pine-700 hover:text-brass-700">
-                      📞 {a.telefono}
+                    <a href={`tel:${a.telefono}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1.5 text-[14px] text-pine-700 hover:text-brass-700">
+                      <Phone size={14} strokeWidth={2} className="text-brass-700" />{a.telefono}
                     </a>
                   )}
                   {a.email && (
-                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="text-xs text-pine-700 hover:text-brass-700">
-                      ✉ {a.email}
+                    <a href={`mailto:${a.email}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1.5 text-[14px] text-pine-700 hover:text-brass-700">
+                      <Mail size={14} strokeWidth={2} className="text-brass-700" />{a.email}
                     </a>
                   )}
                   {pag && (
-                    <span className="text-xs text-pine-700">💳 {pag}</span>
+                    <span className="inline-flex items-center gap-1.5 text-[14px] text-pine-700"><CreditCard size={14} strokeWidth={2} className="text-brass-700" />{pag}</span>
                   )}
                 </div>
 
                 {a.notas && (
-                  <p className="text-xs text-pine-600 mt-1 italic truncate max-w-md">{a.notas}</p>
+                  <p className="text-[14px] text-ink-soft mt-1 italic truncate max-w-md">{a.notas}</p>
                 )}
 
                 {/* Group badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {gruposDetalle.map(g => (
-                    <span key={g.grupo} className="inline-flex items-center gap-1 text-xs font-medium bg-khaki-100 text-brass-700 px-2 py-0.5 rounded-full">
+                    <span key={g.grupo} className="inline-flex items-center gap-1 font-label text-[13px] font-semibold bg-khaki-100 text-pine-900 border border-pine-900/10 px-2.5 py-1 rounded-full">
                       {g.grupo_nombre}
                       {g.horarios.length > 0 && (
-                        <span className="font-normal text-brass-500">
+                        <span className="font-medium text-ink-soft">
                           · {g.horarios.map(h => DIAS[h.dia]?.slice(0, 3) + " " + h.ini).join(", ")}
                         </span>
                       )}
                     </span>
                   ))}
                   {!gruposDetalle.length && (
-                    <span className="text-xs text-pine-600 italic">Sin grupo asignado</span>
+                    <span className="text-[14px] text-ink-soft italic">Sin grupo asignado</span>
                   )}
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="flex flex-wrap justify-end gap-1.5 flex-shrink-0 max-w-[45%]" onClick={e => e.stopPropagation()}>
                 {pagObj_?.telefono && (
                   <a
                     href={waUrl(pagObj_.telefono, pagObj_.nombre, a.nombre)}
                     target="_blank" rel="noreferrer"
-                    className="px-3 py-1.5 border rounded-lg text-xs text-green-700 hover:bg-green-50 border-green-200">
+                    className={`${ACTION_BTN} text-green-800 border-green-300 hover:bg-green-50`}>
                     WhatsApp
                   </a>
                 )}
                 {pagObj_?.email && (
                   <button onClick={() => setEmailTarget(a)}
-                    className="px-3 py-1.5 border rounded-lg text-xs text-brass-700 hover:bg-khaki-100 border-khaki-400">
-                    ✉ Email
+                    className={`${ACTION_BTN} text-brass-700 border-brass-500/50 hover:bg-khaki-100`}>
+                    Email
                   </button>
                 )}
                 <button onClick={() => openEdit(a)}
-                  className="px-3 py-1.5 border rounded-lg text-xs text-pine-600 hover:bg-khaki-100">
+                  className={`${ACTION_BTN} text-pine-900 border-pine-900/25 hover:bg-khaki-100`}>
                   Editar
                 </button>
                 {!isReception && (
-                  <button onClick={() => setConfirmDelete(a)}
-                    className="px-3 py-1.5 border rounded-lg text-xs text-red-600 hover:bg-red-50">
+                  <button onClick={() => setConfirmDelete(a)} aria-label="Eliminar alumno" title="Eliminar alumno"
+                    className={`${ACTION_BTN} text-red-700 border-red-200 hover:bg-red-50`}>
                     ✕
                   </button>
                 )}
@@ -365,34 +370,35 @@ export default function AlumnosPage() {
 
       {/* Create / Edit modal */}
       {showModal && createPortal(
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" {...modalOverlayGuard}>
+        <div className="modal-overlay" {...modalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
             {/* Modal header */}
-            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-bold text-pine-900">{editing ? "Editar alumno" : "Nuevo alumno"}</h2>
-              <button onClick={closeModal} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+            <div className="pl-6 pr-3 py-3 border-b border-pine-900/10 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head text-[22px] leading-tight text-pine-900">{editing ? "Editar alumno" : "Nuevo alumno"}</h2>
+              <button onClick={closeModal} aria-label="Cerrar"
+                className="w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
 
             {/* Modal body */}
             <div className="p-6 overflow-y-auto space-y-5">
               {formError && (
-                <p className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-lg">{formError}</p>
+                <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{formError}</p>
               )}
 
               {/* Datos personales */}
               <section>
-                <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Datos personales</p>
+                <p className={SECTION_CLS}>Datos personales</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Nombre *</label>
+                    <label className={LABEL_CLS}>Nombre *</label>
                     <input type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      className="input" />
                   </div>
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Marca / Emisor *</label>
+                      <label className={LABEL_CLS}>Marca / Emisor *</label>
                       <select value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value as Marca }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+                        className="input">
                         <option value="">Seleccionar...</option>
                         {MARCAS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                       </select>
@@ -400,42 +406,42 @@ export default function AlumnosPage() {
                   )}
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Fecha de nacimiento</label>
+                      <label className={LABEL_CLS}>Fecha de nacimiento</label>
                       <input type="date" value={form.fnac} onChange={e => setForm(f => ({ ...f, fnac: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                        className="input" />
                     </div>
                   )}
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Aviso cumpleaños (días antes)</label>
+                      <label className={LABEL_CLS}>Aviso cumpleaños (días antes)</label>
                       <input type="number" min="0" placeholder="14"
                         value={form.aviso_cumple_dias ?? ""}
                         onChange={e => setForm(f => ({ ...f, aviso_cumple_dias: e.target.value ? +e.target.value : null }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                        className="input" />
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Teléfono</label>
+                    <label className={LABEL_CLS}>Teléfono</label>
                     <input type="tel" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      className="input" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-pine-700 mb-1">Email</label>
+                    <label className={LABEL_CLS}>Email</label>
                     <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                      className="input" />
                   </div>
                   {!isReception && (
                     <div>
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">DNI</label>
+                      <label className={LABEL_CLS}>DNI</label>
                       <input type="text" value={form.dni} onChange={e => setForm(f => ({ ...f, dni: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500" />
+                        className="input" />
                     </div>
                   )}
                   {!isReception && (
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-pine-700 mb-1">Notas</label>
+                      <label className={LABEL_CLS}>Notas</label>
                       <textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 resize-none" />
+                        className="input !py-2.5 resize-none" />
                     </div>
                   )}
                 </div>
@@ -444,19 +450,19 @@ export default function AlumnosPage() {
               {/* Pagador */}
               {!isReception && (
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-3">Pagador</p>
+                  <p className={SECTION_CLS}>Pagador</p>
                   <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-sm text-pine-700 cursor-pointer">
+                    <label className="flex items-center gap-2.5 min-h-[44px] text-[15px] text-pine-900 cursor-pointer">
                       <input type="checkbox" checked={form.es_adulto}
                         onChange={e => {
                           const checked = e.target.checked
                           setForm(f => ({ ...f, es_adulto: checked, pagador: null }))
                         }}
-                        className="w-4 h-4 rounded border-khaki-400 focus:ring-2 focus:ring-brass-500" />
+                        className="w-5 h-5 accent-pine-900" />
                       El alumno es adulto / paga el mismo
                     </label>
                     {form.es_adulto ? (
-                      <p className="text-xs text-pine-700">
+                      <p className="text-[14px] text-ink-soft">
                         Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
                       </p>
                     ) : (
@@ -475,13 +481,13 @@ export default function AlumnosPage() {
             </div>
 
             {/* Modal footer */}
-            <div className="px-6 py-4 border-t flex justify-end gap-2 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-pine-900/10 flex justify-end gap-2 flex-shrink-0">
               <button onClick={closeModal}
-                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-400">
+                className="btn-ghost">
                 Cancelar
               </button>
               <button onClick={handleSubmit} disabled={saveMut.isPending}
-                className="px-4 py-2 rounded-lg bg-brass-500 text-white text-sm hover:bg-brass-700 disabled:opacity-50">
+                className="btn-primary disabled:opacity-50">
                 {saveMut.isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear alumno"}
               </button>
             </div>
@@ -500,21 +506,21 @@ export default function AlumnosPage() {
       )}
 
       {confirmDelete && createPortal(
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-pine-900 mb-1">Eliminar alumno</h3>
-            <p className="text-sm text-pine-700 mb-1">
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Eliminar alumno</h3>
+            <p className="text-[15px] text-ink mb-1">
               ¿Eliminar a <strong>{confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-xs text-pine-600 mb-4">Esta acción no se puede deshacer.</p>
-            {deleteError && <p className="text-red-600 text-xs mb-3">{deleteError}</p>}
+            <p className="text-[14px] text-ink-soft mb-5">Esta acción no se puede deshacer.</p>
+            {deleteError && <p className="text-red-700 text-[14px] mb-3">{deleteError}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmDelete(null); setDeleteError("") }}
-                className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-400">
+                className="btn-ghost">
                 Cancelar
               </button>
               <button onClick={() => deleteMut.mutate(confirmDelete.id)} disabled={deleteMut.isPending}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                 {deleteMut.isPending ? "Eliminando..." : "Eliminar"}
               </button>
             </div>

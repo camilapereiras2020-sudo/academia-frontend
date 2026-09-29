@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { useQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "react-router-dom"
@@ -11,6 +11,15 @@ import StatItem from "@/components/shared/StatItem"
 import ReceptionSummary from "../components/ReceptionSummary"
 import type { Grupo } from "@/types"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
+
+function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-pine-900/10">
+      <h2 className="font-head text-[18px] leading-tight text-pine-900">{title}</h2>
+      {action}
+    </div>
+  )
+}
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -99,191 +108,173 @@ function OwnerDashboard() {
   const selectedClases = selectedDay != null ? clasesForDay(selectedDay) : []
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-6">
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between flex-wrap gap-3">
+      {/* Cabecera */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif font-light text-[2rem] sm:text-[2.5rem] leading-none tracking-[-0.01em] text-pine-800">Station Overview</h1>
-          <p className="text-[13px] text-pine-700 mt-1">{formatMonth(mesAct)}</p>
+          <h1 className="page-title">Resumen</h1>
+          <p className="page-subtitle">{capitalizeFirst(formatMonth(mesAct))}</p>
         </div>
-        <div className="flex items-center gap-4">
-          {/* Secondary action — plain text link, not a boxed button, so it
-              doesn't visually compete with the one primary action. */}
-          <Link to="/asistencia" className="text-pine-700 text-sm font-semibold no-underline hover:text-pine-900 hover:underline">
+        <div className="flex items-center gap-2.5">
+          <Link to="/asistencia" className="btn-ghost inline-flex items-center no-underline">
             Pasar lista
           </Link>
-          <Link to="/pagos/nuevo" className="px-4 py-2 rounded-[5px] bg-brass-500 border-2 border-brass-700 text-pine-900 text-sm font-bold no-underline hover:bg-brass-300">
+          <Link to="/pagos/nuevo" className="btn-primary inline-flex items-center no-underline">
             + Nuevo pago
           </Link>
         </div>
       </div>
 
-      {/* Stat ledger — la parte financiera (cobrado/pendiente/tasa de cobro)
-          vive ahora en las vistas por marca (Rangers Academy / Cami & Co),
-          no acá combinada. */}
-      <div className="grid grid-cols-2 bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden">
+      {/* Cifras — la parte financiera (cobrado/pendiente/tasa de cobro) vive
+          en las vistas por marca (Rangers Academy / Cami & Co). */}
+      <div className="grid grid-cols-2 gap-3">
         <StatItem label="Alumnos" value={String(alumnosCount)} sub="registrados" />
         <StatItem label="Grupos activos" value={String(grupos.length)} sub="en curso" />
       </div>
 
-      {/* Trail Log calendar + Quick Actions stacked on the left, Today's
-          Timetable + Upcoming Birthdays stacked on the right. `items-start`
-          (not `items-stretch`) so each column stays sized to its own
-          content instead of stretching to match the other column's height. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-5 items-start">
+      {/* Calendario + accesos rápidos a la izquierda; clases de hoy +
+          cumpleaños a la derecha. `items-start` so each column keeps its own
+          height instead of stretching to match the other. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-5 items-start">
 
-      <div className="flex flex-col gap-5">
-
-      <div className="relative bg-pine-800 border-2 border-pine-800 rounded-md p-4 pb-3 overflow-hidden">
-        {/* Toned way down (was 0.08, four rings) — this is the highest-contrast
-            card on the page but the lowest-information one, so the decoration
-            shouldn't compete with the actual numbers for attention. */}
-        <svg viewBox="0 0 200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.035]">
-          <circle cx="100" cy="80" r="40" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-          <circle cx="100" cy="80" r="80" fill="none" stroke="#F6F1E7" strokeWidth="2" />
-        </svg>
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-          <div className="text-[13px] font-bold text-brass-300 uppercase tracking-[0.05em]">🧭 Trail Log</div>
-          <div className="flex items-center gap-2">
-            <button onClick={goToday}
-              className="px-2 py-0.5 rounded-md border border-white/20 text-[10.5px] font-semibold text-khaki-100 hover:bg-white/10">
-              Hoy
-            </button>
-            <button onClick={prevMonth} aria-label="Mes anterior"
-              className="w-6 h-6 rounded-md border border-white/20 text-khaki-100 hover:bg-white/10 text-[13px]">‹</button>
-            <span className="font-head text-[13.5px] text-khaki-100 w-32 text-center">
-              {capitalizeFirst(MESES[calMonth])} {calYear}
-            </span>
-            <button onClick={nextMonth} aria-label="Mes siguiente"
-              className="w-6 h-6 rounded-md border border-white/20 text-khaki-100 hover:bg-white/10 text-[13px]">›</button>
-          </div>
-        </div>
-        <div className="relative grid grid-cols-7 gap-1 text-[9.5px] font-extrabold uppercase text-khaki-300 text-center mb-1">
-          {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => <div key={i}>{d}</div>)}
-        </div>
-        <div className="relative grid grid-cols-7 gap-1">
-          {calendarDays.map((d, i) => {
-            const isToday = isCurrentCalMonth && d.day === today.getDate()
-            const clases = d.day != null ? clasesForDay(d.day) : []
-            return (
-              <button
-                key={i}
-                type="button"
-                disabled={d.day == null}
-                onClick={() => d.day != null && setSelectedDay(d.day)}
-                title={clases.length ? `${clases.length} clase${clases.length === 1 ? "" : "s"}` : undefined}
-                className={`h-7 rounded-md text-[13px] flex items-center justify-center gap-0.5 transition-colors ${
-                  d.day == null ? "cursor-default" : "cursor-pointer hover:bg-white/10"
-                } ${isToday ? "bg-brass-500 text-pine-900 font-extrabold" : "text-khaki-100"}`}
-              >
-                <span>{d.day ?? ""}</span>
-                {clases.slice(0, 3).map((c, ci) => (
-                  <span key={ci} className="w-1 h-1 rounded-full flex-shrink-0"
-                    style={{ background: isToday ? "#1E3A2E" : PALETTE[c.grupo.color_idx % PALETTE.length].accent }} />
-                ))}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-        {/* Quick actions */}
-        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
-          <div className="font-head text-[15px] text-pine-800 mb-3.5">⚡ Quick Actions</div>
-          <div className="flex flex-col gap-2">
-            <Link to="/asistencia" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-              ✅ Pasar lista
-            </Link>
-            <Link to="/pagos/nuevo" className="px-3.5 py-2.5 rounded-[5px] bg-pine-800 text-khaki-100 text-sm font-semibold no-underline hover:bg-pine-700 text-center">
-              + Nuevo pago
-            </Link>
-            <Link to="/horario" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-              📅 Ver Horario
-            </Link>
-            <Link to="/crm" className="px-3.5 py-2.5 rounded-[5px] border-2 border-pine-800/20 text-pine-800 text-sm font-semibold no-underline hover:bg-pine-800/5 text-center">
-              🧭 Ver CRM
-            </Link>
-          </div>
-        </div>
-
-      </div>
-
-      <div className="flex flex-col gap-5">
-
-      <div className="bg-khaki-100 border-2 border-pine-800 rounded-md overflow-hidden flex flex-col">
-        <div className="px-5 py-4 bg-pine-800 font-head text-[16px] text-khaki-100 flex-shrink-0">🧭 Today's Timetable</div>
-        <div className="px-5 py-2 pb-4 overflow-y-auto flex-1 min-h-0">
-          {!timetableHoy.length && (
-            <p className="text-sm text-pine-700 py-4 text-center">Sin clases programadas hoy.</p>
-          )}
-          {timetableHoy.map(({ grupo, horario }, i) => (
-            <div key={`${grupo.id}-${i}`} className="flex items-center gap-3.5 py-2.5 border-b border-khaki-300 last:border-b-0">
-              <div className="font-head text-[15px] text-pine-700 w-16 flex-shrink-0">{horario.ini}</div>
-              <div className="w-2 h-2 rounded-full flex-shrink-0 bg-brass-500" />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-pine-900 truncate">{grupo.nombre}</div>
-                <div className="text-xs text-pine-700">{grupo.aula || "Sin aula asignada"}</div>
+        <div className="flex flex-col gap-5">
+          <div className="card !bg-white overflow-hidden">
+            <CardHeader
+              title={`${capitalizeFirst(MESES[calMonth])} ${calYear}`}
+              action={
+                <div className="flex items-center gap-1.5">
+                  <button onClick={goToday} className="btn-ghost !min-h-[40px] !px-3 !text-[14px]">Hoy</button>
+                  <button onClick={prevMonth} aria-label="Mes anterior"
+                    className="w-10 h-10 rounded-[10px] border border-pine-900/20 text-pine-900 hover:bg-pine-900/5 text-[18px] leading-none">‹</button>
+                  <button onClick={nextMonth} aria-label="Mes siguiente"
+                    className="w-10 h-10 rounded-[10px] border border-pine-900/20 text-pine-900 hover:bg-pine-900/5 text-[18px] leading-none">›</button>
+                </div>
+              }
+            />
+            <div className="p-4">
+              <div className="grid grid-cols-7 gap-1 font-label text-[12px] font-semibold uppercase text-ink-soft text-center mb-1.5">
+                {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => <div key={i}>{d}</div>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map((d, i) => {
+                  const isToday = isCurrentCalMonth && d.day === today.getDate()
+                  const clases = d.day != null ? clasesForDay(d.day) : []
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={d.day == null}
+                      onClick={() => d.day != null && setSelectedDay(d.day)}
+                      title={clases.length ? `${clases.length} clase${clases.length === 1 ? "" : "s"}` : undefined}
+                      className={`h-11 rounded-[10px] text-[15px] flex flex-col items-center justify-center gap-0.5 transition-colors ${
+                        d.day == null ? "cursor-default" : "cursor-pointer hover:bg-khaki-100"
+                      } ${isToday ? "bg-pine-900 text-khaki-100 font-bold hover:!bg-pine-800" : "text-ink"}`}
+                    >
+                      <span className="leading-none">{d.day ?? ""}</span>
+                      {!!clases.length && (
+                        <span className="flex gap-0.5 h-1">
+                          {clases.slice(0, 3).map((c, ci) => (
+                            <span key={ci} className="w-1 h-1 rounded-full"
+                              style={{ background: isToday ? "#C8A45A" : PALETTE[c.grupo.color_idx % PALETTE.length].accent }} />
+                          ))}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-        {/* Upcoming birthdays */}
-        <div className="bg-khaki-100 border-2 border-pine-800 rounded-md p-4.5 px-5">
-          <div className="font-head text-[15px] text-pine-800 mb-3">🎂 Upcoming Birthdays</div>
-          {!cumples.length && (
-            <p className="text-[13.5px] text-pine-700">Sin cumpleaños en los próximos 30 días.</p>
-          )}
-          {!!cumples.length && (
-            <div className="flex flex-col gap-2">
-              {cumples.slice(0, 6).map((c: any) => (
-                <div key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
-                  <Link to={`/alumnos/${c.id}`} className="text-pine-900 font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
-                  <span className="text-pine-700 flex-shrink-0">
-                    {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos}d`}
-                  </span>
+          {/* Accesos rápidos */}
+          <div className="card !bg-white overflow-hidden">
+            <CardHeader title="Accesos rápidos" />
+            <div className="p-4 grid grid-cols-2 gap-2">
+              <Link to="/pagos/nuevo" className="btn-primary inline-flex items-center justify-center no-underline">+ Nuevo pago</Link>
+              <Link to="/asistencia" className="btn-ghost inline-flex items-center justify-center no-underline">Pasar lista</Link>
+              <Link to="/horario" className="btn-ghost inline-flex items-center justify-center no-underline">Ver horario</Link>
+              <Link to="/crm" className="btn-ghost inline-flex items-center justify-center no-underline">Ver CRM</Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <div className="card !bg-white overflow-hidden flex flex-col">
+            <CardHeader title="Clases de hoy" />
+            <div className="px-5 py-1 overflow-y-auto flex-1 min-h-0">
+              {!timetableHoy.length && (
+                <p className="text-[15px] text-ink-soft py-8 text-center">Sin clases programadas hoy.</p>
+              )}
+              {timetableHoy.map(({ grupo, horario }, i) => (
+                <div key={`${grupo.id}-${i}`}
+                  className="flex items-center gap-4 min-h-[56px] py-2.5 border-b border-pine-900/10 last:border-b-0">
+                  <div className="font-head text-[16px] text-pine-900 w-14 flex-shrink-0">{horario.ini}</div>
+                  <span className="w-1.5 h-9 rounded-full flex-shrink-0"
+                    style={{ background: PALETTE[grupo.color_idx % PALETTE.length].accent }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[15px] font-semibold text-ink truncate">{grupo.nombre}</div>
+                    <div className="text-[13px] text-ink-soft">{grupo.aula || "Sin aula asignada"}</div>
+                  </div>
                 </div>
               ))}
-              {cumples.length > 6 && (
-                <Link to="/cumpleanos" className="text-xs font-bold text-brass-700 no-underline mt-1">+{cumples.length - 6} más → Ver todos</Link>
+            </div>
+          </div>
+
+          {/* Próximos cumpleaños */}
+          <div className="card !bg-white overflow-hidden">
+            <CardHeader title="Próximos cumpleaños" />
+            <div className="px-5 py-3">
+              {!cumples.length && (
+                <p className="text-[15px] text-ink-soft py-2">Sin cumpleaños en los próximos 30 días.</p>
+              )}
+              {!!cumples.length && (
+                <div className="flex flex-col">
+                  {cumples.slice(0, 6).map((c: any) => (
+                    <div key={c.id} className="flex items-center justify-between gap-2 min-h-[44px] border-b border-pine-900/10 last:border-b-0 text-[15px]">
+                      <Link to={`/alumnos/${c.id}`} className="text-ink font-semibold truncate hover:text-brass-700 hover:underline">{c.nombre}</Link>
+                      <span className={`flex-shrink-0 font-label font-semibold ${c.dias_para_cumpleanos === 0 ? "text-brass-700" : "text-ink-soft"}`}>
+                        {c.dias_para_cumpleanos === 0 ? "¡hoy!" : c.dias_para_cumpleanos === 1 ? "mañana" : `en ${c.dias_para_cumpleanos} días`}
+                      </span>
+                    </div>
+                  ))}
+                  {cumples.length > 6 && (
+                    <Link to="/cumpleanos" className="font-label text-[14px] font-semibold text-brass-700 no-underline py-2.5">+{cumples.length - 6} más → Ver todos</Link>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
-
-      </div>
-
       </div>
 
       {/* Day detail — clicking a calendar cell opens this instead of jumping
           away to /calendario, so a quick look doesn't lose dashboard context. */}
       {selectedDate && createPortal(
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          {...dayModalOverlayGuard}>
+        <div className="modal-overlay" {...dayModalOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
-            <div className="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="font-head font-normal text-lg text-pine-900">
+            <div className="pl-6 pr-3 py-3 border-b border-pine-900/10 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-head text-[20px] text-pine-900">
                 {capitalizeFirst(selectedDate.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }))}
               </h2>
-              <button onClick={() => setSelectedDay(null)} className="text-khaki-400 hover:text-pine-600 text-xl leading-none">✕</button>
+              <button onClick={() => setSelectedDay(null)} aria-label="Cerrar"
+                className="w-11 h-11 rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
             </div>
-            <div className="p-6 overflow-y-auto space-y-2">
+            <div className="p-5 overflow-y-auto space-y-2">
               {selectedClases.length === 0 ? (
-                <p className="text-sm text-pine-600">Sin clases programadas este día.</p>
+                <p className="text-[15px] text-ink-soft">Sin clases programadas este día.</p>
               ) : (
                 selectedClases.map(({ grupo, horario }, i) => {
                   const palette = PALETTE[grupo.color_idx % PALETTE.length]
                   return (
                     <button key={i} onClick={() => navigate(`/grupos/${grupo.id}`)}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg border text-left hover:bg-khaki-100 transition-colors"
+                      className="w-full flex items-center gap-3 min-h-[56px] p-3 rounded-[10px] border text-left hover:bg-khaki-100 transition-colors"
                       style={{ borderColor: palette.border }}>
-                      <span className="w-2 h-10 rounded-full flex-shrink-0" style={{ background: palette.accent }} />
+                      <span className="w-1.5 h-10 rounded-full flex-shrink-0" style={{ background: palette.accent }} />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-pine-900 truncate">{grupo.nombre}</p>
-                        <p className="text-xs text-pine-600">
-                          {horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}{grupo.profesor_nombre ? ` · 🧑‍🏫 ${grupo.profesor_nombre}` : ""}
+                        <p className="font-semibold text-[15px] text-ink truncate">{grupo.nombre}</p>
+                        <p className="text-[13px] text-ink-soft">
+                          {horario.ini} – {horario.fin}{grupo.aula ? ` · ${grupo.aula}` : ""}{grupo.profesor_nombre ? ` · ${grupo.profesor_nombre}` : ""}
                         </p>
                       </div>
                     </button>
@@ -295,7 +286,6 @@ function OwnerDashboard() {
         </div>,
         document.body
       )}
-
     </div>
   )
 }

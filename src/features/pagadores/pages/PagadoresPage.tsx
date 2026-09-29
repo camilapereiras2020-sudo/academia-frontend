@@ -21,27 +21,27 @@ export default function PagadoresPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Payers</h1>
-          <p className="text-sm text-pine-700 mt-1">{pagadores?.length ?? 0} pagadores registrados</p>
+          <h1 className="page-title">Pagadores</h1>
+          <p className="page-subtitle">{pagadores?.length ?? 0} pagadores registrados</p>
         </div>
       </div>
 
       <div className="relative mb-5 max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-khaki-400" />
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar pagador..."
-          className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500 bg-white"
+          className="input !pl-10"
         />
       </div>
 
-      {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
 
       {!isLoading && !visibles.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
           <span className="text-5xl mb-3">👛</span>
-          <p className="text-sm">Sin pagadores.</p>
+          <p className="text-[15px]">Sin pagadores.</p>
         </div>
       )}
 
@@ -50,11 +50,11 @@ export default function PagadoresPage() {
           <div
             key={p.id}
             onClick={() => navigate(`/payers/${p.id}`)}
-            className="bg-white rounded-xl border shadow-sm p-4 cursor-pointer hover:border-brass-300 transition-colors flex items-center justify-between"
+            className="card !bg-white p-4 cursor-pointer hover:!border-brass-500 flex items-center justify-between gap-3"
           >
             <div>
-              <p className="font-medium text-pine-900">{p.nombre}</p>
-              <p className="text-xs text-pine-700 mt-0.5">
+              <p className="text-[16px] font-semibold text-ink">{p.nombre}</p>
+              <p className="text-[14px] text-ink-soft mt-0.5">
                 {p.es_alumno_adulto
                   ? "Alumno adulto"
                   : `${p.alumnos_count} alumno${p.alumnos_count !== 1 ? "s" : ""}`}
@@ -63,7 +63,7 @@ export default function PagadoresPage() {
               </p>
             </div>
             {!p.es_alumno_adulto && p.alumnos_count > 1 && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-khaki-200 text-brass-700">
+              <span className="badge bg-khaki-200 text-brass-700 normal-case tracking-normal">
                 Familia
               </span>
             )}

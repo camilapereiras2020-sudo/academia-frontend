@@ -31,19 +31,19 @@ export default function EmailModal({ to, onSend, onClose }: Props) {
 
   return createPortal(
     <div className="modal-overlay" {...overlayGuard}>
-      <div className="modal" style={{ maxWidth: "32rem", padding: 0 }}>
+      <div className="modal !bg-white" style={{ maxWidth: "32rem", padding: 0 }}>
         <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h2 style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Enviar email</h2>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Para: {to}</p>
+            <h2 className="font-head text-[22px] leading-tight text-pine-900">Enviar email</h2>
+            <p className="text-[14px] text-ink-soft mt-1">Para: {to}</p>
           </div>
-          <button onClick={onClose} className="btn-ghost" style={{ padding: "0.25rem 0.6rem", fontSize: "1rem" }}>✕</button>
+          <button onClick={onClose} aria-label="Cerrar" className="w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
         </div>
 
         {done ? (
           <div style={{ padding: "2.5rem 1.5rem", textAlign: "center" }}>
             <div style={{ fontSize: "2.25rem", marginBottom: "0.75rem" }}>✅</div>
-            <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)" }}>Email enviado correctamente.</p>
+            <p className="text-[15px] font-semibold text-ink">Email enviado correctamente.</p>
             <button onClick={onClose} className="btn-ghost" style={{ marginTop: "1rem" }}>
               Cerrar
             </button>
@@ -54,7 +54,7 @@ export default function EmailModal({ to, onSend, onClose }: Props) {
               <p style={{ fontSize: "0.875rem", color: "#b5654a", background: "var(--terracotta-muted)", border: "1px solid var(--border-subtle)", padding: "0.75rem", borderRadius: "var(--radius-sm)" }}>{error}</p>
             )}
             <div>
-              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.35rem" }}>Asunto</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Asunto</label>
               <input
                 type="text" value={asunto} onChange={e => setAsunto(e.target.value)}
                 placeholder="Ej: Recordatorio de pago — Junio 2026"
@@ -62,11 +62,11 @@ export default function EmailModal({ to, onSend, onClose }: Props) {
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 500, color: "var(--text-dim)", marginBottom: "0.35rem" }}>Mensaje</label>
+              <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Mensaje</label>
               <textarea
                 rows={6} value={cuerpo} onChange={e => setCuerpo(e.target.value)}
                 placeholder="Escribe tu mensaje aquí..."
-                className="input" style={{ resize: "none" }}
+                className="input !py-2.5" style={{ resize: "none" }}
               />
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", paddingTop: "0.25rem" }}>

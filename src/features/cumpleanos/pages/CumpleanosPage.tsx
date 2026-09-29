@@ -15,14 +15,14 @@ const WINDOW_OPTS = [7, 14, 30, 60, 90]
 function urgencyClass(dias: number) {
   if (dias === 0) return "border-l-amber-500 bg-amber-50"
   if (dias <= 7) return "border-l-orange-400 bg-orange-50"
-  return "border-l-khaki-200 bg-white"
+  return "border-l-pine-900/20 bg-white"
 }
 
 function urgencyLabel(dias: number) {
-  if (dias === 0) return <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">¡Hoy!</span>
-  if (dias === 1) return <span className="text-xs font-semibold text-orange-600">Mañana</span>
-  if (dias <= 7) return <span className="text-xs font-semibold text-orange-500">en {dias} días</span>
-  return <span className="text-xs text-pine-700">en {dias} días</span>
+  if (dias === 0) return <span className="badge bg-amber-100 text-amber-800">¡Hoy!</span>
+  if (dias === 1) return <span className="font-label text-[14px] font-semibold text-orange-700">Mañana</span>
+  if (dias <= 7) return <span className="font-label text-[14px] font-semibold text-orange-700">en {dias} días</span>
+  return <span className="text-[14px] text-ink-soft">en {dias} días</span>
 }
 
 export default function CumpleanosPage() {
@@ -41,33 +41,33 @@ export default function CumpleanosPage() {
     <div>
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="font-serif font-light text-[2.5rem] leading-none tracking-[-0.01em] text-pine-900">Cumpleaños</h1>
-          <p className="text-sm text-pine-700 mt-1">
+          <h1 className="page-title">Cumpleaños</h1>
+          <p className="page-subtitle">
             {cumples.length} cumpleaños en los próximos {dias} días
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-pine-700">Ventana:</label>
+          <label className="font-label text-[14px] font-semibold text-pine-700">Ventana:</label>
           <select value={dias} onChange={e => setDias(+e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500">
+            className="input !w-auto">
             {WINDOW_OPTS.map(d => <option key={d} value={d}>{d} días</option>)}
           </select>
         </div>
       </div>
 
-      {isLoading && <p className="text-khaki-400 text-sm">Cargando...</p>}
+      {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
 
       {!isLoading && !cumples.length && (
-        <div className="flex flex-col items-center justify-center py-16 text-khaki-400">
+        <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
           <span className="text-5xl mb-3">🎂</span>
-          <p className="text-sm">Sin cumpleaños en los próximos {dias} días.</p>
+          <p className="text-[15px]">Sin cumpleaños en los próximos {dias} días.</p>
         </div>
       )}
 
       {/* Today */}
       {hoy.length > 0 && (
         <div className="mb-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-2">Hoy</p>
+          <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-amber-700 mb-2">Hoy</p>
           <div className="space-y-2">
             {hoy.map((c) => (
               <BirthdayCard key={c.id} c={c} />
@@ -80,7 +80,7 @@ export default function CumpleanosPage() {
       {proximos.length > 0 && (
         <div>
           {hoy.length > 0 && (
-            <p className="text-xs font-bold uppercase tracking-widest text-pine-600 mb-2">Próximos</p>
+            <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700 mb-2">Próximos</p>
           )}
           <div className="space-y-2">
             {proximos.map((c) => (
@@ -105,13 +105,13 @@ function BirthdayCard({ c }: { c: Cumpleanos }) {
 
   return (
     <Link to={`/alumnos/${c.id}`}
-      className={`rounded-xl border-l-4 shadow-sm p-4 flex items-center gap-4 hover:brightness-95 transition ${urgencyClass(c.dias_para_cumpleanos)}`}>
+      className={`rounded-[12px] border border-pine-900/10 border-l-4 shadow-[var(--shadow-card)] p-4 flex items-center gap-4 hover:brightness-95 transition ${urgencyClass(c.dias_para_cumpleanos)}`}>
       <div className="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center text-xl flex-shrink-0">
         🎂
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-pine-900">{c.nombre}</p>
-        <p className="text-xs text-pine-700 mt-0.5">
+        <p className="font-head text-[20px] leading-tight text-pine-900">{c.nombre}</p>
+        <p className="text-[14px] text-ink-soft mt-0.5">
           {formatted}
           {age !== null && <span className="ml-1">· cumple {age} años</span>}
         </p>

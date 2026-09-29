@@ -71,38 +71,38 @@ export default function RemindersModal() {
   const extra = leads.length - visible.length
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-xl max-h-[85vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-1">
+    <div className="modal-overlay">
+      <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl max-h-[85vh] overflow-y-auto">
+        <h3 className="font-head text-[20px] leading-tight text-pine-900 mb-1">
           {leads.length} seguimiento{leads.length === 1 ? "" : "s"} pendiente{leads.length === 1 ? "" : "s"}
         </h3>
-        <p className="text-pine-700 text-sm mb-4">
+        <p className="text-ink-soft text-[15px] mb-4">
           Estos leads necesitan una decision hoy — contactar, posponer, o marcarlos frios.
         </p>
         <div className="flex flex-col gap-2 mb-4">
           {visible.map((lead) => (
             <div
               key={lead.id}
-              className="flex items-center justify-between gap-3 border border-khaki-200 rounded-lg px-3 py-2"
+              className="flex items-center justify-between gap-3 border border-pine-900/15 rounded-[10px] px-3.5 py-2.5"
             >
               <div className="min-w-0">
-                <div className="font-medium text-sm truncate">
+                <div className="font-semibold text-[15px] text-ink truncate">
                   {lead.nombre_alumno}
                   {lead.nombre_contacto ? ` (${lead.nombre_contacto})` : ""}
                 </div>
-                <div className="text-xs text-red-600">{razonLabel(lead)}</div>
+                <div className="text-[14px] text-red-700">{razonLabel(lead)}</div>
               </div>
               <div className="flex gap-1.5 flex-shrink-0">
                 <button
                   onClick={() => snoozeMut.mutate(lead.id)}
                   disabled={snoozeMut.isPending}
-                  className="px-2.5 py-1.5 rounded-md bg-khaki-100 text-pine-700 text-xs hover:bg-khaki-200"
+                  className="min-h-[40px] px-3 rounded-[10px] border border-pine-900/20 bg-white text-pine-700 text-[14px] font-semibold hover:bg-khaki-100"
                 >
                   +1 dia
                 </button>
                 <button
                   onClick={() => verLead(lead.id)}
-                  className="px-2.5 py-1.5 rounded-md bg-pine-700 text-white text-xs hover:bg-pine-800"
+                  className="min-h-[40px] px-3 rounded-[10px] bg-pine-900 text-khaki-100 text-[14px] font-semibold hover:bg-pine-800"
                 >
                   Ver
                 </button>
@@ -110,7 +110,7 @@ export default function RemindersModal() {
             </div>
           ))}
           {extra > 0 && (
-            <div className="text-xs text-pine-700 text-center pt-1">
+            <div className="text-[14px] text-ink-soft text-center pt-1">
               + {extra} mas — abrir CRM para verlos todos
             </div>
           )}
@@ -118,7 +118,7 @@ export default function RemindersModal() {
         <div className="flex justify-end">
           <button
             onClick={close}
-            className="px-4 py-2 rounded-lg bg-khaki-100 text-pine-700 text-sm hover:bg-khaki-200"
+            className="btn-ghost"
           >
             Cerrar
           </button>

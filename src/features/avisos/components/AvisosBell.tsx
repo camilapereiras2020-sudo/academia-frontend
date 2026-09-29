@@ -57,7 +57,7 @@ export default function AvisosBell() {
       <button
         onClick={toggle}
         aria-label="Avisos"
-        className="relative w-9 h-9 flex items-center justify-center rounded-md border border-pine-800/30 text-pine-800 hover:bg-pine-800/5"
+        className="relative w-11 h-11 flex items-center justify-center rounded-[10px] border border-khaki-100/30 text-khaki-100 hover:bg-white/10 xl:border-pine-900/25 xl:text-pine-900 xl:hover:bg-pine-900/5"
       >
         <Bell size={17} strokeWidth={2} />
         {pendientes.length > 0 && (

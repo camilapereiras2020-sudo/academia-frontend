@@ -96,13 +96,13 @@ const TIPO_NOTA_LABELS: Record<TipoNotaAlumno, string> = { progreso: "Progreso",
 const CODIGO_CLASE_LABELS: Record<Exclude<CodigoClase, "">, string> = {
   HORA: "Clase grupo (1h/semana)",
   HORA_Y_MEDIA: "Clase grupo (1h30/semana)",
-  PRIVADA: "Clase privada",
-  PRIVADA_PROFESIONAL: "Clase privada profesional/adultos",
+  PRIVADA: "Clase privada (30 €/h)",
+  PRIVADA_PROFESIONAL: "Clase privada profesional o especialización (35 €/h)",
 }
 const CUOTA_TIPO_LABELS: Record<string, string> = {
   manual: "Precio manual",
   privada_manual: "Clase privada — precio manual",
-  bono_familia: "Bono Familia (prorrateado)",
+  bono_familia: "Bono Familia",
   clase_grupo: "Clase Grupo",
   sin_tabla: "Sin calcular",
 }
@@ -149,7 +149,7 @@ export default function AlumnoDetailPage() {
   const [imprimiendoTipo, setImprimiendoTipo] = useState<TipoConsentimiento | null>(null)
   const [imprimirError, setImprimirError] = useState("")
   const [generalForm, setGeneralForm] = useState({
-    nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false,
+    nombre: "", telefono: "", email: "", dni: "", notas: "", es_adulto: false, fnac: "", direccion: "",
     colegio_origen: "", idioma_nativo: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
     nivel: "", nivel_objetivo: "" as NivelObjetivo | "", examen_objetivo: "" as ExamenObjetivo | "", curso: "" as Curso | "",
   })
@@ -216,7 +216,7 @@ export default function AlumnoDetailPage() {
       ? { telefono: pagador.telefono, email: pagador.email, direccion: pagador.direccion, nif: pagador.nif }
       : emptyPagadorDraft())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagador?.id])
+  }, [pagador?.id, pagador?.direccion])
 
   function openSaludEditing() {
     if (salud) setSaludForm({ alergias: salud.alergias, condiciones_medicas: salud.condiciones_medicas, medicacion: salud.medicacion })
@@ -228,6 +228,7 @@ export default function AlumnoDetailPage() {
       setGeneralForm({
         nombre: alumno.nombre, telefono: alumno.telefono ?? "", email: alumno.email ?? "",
         dni: alumno.dni ?? "", notas: alumno.notas ?? "", es_adulto: alumno.es_adulto ?? false,
+        fnac: alumno.fnac ?? "", direccion: pagador?.direccion ?? "",
         colegio_origen: alumno.colegio_origen ?? "", idioma_nativo: alumno.idioma_nativo ?? "",
         contacto_emergencia_nombre: alumno.contacto_emergencia_nombre ?? "",
         contacto_emergencia_telefono: alumno.contacto_emergencia_telefono ?? "",
@@ -244,8 +245,9 @@ export default function AlumnoDetailPage() {
   })
 
   const generalMut = useMutation({
-    mutationFn: () => {
-      const payload: Record<string, unknown> = { ...generalForm }
+    mutationFn: async () => {
+      const { direccion, ...rest } = generalForm
+      const payload: Record<string, unknown> = { ...rest, fnac: rest.fnac || null }
       // Just switched from minor to adult self-pay: clear any existing payer
       // link so the backend auto-creates/links a fresh one from this alumno's
       // own (just-saved) contact data, instead of leaving a stale minor-payer
@@ -253,7 +255,15 @@ export default function AlumnoDetailPage() {
       if (generalForm.es_adulto && !alumno?.es_adulto) {
         payload.pagador = null
       }
-      return alumnosApi.update(alumnoId, payload)
+      const { data: guardado } = await alumnosApi.update(alumnoId, payload)
+      // La dirección vive en el Pagador (también el de un adulto que paga él
+      // mismo, que el backend crea/vincula al guardar) — por eso se guarda
+      // aparte, con el pagador que haya quedado vinculado tras el PATCH.
+      const pagadorId = guardado.pagador ?? null
+      if (pagadorId && direccion.trim() !== (pagador?.id === pagadorId ? pagador.direccion ?? "" : "")) {
+        await pagadoresApi.update(pagadorId, { direccion: direccion.trim() })
+      }
+      return guardado
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
@@ -417,8 +427,8 @@ export default function AlumnoDetailPage() {
     e.target.value = ""
   }
 
-  if (loadingAlumno) return <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Cargando...</p>
-  if (!alumno) return <p style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>Alumno no encontrado.</p>
+  if (loadingAlumno) return <p className="text-[15px] text-ink-soft">Cargando...</p>
+  if (!alumno) return <p className="text-[15px] text-ink-soft">Alumno no encontrado.</p>
 
   const gruposDetalle = alumno.grupos_detalle ?? []
   const grupoDetalle = gruposDetalle[0] ?? null // used only for the WhatsApp-reply modal's context line
@@ -432,13 +442,13 @@ export default function AlumnoDetailPage() {
   const pagosFiltrados = periodoFilter ? pagos.filter(p => p.periodo === periodoFilter) : pagos
 
   return (
-    <div style={{ maxWidth: "56rem" }}>
-      <button onClick={() => navigate("/alumnos")} className="btn-ghost" style={{ marginBottom: "1rem" }}>
+    <div className="max-w-5xl">
+      <button onClick={() => navigate("/alumnos")} className="btn-ghost mb-4">
         ← Volver a alumnos
       </button>
 
       {/* Header */}
-      <div className="card" style={{ padding: "1.1rem", marginBottom: "1rem", display: "flex", gap: "1.25rem", alignItems: "center", flexWrap: "wrap" }}>
+      <div className="card !bg-white p-5 mb-4 flex gap-5 items-center flex-wrap !border-t-4 !border-t-pine-900">
         <button
           onClick={() => fotoInputRef.current?.click()}
           disabled={fotoMut.isPending}
@@ -446,7 +456,7 @@ export default function AlumnoDetailPage() {
             width: "5rem", height: "5rem", borderRadius: "50%", flexShrink: 0, border: "none", cursor: "pointer",
             background: alumno.foto_url ? `url(${alumno.foto_url}) center/cover` : "var(--gold-muted)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "Cormorant Garamond, serif", fontSize: "1.75rem", color: "var(--gold)",
+            fontFamily: "Bevan, serif", fontWeight: 400, fontSize: "1.75rem", color: "var(--gold-dim)",
             position: "relative", overflow: "hidden",
           }}
           title="Cambiar foto"
@@ -460,14 +470,11 @@ export default function AlumnoDetailPage() {
         </button>
         <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFotoChange} style={{ display: "none" }} />
 
-        <div style={{ flex: 1, minWidth: "12rem" }}>
-          <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+        <div className="flex-1 min-w-[12rem]">
+          <h1 className="page-title flex items-center gap-2.5 flex-wrap">
             {alumno.nombre}
             {alumno.activo === false && (
-              <span style={{
-                fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
-                padding: "0.15rem 0.5rem", borderRadius: "999px", background: "#f1e4d0", color: "#7a5a2c",
-              }}>
+              <span className="badge bg-khaki-200 text-brass-700 font-body">
                 Ex-alumno
               </span>
             )}
@@ -477,15 +484,15 @@ export default function AlumnoDetailPage() {
               .filter(Boolean).join(" · ") || "Sin datos adicionales"}
           </p>
           {alumno.activo === false && (
-            <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "0.25rem" }}>
+            <p className="text-[14px] text-ink-soft mt-1">
               Baja{alumno.fecha_baja ? ` el ${new Date(alumno.fecha_baja).toLocaleDateString("es-ES")}` : ""}
               {alumno.motivo_baja ? ` — ${alumno.motivo_baja}` : ""}
             </p>
           )}
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button className="btn-ghost" disabled={!pagador?.email} onClick={() => setShowEmailModal(true)}>
+        <div className="flex gap-2 flex-wrap">
+          <button className="btn-ghost disabled:opacity-50" disabled={!pagador?.email} onClick={() => setShowEmailModal(true)}>
             Enviar email
           </button>
           <button className="btn-ghost" onClick={() => setShowWhatsappModal(true)}>
@@ -504,28 +511,28 @@ export default function AlumnoDetailPage() {
       </div>
 
       {confirmExAlumno && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-pine-900 mb-1">Marcar como ex-alumno</h3>
-            <p className="text-sm text-pine-800 mb-3">
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Marcar como ex-alumno</h3>
+            <p className="text-[15px] text-ink mb-4">
               {alumno.nombre} se dará de baja de {gruposDetalle.length
                 ? `sus ${gruposDetalle.length} clase${gruposDetalle.length === 1 ? "" : "s"}`
                 : "el horario"} y dejará de aparecer en la lista de alumnos activos por defecto. Sus datos,
               facturas e historial se conservan tal cual — podés reactivarlo cuando quieras.
             </p>
-            <label style={{ fontSize: "0.8rem", color: "var(--text-dim)", display: "block", marginBottom: "0.3rem" }}>
+            <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Motivo (opcional)
             </label>
             <textarea value={motivoBaja} onChange={e => setMotivoBaja(e.target.value)} rows={3}
               placeholder="Se muda de ciudad, cambia de academia, termina el curso..."
-              className="w-full border border-khaki-300 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brass-500" />
+              className="input !py-2.5 mb-5 resize-none" />
             <div className="flex justify-end gap-2">
               <button onClick={() => { setConfirmExAlumno(false); setMotivoBaja("") }}
-                className="px-4 py-2 rounded-lg bg-khaki-200 text-pine-800 text-sm hover:bg-khaki-300">
+                className="btn-ghost">
                 Cancelar
               </button>
               <button onClick={() => marcarExAlumnoMut.mutate(motivoBaja)} disabled={marcarExAlumnoMut.isPending}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50">
+                className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                 {marcarExAlumnoMut.isPending ? "Guardando…" : "Marcar como ex-alumno"}
               </button>
             </div>
@@ -535,20 +542,20 @@ export default function AlumnoDetailPage() {
 
       {/* Horario — a student can be in more than one class a week now, so this
           lists every current membership, not just a "primary" one. */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">
             Horario ({gruposDetalle.length})
           </h2>
           <button className="btn-ghost" onClick={() => navigate(`/horario?alumno=${id}`)}>Editar en Horario →</button>
         </div>
-        {!gruposDetalle.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin clases asignadas todavía.</p>}
+        {!gruposDetalle.length && <p className="text-[15px] text-ink-soft">Sin clases asignadas todavía.</p>}
         {!!gruposDetalle.length && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          <div className="flex flex-col">
             {gruposDetalle.map(g => (
-              <div key={g.grupo} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)" }}>{g.grupo_nombre}</span>
-                <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
+              <div key={g.grupo} className="flex items-center justify-between gap-3 flex-wrap min-h-[48px] py-2 border-b border-pine-900/10 last:border-b-0">
+                <span className="text-[15px] font-semibold text-ink">{g.grupo_nombre}</span>
+                <span className="font-label text-[14px] font-medium text-ink-soft">
                   {g.horarios.length
                     ? g.horarios.map((h, i) => <span key={i}>{i > 0 ? " · " : ""}{DIA_LABELS[h.dia]} {h.ini}–{h.fin}</span>)
                     : "Sin horario configurado"}
@@ -560,21 +567,35 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Datos generales */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">
             Datos generales
           </h2>
           {!generalEditing && <button className="btn-ghost" onClick={openGeneralEditing}>Editar</button>}
         </div>
 
         {generalEditing ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1rem" }}>
+          <div className="flex flex-col gap-3 mb-5 pb-5 border-b border-pine-900/10">
             <div className="grid-2col">
               <TextInput label="Nombre" value={generalForm.nombre} onChange={v => setGeneralForm(f => ({ ...f, nombre: v }))} />
               <TextInput label="DNI" value={generalForm.dni} onChange={v => setGeneralForm(f => ({ ...f, dni: v }))} />
               <TextInput label="Teléfono" value={generalForm.telefono} onChange={v => setGeneralForm(f => ({ ...f, telefono: v }))} />
               <TextInput label="Email" value={generalForm.email} onChange={v => setGeneralForm(f => ({ ...f, email: v }))} />
+              <div>
+                <p className={LABEL_CLS}>Fecha de nacimiento</p>
+                <input type="date" className="input" value={generalForm.fnac}
+                  onChange={e => setGeneralForm(f => ({ ...f, fnac: e.target.value }))} />
+              </div>
+              <div>
+                <p className={LABEL_CLS}>Dirección</p>
+                <input type="text" className="input" value={generalForm.direccion}
+                  disabled={!pagador && !generalForm.es_adulto}
+                  onChange={e => setGeneralForm(f => ({ ...f, direccion: e.target.value }))} />
+                {!pagador && !generalForm.es_adulto && (
+                  <p className="text-[13px] text-ink-soft mt-1">Vincula primero un pagador: la dirección se guarda en él.</p>
+                )}
+              </div>
               <div>
                 <TextInput label="Colegio de origen" value={generalForm.colegio_origen}
                   onChange={v => setGeneralForm(f => ({ ...f, colegio_origen: v }))} listId="colegios-sugeridos" />
@@ -583,7 +604,7 @@ export default function AlumnoDetailPage() {
                 </datalist>
               </div>
               <div>
-                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Curso</p>
+                <p className={LABEL_CLS}>Curso</p>
                 <select className="input" value={generalForm.curso}
                   onChange={e => setGeneralForm(f => ({ ...f, curso: e.target.value as Curso }))}>
                   <option value="">—</option>
@@ -594,13 +615,13 @@ export default function AlumnoDetailPage() {
               <TextInput label="Contacto de emergencia (nombre)" value={generalForm.contacto_emergencia_nombre} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_nombre: v }))} />
               <TextInput label="Contacto de emergencia (teléfono)" value={generalForm.contacto_emergencia_telefono} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_telefono: v }))} />
               <div>
-                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel actual</p>
+                <p className={LABEL_CLS}>Nivel actual</p>
                 <NivelSelect className="input" value={generalForm.nivel}
                   onChange={v => setGeneralForm(f => ({ ...f, nivel: v }))} />
               </div>
               <div>
-                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Nivel / examen objetivo</p>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <p className={LABEL_CLS}>Nivel / examen objetivo</p>
+                <div className="flex gap-2">
                   <select className="input" value={generalForm.nivel_objetivo}
                     onChange={e => setGeneralForm(f => ({ ...f, nivel_objetivo: e.target.value as NivelObjetivo | "" }))}>
                     <option value="">—</option>
@@ -615,12 +636,12 @@ export default function AlumnoDetailPage() {
               </div>
             </div>
             <Textarea label="Notas" value={generalForm.notas} onChange={v => setGeneralForm(f => ({ ...f, notas: v }))} />
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text)", cursor: "pointer" }}>
-              <input type="checkbox" checked={generalForm.es_adulto}
+            <label className="flex items-center gap-2.5 min-h-[44px] text-[15px] text-ink cursor-pointer">
+              <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={generalForm.es_adulto}
                 onChange={e => setGeneralForm(f => ({ ...f, es_adulto: e.target.checked }))} />
               El alumno es adulto / paga el mismo
             </label>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+            <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setGeneralEditing(false)}>Cancelar</button>
               <button className="btn-primary" disabled={!generalForm.nombre.trim() || generalMut.isPending} onClick={() => generalMut.mutate()}>
                 {generalMut.isPending ? "Guardando..." : "Guardar"}
@@ -632,6 +653,9 @@ export default function AlumnoDetailPage() {
         <div className="grid-2col">
           <Field label="Contacto" value={[alumno.telefono, alumno.email].filter(Boolean).join(" · ") || "—"} />
           <Field label="DNI" value={alumno.dni || "—"} />
+          <Field label="Fecha de nacimiento"
+            value={alumno.fnac ? `${formatDate(alumno.fnac)}${yearsOld !== null ? ` · ${yearsOld} años` : ""}` : "—"} />
+          <Field label="Dirección" value={pagador?.direccion || "—"} />
           <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
           <Field label="Nivel actual" value={alumno.nivel || "—"} />
           <Field label="Nivel / examen objetivo"
@@ -648,29 +672,29 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Pagador */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+      <section className="card !bg-white p-5 mb-4">
+        <h2 className="font-head text-[20px] leading-tight text-pine-900 mb-4">
           Pagador
         </h2>
         {alumno.es_adulto ? (
-          <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>
+          <p className="text-[15px] text-ink-soft">
             Se usa el propio alumno como pagador (nombre, teléfono y email indicados en Datos generales).
           </p>
         ) : (
           <>
             {pagador ? (
-              <div className="card" style={{ padding: "1rem", marginBottom: "0.75rem" }}>
-                <p style={{ fontWeight: 500, color: "var(--text)" }}>{pagador.nombre}</p>
-                <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>
+              <div className="bg-khaki-100 border border-pine-900/10 rounded-[12px] p-4 mb-3">
+                <p className="text-[16px] font-semibold text-ink">{pagador.nombre}</p>
+                <p className="text-[15px] text-ink-soft mt-0.5">
                   {[pagador.telefono, pagador.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
                 </p>
               </div>
             ) : (
-              <p style={{ fontSize: "0.875rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>Sin pagador vinculado.</p>
+              <p className="text-[15px] text-ink-soft mb-3">Sin pagador vinculado.</p>
             )}
             <PagadorCombobox theme="gold" value={alumno.pagador} onChange={pagadorId => pagadorMut.mutate(pagadorId)} />
             {pagador && (
-              <div style={{ marginTop: "1rem" }}>
+              <div className="mt-4">
                 <PagadorFieldsEditor theme="gold" value={pagadorDraft}
                   onChange={patch => setPagadorDraft(d => ({ ...d, ...patch }))}
                   onBlur={() => pagadorFieldsMut.mutate()} />
@@ -682,20 +706,17 @@ export default function AlumnoDetailPage() {
 
       {/* Cuota — cálculo automático (modules.tarifas.pricing.calcular_cuota_alumno)
           + clases a mayores (CargoExtra), sumadas aparte a la factura del mes. */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>
-            Cuota
-          </h2>
-          <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
-            onClick={() => setShowGenerarFactura(true)}>
-            🧾 Generar factura
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">Cuota</h2>
+          <button className="btn-ghost" onClick={() => setShowGenerarFactura(true)}>
+            Generar factura
           </button>
         </div>
 
-        <div className="grid-2col" style={{ marginBottom: "1rem" }}>
+        <div className="grid-2col mb-4">
           <div>
-            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Tipo de clase</p>
+            <p className={LABEL_CLS}>Tipo de clase</p>
             <select className="input" value={alumno.codigo_clase}
               onChange={e => codigoClaseMut.mutate(e.target.value as CodigoClase)}>
               <option value="">— Sin definir —</option>
@@ -704,32 +725,32 @@ export default function AlumnoDetailPage() {
           </div>
 
           <div>
-            <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>Cuota mensual</p>
+            <p className={LABEL_CLS}>Cuota mensual</p>
             {cuota?.cuota != null && !cuotaManualEditing ? (
-              <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
+              <p className="font-head text-[24px] leading-tight text-pine-900">
                 {formatEur(cuota.cuota)}
-                <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-dim)", marginLeft: "0.5rem" }}>
+                <span className="font-label text-[14px] font-semibold text-ink-soft ml-2">
                   {CUOTA_TIPO_LABELS[cuota.tipo] ?? cuota.tipo}
                 </span>
               </p>
             ) : cuotaManualEditing ? (
-              <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                <input type="number" step="0.01" className="input" style={{ width: "8rem" }}
+              <div className="flex gap-2 items-center flex-wrap">
+                <input type="number" step="0.01" className="input !w-32"
                   value={cuotaManualDraft} onChange={e => setCuotaManualDraft(e.target.value)} autoFocus />
-                <button className="btn-primary" style={{ padding: "0.3rem 0.6rem" }}
+                <button className="btn-primary"
                   disabled={cuotaManualMut.isPending}
                   onClick={() => cuotaManualMut.mutate(cuotaManualDraft.trim() === "" ? null : Number(cuotaManualDraft))}>
                   Guardar
                 </button>
-                <button className="btn-ghost" style={{ padding: "0.3rem 0.6rem" }} onClick={() => setCuotaManualEditing(false)}>
+                <button className="btn-ghost" onClick={() => setCuotaManualEditing(false)}>
                   Cancelar
                 </button>
               </div>
             ) : (
-              <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Precio manual — sin cargar aún.</p>
+              <p className="text-[15px] text-ink-soft">Precio manual — sin cargar aún.</p>
             )}
             {!cuotaManualEditing && (
-              <button className="btn-ghost" style={{ marginTop: "0.4rem", fontSize: "0.75rem", padding: "0.15rem 0.5rem" }}
+              <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px] mt-2"
                 onClick={() => { setCuotaManualDraft(alumno.cuota_manual != null ? String(alumno.cuota_manual) : ""); setCuotaManualEditing(true) }}>
                 {alumno.cuota_manual != null ? "Editar precio manual" : "Cargar precio manual"}
               </button>
@@ -738,35 +759,35 @@ export default function AlumnoDetailPage() {
         </div>
 
         {cuota?.tipo === "bono_familia" && (
-          <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.75rem" }}>
-            Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"},
-            repartido en proporción al tramo individual de cada hermano.
+          <p className="text-[14px] text-ink bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-2.5 mb-3">
+            Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"}{" "}
+            según la tarifa, repartido a partes iguales.
           </p>
         )}
         {!!cuota?.avisos.length && (
-          <div style={{ marginBottom: "0.75rem" }}>
+          <div className="mb-3">
             {cuota.avisos.map((a, i) => (
-              <p key={i} style={{ fontSize: "0.8rem", color: "var(--terracotta)" }}>⚠ {a}</p>
+              <p key={i} className="text-[14px] text-amber-800">⚠ {a}</p>
             ))}
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem", marginTop: "0.5rem" }}>
-          <p style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Clases a mayores</p>
+        <div className="flex items-center justify-between gap-3 mb-3 pt-4 border-t border-pine-900/10">
+          <p className="font-label text-[14px] font-semibold uppercase tracking-[0.1em] text-pine-700">Clases a mayores</p>
           {!showCargoExtraForm && <button className="btn-ghost" onClick={() => setShowCargoExtraForm(true)}>+ Añadir clase a mayores</button>}
         </div>
 
         {showCargoExtraForm && (
-          <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          <div className="bg-khaki-100 border border-pine-900/10 rounded-[12px] p-4 mb-4 flex flex-col gap-2.5">
             <input type="text" className="input" placeholder="Concepto (ej. Refuerzo pre-examen Cambridge B2)"
               value={cargoExtraForm.concepto} onChange={e => setCargoExtraForm(f => ({ ...f, concepto: e.target.value }))} />
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <input type="number" step="0.01" className="input" style={{ width: "8rem" }} placeholder="Importe €"
+            <div className="flex gap-2 flex-wrap">
+              <input type="number" step="0.01" className="input !w-32" placeholder="Importe €"
                 value={cargoExtraForm.monto} onChange={e => setCargoExtraForm(f => ({ ...f, monto: e.target.value }))} />
-              <input type="date" className="input" style={{ width: "auto" }}
+              <input type="date" className="input !w-auto"
                 value={cargoExtraForm.fecha} onChange={e => setCargoExtraForm(f => ({ ...f, fecha: e.target.value }))} />
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+            <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setShowCargoExtraForm(false)}>Cancelar</button>
               <button className="btn-primary"
                 disabled={!cargoExtraForm.concepto.trim() || !cargoExtraForm.monto || cargoExtraMut.isPending}
@@ -777,18 +798,18 @@ export default function AlumnoDetailPage() {
           </div>
         )}
 
-        {!cargosExtra.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin clases a mayores registradas.</p>}
+        {!cargosExtra.length && <p className="text-[15px] text-ink-soft">Sin clases a mayores registradas.</p>}
         {!!cargosExtra.length && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className="flex flex-col">
             {cargosExtra.map(c => (
-              <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+              <div key={c.id} className="flex items-center justify-between gap-3 min-h-[52px] border-b border-pine-900/10 last:border-b-0">
                 <div>
-                  <span style={{ fontSize: "0.875rem", color: "var(--text)" }}>{c.concepto}</span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginLeft: "0.5rem" }}>{formatDate(c.fecha)}</span>
+                  <span className="text-[15px] text-ink">{c.concepto}</span>
+                  <span className="font-label text-[13px] text-ink-soft ml-2">{formatDate(c.fecha)}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{formatEur(Number(c.monto))}</span>
-                  <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.15rem 0.5rem" }}
+                <div className="flex items-center gap-2.5">
+                  <span className="font-semibold text-ink">{formatEur(Number(c.monto))}</span>
+                  <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px]"
                     disabled={eliminarCargoExtraMut.isPending} onClick={() => eliminarCargoExtraMut.mutate(c.id)}>
                     Quitar
                   </button>
@@ -800,29 +821,29 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Pagos */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Pagos</h2>
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">Pagos</h2>
           {periodos.length > 0 && (
-            <select className="input" style={{ width: "auto" }} value={periodoFilter} onChange={e => setPeriodoFilter(e.target.value)}>
+            <select className="input !w-auto" value={periodoFilter} onChange={e => setPeriodoFilter(e.target.value)}>
               <option value="">Todos los periodos</option>
               {periodos.map(p => <option key={p} value={p}>{formatMonth(p)}</option>)}
             </select>
           )}
         </div>
-        {!pagosFiltrados.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin pagos registrados.</p>}
+        {!pagosFiltrados.length && <p className="text-[15px] text-ink-soft">Sin pagos registrados.</p>}
         {!!pagosFiltrados.length && (
-          <div style={{ overflowX: "auto" }}>
+          <div className="overflow-x-auto -mx-5">
             <table className="data-table">
               <thead><tr>{["Periodo", "Importe", "Método", "Estado", "Doc"].map(h => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {pagosFiltrados.map(p => (
                   <tr key={p.id} onClick={() => setSelectedPago(p)} style={{ cursor: "pointer" }}>
                     <td>{formatMonth(p.periodo)}</td>
-                    <td style={{ fontWeight: 600, color: "var(--text)" }}>{formatEur(Number(p.total))}</td>
-                    <td style={{ textTransform: "capitalize" }}>{p.metodo}</td>
+                    <td className="font-semibold">{formatEur(Number(p.total))}</td>
+                    <td className="capitalize">{p.metodo}</td>
                     <td><span className="badge" style={p.estado === "pagado" ? { background: "var(--sage-muted)", color: "var(--sage)" } : { background: "var(--terracotta-muted)", color: "var(--terracotta)" }}>{p.estado}</span></td>
-                    <td style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{p.num_doc || "—"}</td>
+                    <td className="font-mono text-[13px]">{p.num_doc || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -833,22 +854,22 @@ export default function AlumnoDetailPage() {
 
       {/* Facturas y recibos — read-only, distinct from "Documentos y consentimientos"
           below (which is consent forms: image rights/data protection/enrollment). */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+      <section className="card !bg-white p-5 mb-4">
+        <h2 className="font-head text-[20px] leading-tight text-pine-900 mb-4">
           Facturas y recibos
         </h2>
         {downloadDocError && (
-          <p style={{ fontSize: "0.8rem", color: "var(--terracotta)", marginBottom: "0.75rem" }}>{downloadDocError}</p>
+          <p style={{ fontSize: "0.9375rem", color: "var(--terracotta)", marginBottom: "0.75rem" }}>{downloadDocError}</p>
         )}
-        {!documentos.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin documentos generados.</p>}
+        {!documentos.length && <p className="text-[15px] text-ink-soft">Sin documentos generados.</p>}
         {!!documentos.length && (
-          <div style={{ overflowX: "auto" }}>
+          <div className="overflow-x-auto -mx-5">
             <table className="data-table">
               <thead><tr>{["Nº doc", "Tipo", "Fecha de emisión", "Estado", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {documentos.map(d => (
                   <tr key={d.id}>
-                    <td style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{d.num_doc || d.nombre}</td>
+                    <td className="font-mono text-[13px]">{d.num_doc || d.nombre}</td>
                     <td>{DOC_TIPO_LABEL[d.tipo] ?? d.tipo}</td>
                     <td>{formatDocFecha(d.emitida_at)}</td>
                     <td>
@@ -856,13 +877,13 @@ export default function AlumnoDetailPage() {
                         {d.estado}
                       </span>
                     </td>
-                    <td style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                      <button className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
+                    <td className="flex gap-1.5 flex-wrap">
+                      <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px] inline-flex items-center"
                         disabled={downloadingDocId === d.id} onClick={() => handleDescargarDoc(d)}>
                         {downloadingDocId === d.id ? "..." : "Descargar"}
                       </button>
                       {d.drive_url && (
-                        <a className="btn-ghost" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
+                        <a className="btn-ghost !min-h-[40px] !px-3 !text-[14px] inline-flex items-center"
                           href={d.drive_url} target="_blank" rel="noopener noreferrer">
                           Ver en Drive
                         </a>
@@ -877,101 +898,100 @@ export default function AlumnoDetailPage() {
       </section>
 
       {/* Académico */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Académico</h2>
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">Académico</h2>
           {!showFechaForm && <button className="btn-ghost" onClick={() => setShowFechaForm(true)}>+ añadir fecha</button>}
         </div>
 
         {showFechaForm && (
-          <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <input type="date" className="input" style={{ width: "auto" }} value={fechaForm.fecha}
+          <div className="bg-khaki-100 border border-pine-900/10 rounded-[12px] p-4 mb-4 flex flex-col gap-2.5">
+            <div className="flex gap-2 flex-wrap">
+              <input type="date" className="input !w-auto" value={fechaForm.fecha}
                 onChange={e => setFechaForm(f => ({ ...f, fecha: e.target.value }))} />
-              <select className="input" style={{ width: "auto" }} value={fechaForm.tipo}
+              <select className="input !w-auto" value={fechaForm.tipo}
                 onChange={e => setFechaForm(f => ({ ...f, tipo: e.target.value as TipoFechaImportante }))}>
                 {Object.entries(TIPO_FECHA_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <input type="text" className="input" placeholder="Descripción (opcional)" value={fechaForm.descripcion}
               onChange={e => setFechaForm(f => ({ ...f, descripcion: e.target.value }))} />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+            <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setShowFechaForm(false)}>Cancelar</button>
               <button className="btn-primary" disabled={!fechaForm.fecha || fechaMut.isPending} onClick={() => fechaMut.mutate()}>Guardar</button>
             </div>
           </div>
         )}
 
-        {!fechas.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)", marginBottom: "1rem" }}>Sin fechas importantes registradas.</p>}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.5rem" }}>
+        {!fechas.length && <p className="text-[15px] text-ink-soft mb-4">Sin fechas importantes registradas.</p>}
+        <div className="flex flex-col mb-6">
           {fechas.map(f => (
-            <div key={f.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div key={f.id} className="flex items-center gap-3 flex-wrap min-h-[44px] py-1.5 border-b border-pine-900/10 last:border-b-0">
               <span className="badge" style={TIPO_FECHA_STYLE[f.tipo]}>{f.tipo_display}</span>
-              <span style={{ fontSize: "0.875rem", color: "var(--text)" }}>{formatDate(f.fecha)}</span>
-              {f.descripcion && <span style={{ fontSize: "1rem", color: "var(--text-dim)" }}>{f.descripcion}</span>}
+              <span className="text-[15px] text-ink">{formatDate(f.fecha)}</span>
+              {f.descripcion && <span className="text-[15px] text-ink-soft">{f.descripcion}</span>}
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-          <p style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text)" }}>Notas de progreso</p>
+        <div className="flex items-center justify-between gap-3 mb-3 pt-4 border-t border-pine-900/10">
+          <p className="font-label text-[14px] font-semibold uppercase tracking-[0.1em] text-pine-700">Notas de progreso</p>
           {!showNotaForm && <button className="btn-ghost" onClick={() => setShowNotaForm(true)}>+ añadir</button>}
         </div>
         {showNotaForm && (
-          <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            <select className="input" style={{ width: "auto" }} value={notaForm.tipo}
+          <div className="bg-khaki-100 border border-pine-900/10 rounded-[12px] p-4 mb-4 flex flex-col gap-2.5">
+            <select className="input !w-auto" value={notaForm.tipo}
               onChange={e => setNotaForm(f => ({ ...f, tipo: e.target.value as TipoNotaAlumno }))}>
               {Object.entries(TIPO_NOTA_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <textarea rows={2} className="input" style={{ resize: "none" }} placeholder="Progreso, tema cubierto..."
+            <textarea rows={2} className="input !py-2.5 resize-none" placeholder="Progreso, tema cubierto..."
               value={notaForm.contenido} onChange={e => setNotaForm(f => ({ ...f, contenido: e.target.value }))} />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+            <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setShowNotaForm(false)}>Cancelar</button>
               <button className="btn-primary" disabled={!notaForm.contenido.trim() || notaMut.isPending} onClick={() => notaMut.mutate()}>Guardar</button>
             </div>
           </div>
         )}
-        {!notas.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin notas de progreso.</p>}
+        {!notas.length && <p className="text-[15px] text-ink-soft">Sin notas de progreso.</p>}
       </section>
 
       {/* Notas / reuniones (timeline) */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+      <section className="card !bg-white p-5 mb-4">
+        <h2 className="font-head text-[20px] leading-tight text-pine-900 mb-4">
           Notas y reuniones
         </h2>
-        {!notas.length && <p style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>Sin registros.</p>}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        {!notas.length && <p className="text-[15px] text-ink-soft">Sin registros.</p>}
+        <div className="flex flex-col gap-4">
           {notas.map(n => (
-            <div key={n.id} style={{ borderLeft: "2px solid var(--border)", paddingLeft: "0.75rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
+            <div key={n.id} className="border-l-[3px] border-brass-500 pl-4">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="badge" style={{ background: "var(--surface)", color: "var(--text-dim)" }}>{n.tipo_display}</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{formatDate(n.fecha)} · {n.autor_nombre}</span>
+                <span className="font-label text-[13px] text-ink-soft">{formatDate(n.fecha)} · {n.autor_nombre}</span>
               </div>
-              <p style={{ fontSize: "0.875rem", color: "var(--text)" }}>{n.contenido}</p>
+              <p className="text-[15px] text-ink">{n.contenido}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Documentos / Consentimientos */}
-      <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "1rem" }}>
+      <section className="card !bg-white p-5 mb-4">
+        <h2 className="font-head text-[20px] leading-tight text-pine-900 mb-4">
           Documentos y consentimientos
         </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+        <div className="flex flex-col">
           {CONSENTIMIENTO_TIPOS.map(tipo => {
             const c = consentimientos.find(x => x.tipo === tipo)
             const firmado = c?.firmado ?? false
             return (
-              <div key={tipo} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                  <input type="checkbox" checked={firmado} onChange={e => consentMut.mutate({ tipo, firmado: e.target.checked })} />
-                  <span style={{ fontSize: "0.875rem", color: "var(--text)" }}>{TIPO_CONSENTIMIENTO_LABELS[tipo]}</span>
-                  {c?.documento_url && <a href={c.documento_url} target="_blank" rel="noreferrer" style={{ fontSize: "0.75rem", color: "var(--gold)" }}>Ver documento</a>}
+              <div key={tipo} className="flex items-center justify-between gap-3 flex-wrap min-h-[52px] py-1.5 border-b border-pine-900/10 last:border-b-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={firmado} onChange={e => consentMut.mutate({ tipo, firmado: e.target.checked })} />
+                  <span className="text-[15px] text-ink">{TIPO_CONSENTIMIENTO_LABELS[tipo]}</span>
+                  {c?.documento_url && <a href={c.documento_url} target="_blank" rel="noreferrer" className="font-label text-[14px] font-semibold text-brass-700 underline">Ver documento</a>}
                   {TIPOS_CON_PDF.includes(tipo) && (
                     <button
-                      className="btn-ghost"
-                      style={{ fontSize: "0.75rem", padding: "0.15rem 0.5rem" }}
+                      className="btn-ghost !min-h-[40px] !px-3 !text-[14px]"
                       disabled={imprimiendoTipo === tipo}
                       onClick={() => handleImprimirDocumento(tipo)}
                     >
@@ -987,25 +1007,25 @@ export default function AlumnoDetailPage() {
           })}
         </div>
         {imprimirError && (
-          <p style={{ fontSize: "0.8rem", color: "var(--terracotta)", marginTop: "0.6rem" }}>{imprimirError}</p>
+          <p style={{ fontSize: "0.9375rem", color: "var(--terracotta)", marginTop: "0.6rem" }}>{imprimirError}</p>
         )}
       </section>
 
       {/* Salud — never rendered for reception */}
       {canSeeSalud && (
-        <section className="card" style={{ padding: "1.1rem", marginBottom: "1rem" }}>
-          <div style={{ marginBottom: "1rem" }}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}>Salud</h2>
-            <p style={{ fontSize: "1rem", color: "var(--text-dim)", fontStyle: "italic", marginTop: "0.25rem" }}>
+        <section className="card !bg-white p-5 mb-4">
+          <div className="mb-4">
+            <h2 className="font-head text-[20px] leading-tight text-pine-900">Salud</h2>
+            <p className="text-[14px] text-ink-soft italic mt-1">
               Dato sensible — visibilidad restringida
             </p>
           </div>
           {saludEditing ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            <div className="flex flex-col gap-3">
               <Textarea label="Alergias" value={saludForm.alergias} onChange={v => setSaludForm(f => ({ ...f, alergias: v }))} />
               <Textarea label="Condiciones médicas" value={saludForm.condiciones_medicas} onChange={v => setSaludForm(f => ({ ...f, condiciones_medicas: v }))} />
               <Textarea label="Medicación" value={saludForm.medicacion} onChange={v => setSaludForm(f => ({ ...f, medicacion: v }))} />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+              <div className="flex justify-end gap-2">
                 <button className="btn-ghost" onClick={() => setSaludEditing(false)}>Cancelar</button>
                 <button className="btn-primary" disabled={saludMut.isPending} onClick={() => saludMut.mutate()}>Guardar</button>
               </div>
@@ -1015,7 +1035,7 @@ export default function AlumnoDetailPage() {
               <Field label="Alergias" value={salud?.alergias || "—"} />
               <Field label="Condiciones médicas" value={salud?.condiciones_medicas || "—"} />
               <Field label="Medicación" value={salud?.medicacion || "—"} />
-              <button className="btn-ghost" style={{ marginTop: "0.5rem" }} onClick={openSaludEditing}>Editar</button>
+              <button className="btn-ghost mt-2" onClick={openSaludEditing}>Editar</button>
             </div>
           )}
         </section>
@@ -1058,11 +1078,13 @@ export default function AlumnoDetailPage() {
   )
 }
 
+const LABEL_CLS = "block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1"
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ marginBottom: "0.75rem" }}>
-      <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.2rem" }}>{label}</p>
-      <p style={{ fontSize: "0.875rem", color: "var(--text)" }}>{value}</p>
+    <div className="mb-3.5">
+      <p className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-ink-soft mb-0.5">{label}</p>
+      <p className="text-[15px] text-ink">{value}</p>
     </div>
   )
 }
@@ -1070,8 +1092,8 @@ function Field({ label, value }: { label: string; value: string }) {
 function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
-      <textarea rows={2} className="input" style={{ resize: "none" }} value={value} onChange={e => onChange(e.target.value)} />
+      <p className={LABEL_CLS}>{label}</p>
+      <textarea rows={2} className="input !py-2.5 resize-none" value={value} onChange={e => onChange(e.target.value)} />
     </div>
   )
 }
@@ -1079,7 +1101,7 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
 function TextInput({ label, value, onChange, listId }: { label: string; value: string; onChange: (v: string) => void; listId?: string }) {
   return (
     <div>
-      <p style={{ fontSize: "1rem", color: "var(--text-dim)", marginBottom: "0.35rem" }}>{label}</p>
+      <p className={LABEL_CLS}>{label}</p>
       <input type="text" className="input" value={value} onChange={e => onChange(e.target.value)} list={listId} />
     </div>
   )
