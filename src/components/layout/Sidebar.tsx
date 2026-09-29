@@ -4,7 +4,7 @@ import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, CreditCard, Building2,
   Users, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
-  Coins, FileText, MessageCircle, Cake, Settings, X,
+  Coins, FileText, MessageCircle, Cake, Settings, X, Landmark, Store,
 } from "lucide-react"
 
 const LOGO_SRC = "/logos/rangers-academy-logo.png"
@@ -41,6 +41,8 @@ const NAV_SECTIONS = [
     items: [
       { to: "/pagos", icon: Coins, label: "Pagos" },
       { to: "/documentos", icon: FileText, label: "Documentos" },
+      { to: "/rangers-academy", icon: Landmark, label: "Rangers Academy" },
+      { to: "/cami-and-co", icon: Store, label: "Cami & Co" },
       { to: "/precios", icon: Tag, label: "Precios" },
     ]
   },

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Receipt, FileText } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
+import { descargarDocumento } from "@/lib/descargarDocumento"
 
 type Documento = {
   id: number
@@ -68,7 +69,12 @@ export default function DocumentosPage() {
     mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
       api.post(`/documentos/${id}/anular/`, { motivo_anulacion: motivo }),
     onSuccess: () => {
+      // El pago detrás de este documento deja de contar como "cobrado" (ver
+      // Pago.documento_anulado) — sin esto, Facturación, Rangers/Cami&Co y
+      // la ficha del alumno seguían mostrando los datos viejos hasta un F5.
       qc.invalidateQueries({ queryKey: ["documentos"] })
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen"] })
       setConfirmAnular(null)
       setMotivoAnulacion("")
       setActionError("")
@@ -88,25 +94,7 @@ export default function DocumentosPage() {
     setDownloadingId(d.id)
     setDownloadError("")
     try {
-      const token = localStorage.getItem("access_token")
-      const base = import.meta.env.VITE_API_URL ?? "/api/v1"
-      const res = await fetch(`${base}/documentos/${d.id}/descargar/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) {
-        throw new Error(`No se pudo descargar el documento (código ${res.status}).`)
-      }
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const cliente = d.pago_info?.alumno || d.pago_info?.pagador || ""
-      const filename = `${d.num_doc}${cliente ? " " + cliente : ""}.pdf`.replace(/[\\/:*?"<>|]/g, "")
-      const a = document.createElement("a")
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+      await descargarDocumento(d, d.pago_info?.alumno || d.pago_info?.pagador || "")
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : "Error al descargar el documento.")
     } finally {

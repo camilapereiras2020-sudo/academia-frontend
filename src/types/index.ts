@@ -26,6 +26,7 @@ export interface Grupo {
 export interface Profesor {
   id: number; nombre: string; codigo: string; es_suplente: boolean
   orden: number; activo: boolean; created_at: string
+  grupos_count: number; alumnos_count: number
 }
 
 export interface Aula {
@@ -57,6 +58,8 @@ export type Curso =
   | "bach_1" | "bach_2"
   | "fp" | "adulto" | "otro"
 
+export type CodigoClase = "HORA" | "HORA_Y_MEDIA" | "PRIVADA" | "PRIVADA_PROFESIONAL" | ""
+
 export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
   fnac: string | null; telefono: string; email: string; dni: string; nivel: string
@@ -75,6 +78,26 @@ export interface Alumno {
   idioma_nativo: string
   contacto_emergencia_nombre: string
   contacto_emergencia_telefono: string
+  codigo_clase: CodigoClase
+  cuota_manual: number | null
+}
+
+// modules.tarifas.pricing.calcular_cuota_alumno — nunca lanza, cuota=null +
+// avisos es "no se puede calcular sola, revisar a mano".
+export interface AlumnoCuota {
+  tipo: "manual" | "privada_manual" | "bono_familia" | "clase_grupo" | "sin_tabla"
+  cuota: number | null
+  descuento_pct?: number
+  dias_semana?: number
+  duracion_min?: number
+  n_hermanos?: number
+  total_bono?: number
+  tarifa_hora_referencia?: number
+  avisos: string[]
+}
+
+export interface CargoExtra {
+  id: number; alumno: number; concepto: string; monto: number; fecha: string; created_at: string
 }
 
 export type TipoFechaImportante = "examen" | "revision_nivel" | "inicio_curso" | "fin_curso" | "otro"
@@ -108,6 +131,8 @@ export interface AlumnoResumen {
   pagos: Pago[]
   fechas_importantes: FechaImportante[]
   notas: NotaAlumno[]
+  cuota: AlumnoCuota
+  cargos_extra: CargoExtra[]
 }
 
 export interface Pago {
@@ -124,6 +149,9 @@ export interface Pago {
   numero_factura_reservado: string
   concepto_original: string
   concepto_libre: string
+  // true si la última factura/recibo de este pago fue anulada y todavía no
+  // se generó una nueva — un "pagado" en este estado no cuenta como ingreso.
+  documento_anulado: boolean
 }
 
 export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"
@@ -171,9 +199,12 @@ export interface NotaDificultad {
 export interface PagadorCalculoItem {
   tipo: "clase_grupo" | "bono_familia"
   alumnos: string[]
-  dias_semana: number
-  duracion_min: number
+  dias_semana?: number
+  duracion_min?: number
   precio: number
+  n_hermanos?: number
+  // bono_familia: precio de la tarifa repartido a partes iguales entre los 2 hermanos.
+  perfiles?: { alumno: string; dias_semana: number; duracion_min: number; cuota: number }[]
 }
 
 export interface PagadorCalculo {

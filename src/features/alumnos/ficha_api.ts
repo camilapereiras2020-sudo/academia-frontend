@@ -2,10 +2,18 @@ import { api } from "@/lib/axios"
 import type {
   AlumnoResumen, FechaImportante, TipoFechaImportante,
   NotaAlumno, TipoNotaAlumno, DatoSalud, ConsentimientoAlumno, TipoConsentimiento,
+  CargoExtra,
 } from "@/types"
 
 export const resumenApi = {
   get: (alumnoId: number) => api.get<AlumnoResumen>(`/alumnos/${alumnoId}/resumen/`),
+}
+
+export const cargoExtraApi = {
+  list: (alumnoId: number) => api.get<CargoExtra[]>(`/tarifas/cargos-extra/?alumno=${alumnoId}`),
+  create: (data: { alumno: number; concepto: string; monto: number; fecha: string }) =>
+    api.post<CargoExtra>("/tarifas/cargos-extra/", data),
+  delete: (id: number) => api.delete(`/tarifas/cargos-extra/${id}/`),
 }
 
 export const fechasImportantesApi = {

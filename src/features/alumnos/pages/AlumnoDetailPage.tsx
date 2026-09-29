@@ -2,18 +2,20 @@ import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { alumnosApi } from "../alumnos_api"
-import { resumenApi, fechasImportantesApi, notasAlumnoApi, datoSaludApi, consentimientosApi } from "../ficha_api"
+import { resumenApi, fechasImportantesApi, notasAlumnoApi, datoSaludApi, consentimientosApi, cargoExtraApi } from "../ficha_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
 import EmailModal from "@/components/shared/EmailModal"
 import WhatsappReplyModal from "../components/WhatsappReplyModal"
 import PagoDetailModal from "@/features/pagos/PagoDetailModal"
+import GenerarFacturaModal from "../components/GenerarFacturaModal"
 import { useAuthStore } from "@/store/authStore"
 import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
+import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
-import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago } from "@/types"
+import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase } from "@/types"
 
 const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const NIVELES: NivelObjetivo[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -91,6 +93,20 @@ const TIPO_FECHA_STYLE: Record<TipoFechaImportante, { background: string; color:
 
 const TIPO_NOTA_LABELS: Record<TipoNotaAlumno, string> = { progreso: "Progreso", reunion: "Reunión", general: "General" }
 
+const CODIGO_CLASE_LABELS: Record<Exclude<CodigoClase, "">, string> = {
+  HORA: "Clase grupo (1h/semana)",
+  HORA_Y_MEDIA: "Clase grupo (1h30/semana)",
+  PRIVADA: "Clase privada (30 €/h)",
+  PRIVADA_PROFESIONAL: "Clase privada profesional o especialización (35 €/h)",
+}
+const CUOTA_TIPO_LABELS: Record<string, string> = {
+  manual: "Precio manual",
+  privada_manual: "Clase privada — precio manual",
+  bono_familia: "Bono Familia",
+  clase_grupo: "Clase Grupo",
+  sin_tabla: "Sin calcular",
+}
+
 const TIPO_CONSENTIMIENTO_LABELS: Record<TipoConsentimiento, string> = {
   autorizacion_imagen: "Autorización de imagen",
   proteccion_datos: "Protección de datos",
@@ -121,6 +137,7 @@ export default function AlumnoDetailPage() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showWhatsappModal, setShowWhatsappModal] = useState(false)
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
+  const [showGenerarFactura, setShowGenerarFactura] = useState(false)
   const [showFechaForm, setShowFechaForm] = useState(false)
   const [fechaForm, setFechaForm] = useState({ fecha: "", tipo: "examen" as TipoFechaImportante, descripcion: "" })
   const [showNotaForm, setShowNotaForm] = useState(false)
@@ -179,17 +196,7 @@ export default function AlumnoDetailPage() {
     setDownloadingDocId(d.id)
     setDownloadDocError("")
     try {
-      const res = await api.get(`/documentos/${d.id}/descargar/`, { responseType: "blob" })
-      const url = window.URL.createObjectURL(res.data as Blob)
-      const cliente = d.pago_info?.alumno || d.pago_info?.pagador || ""
-      const filename = `${d.num_doc || d.nombre}${cliente ? " " + cliente : ""}.pdf`.replace(/[\\/:*?"<>|]/g, "")
-      const a = document.createElement("a")
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+      await descargarDocumento(d, d.pago_info?.alumno || d.pago_info?.pagador || alumno?.nombre)
     } catch {
       setDownloadDocError("No se pudo descargar el documento.")
     } finally {
@@ -317,6 +324,45 @@ export default function AlumnoDetailPage() {
     },
   })
 
+  const codigoClaseMut = useMutation({
+    mutationFn: (codigo_clase: CodigoClase) => alumnosApi.update(alumnoId, { codigo_clase }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+    },
+  })
+
+  const [cuotaManualEditing, setCuotaManualEditing] = useState(false)
+  const [cuotaManualDraft, setCuotaManualDraft] = useState("")
+  const cuotaManualMut = useMutation({
+    mutationFn: (cuota_manual: number | null) => alumnosApi.update(alumnoId, { cuota_manual }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+      setCuotaManualEditing(false)
+    },
+  })
+
+  const [showCargoExtraForm, setShowCargoExtraForm] = useState(false)
+  const [cargoExtraForm, setCargoExtraForm] = useState({
+    concepto: "", monto: "", fecha: new Date().toISOString().slice(0, 10),
+  })
+  const cargoExtraMut = useMutation({
+    mutationFn: () => cargoExtraApi.create({
+      alumno: alumnoId, concepto: cargoExtraForm.concepto.trim(),
+      monto: Number(cargoExtraForm.monto), fecha: cargoExtraForm.fecha,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+      setShowCargoExtraForm(false)
+      setCargoExtraForm({ concepto: "", monto: "", fecha: new Date().toISOString().slice(0, 10) })
+    },
+  })
+  const eliminarCargoExtraMut = useMutation({
+    mutationFn: (id: number) => cargoExtraApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] }),
+  })
+
   const saludMut = useMutation({
     mutationFn: () => datoSaludApi.update(alumnoId, saludForm),
     onSuccess: (res) => {
@@ -380,6 +426,8 @@ export default function AlumnoDetailPage() {
   const pagos = resumen?.pagos ?? []
   const fechas = resumen?.fechas_importantes ?? []
   const notas = resumen?.notas ?? []
+  const cuota = resumen?.cuota ?? null
+  const cargosExtra = resumen?.cargos_extra ?? []
   const periodos = Array.from(new Set(pagos.map(p => p.periodo))).sort().reverse()
   const pagosFiltrados = periodoFilter ? pagos.filter(p => p.periodo === periodoFilter) : pagos
 
@@ -629,6 +677,122 @@ export default function AlumnoDetailPage() {
         )}
       </section>
 
+      {/* Cuota — cálculo automático (modules.tarifas.pricing.calcular_cuota_alumno)
+          + clases a mayores (CargoExtra), sumadas aparte a la factura del mes. */}
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">Cuota</h2>
+          <button className="btn-ghost" onClick={() => setShowGenerarFactura(true)}>
+            Generar factura
+          </button>
+        </div>
+
+        <div className="grid-2col mb-4">
+          <div>
+            <p className={LABEL_CLS}>Tipo de clase</p>
+            <select className="input" value={alumno.codigo_clase}
+              onChange={e => codigoClaseMut.mutate(e.target.value as CodigoClase)}>
+              <option value="">— Sin definir —</option>
+              {Object.entries(CODIGO_CLASE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <p className={LABEL_CLS}>Cuota mensual</p>
+            {cuota?.cuota != null && !cuotaManualEditing ? (
+              <p className="font-head text-[24px] leading-tight text-pine-900">
+                {formatEur(cuota.cuota)}
+                <span className="font-label text-[14px] font-semibold text-ink-soft ml-2">
+                  {CUOTA_TIPO_LABELS[cuota.tipo] ?? cuota.tipo}
+                </span>
+              </p>
+            ) : cuotaManualEditing ? (
+              <div className="flex gap-2 items-center flex-wrap">
+                <input type="number" step="0.01" className="input !w-32"
+                  value={cuotaManualDraft} onChange={e => setCuotaManualDraft(e.target.value)} autoFocus />
+                <button className="btn-primary"
+                  disabled={cuotaManualMut.isPending}
+                  onClick={() => cuotaManualMut.mutate(cuotaManualDraft.trim() === "" ? null : Number(cuotaManualDraft))}>
+                  Guardar
+                </button>
+                <button className="btn-ghost" onClick={() => setCuotaManualEditing(false)}>
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <p className="text-[15px] text-ink-soft">Precio manual — sin cargar aún.</p>
+            )}
+            {!cuotaManualEditing && (
+              <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px] mt-2"
+                onClick={() => { setCuotaManualDraft(alumno.cuota_manual != null ? String(alumno.cuota_manual) : ""); setCuotaManualEditing(true) }}>
+                {alumno.cuota_manual != null ? "Editar precio manual" : "Cargar precio manual"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {cuota?.tipo === "bono_familia" && (
+          <p className="text-[14px] text-ink bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-2.5 mb-3">
+            Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"}{" "}
+            según la tarifa, repartido a partes iguales.
+          </p>
+        )}
+        {!!cuota?.avisos.length && (
+          <div className="mb-3">
+            {cuota.avisos.map((a, i) => (
+              <p key={i} className="text-[14px] text-amber-800">⚠ {a}</p>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3 mb-3 pt-4 border-t border-pine-900/10">
+          <p className="font-label text-[14px] font-semibold uppercase tracking-[0.1em] text-pine-700">Clases a mayores</p>
+          {!showCargoExtraForm && <button className="btn-ghost" onClick={() => setShowCargoExtraForm(true)}>+ Añadir clase a mayores</button>}
+        </div>
+
+        {showCargoExtraForm && (
+          <div className="bg-khaki-100 border border-pine-900/10 rounded-[12px] p-4 mb-4 flex flex-col gap-2.5">
+            <input type="text" className="input" placeholder="Concepto (ej. Refuerzo pre-examen Cambridge B2)"
+              value={cargoExtraForm.concepto} onChange={e => setCargoExtraForm(f => ({ ...f, concepto: e.target.value }))} />
+            <div className="flex gap-2 flex-wrap">
+              <input type="number" step="0.01" className="input !w-32" placeholder="Importe €"
+                value={cargoExtraForm.monto} onChange={e => setCargoExtraForm(f => ({ ...f, monto: e.target.value }))} />
+              <input type="date" className="input !w-auto"
+                value={cargoExtraForm.fecha} onChange={e => setCargoExtraForm(f => ({ ...f, fecha: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setShowCargoExtraForm(false)}>Cancelar</button>
+              <button className="btn-primary"
+                disabled={!cargoExtraForm.concepto.trim() || !cargoExtraForm.monto || cargoExtraMut.isPending}
+                onClick={() => cargoExtraMut.mutate()}>
+                {cargoExtraMut.isPending ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!cargosExtra.length && <p className="text-[15px] text-ink-soft">Sin clases a mayores registradas.</p>}
+        {!!cargosExtra.length && (
+          <div className="flex flex-col">
+            {cargosExtra.map(c => (
+              <div key={c.id} className="flex items-center justify-between gap-3 min-h-[52px] border-b border-pine-900/10 last:border-b-0">
+                <div>
+                  <span className="text-[15px] text-ink">{c.concepto}</span>
+                  <span className="font-label text-[13px] text-ink-soft ml-2">{formatDate(c.fecha)}</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="font-semibold text-ink">{formatEur(Number(c.monto))}</span>
+                  <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px]"
+                    disabled={eliminarCargoExtraMut.isPending} onClick={() => eliminarCargoExtraMut.mutate(c.id)}>
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Pagos */}
       <section className="card !bg-white p-5 mb-4">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
@@ -872,6 +1036,15 @@ export default function AlumnoDetailPage() {
             setSelectedPago(null)
             qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
           }}
+        />
+      )}
+      {showGenerarFactura && alumno && (
+        <GenerarFacturaModal
+          alumno={alumno}
+          cuota={cuota}
+          cargosExtra={cargosExtra}
+          pagador={pagador}
+          onClose={() => setShowGenerarFactura(false)}
         />
       )}
     </div>

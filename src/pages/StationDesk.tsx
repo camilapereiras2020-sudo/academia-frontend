@@ -155,7 +155,7 @@ export default function StationDesk() {
 
   const calendarDays = buildCalendarDays(calYear, calMonth, grupos ?? []);
 
-  const revenue = (pagos ?? []).filter((p) => p.estado === 'pagado').reduce((sum, p) => sum + Number(p.total), 0);
+  const revenue = (pagos ?? []).filter((p) => p.estado === 'pagado' && !p.documento_anulado).reduce((sum, p) => sum + Number(p.total), 0);
   const outstanding = (pagos ?? []).filter((p) => p.estado !== 'pagado').reduce((sum, p) => sum + Number(p.total), 0);
   const outstandingCount = (pagos ?? []).filter((p) => p.estado !== 'pagado').length;
 
