@@ -65,7 +65,7 @@ export default function ReceptionSummary() {
             )}
           </AttentionCard>
 
-          <AttentionCard numero={2} titulo="WhatsApp pendientes" to="/whatsapp-respuestas" vacio={!whatsappCount}>
+          <AttentionCard numero={2} titulo="WhatsApp pendientes" to="/crm" vacio={!whatsappCount}>
             <p className="text-[15px] text-ink-soft">
               {whatsappCount ? `${whatsappCount} consulta${whatsappCount === 1 ? "" : "s"} sin responder` : "Nada pendiente"}
             </p>

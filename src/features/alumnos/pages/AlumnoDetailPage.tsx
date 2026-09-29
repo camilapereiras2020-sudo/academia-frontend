@@ -7,7 +7,6 @@ import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
 import EmailModal from "@/components/shared/EmailModal"
-import WhatsappReplyModal from "../components/WhatsappReplyModal"
 import PagoDetailModal from "@/features/pagos/PagoDetailModal"
 import GenerarFacturaModal from "../components/GenerarFacturaModal"
 import { useAuthStore } from "@/store/authStore"
@@ -135,7 +134,6 @@ export default function AlumnoDetailPage() {
   const fotoInputRef = useRef<HTMLInputElement>(null)
 
   const [showEmailModal, setShowEmailModal] = useState(false)
-  const [showWhatsappModal, setShowWhatsappModal] = useState(false)
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null)
   const [showGenerarFactura, setShowGenerarFactura] = useState(false)
   const [showFechaForm, setShowFechaForm] = useState(false)
@@ -431,7 +429,6 @@ export default function AlumnoDetailPage() {
   if (!alumno) return <p className="text-[15px] text-ink-soft">Alumno no encontrado.</p>
 
   const gruposDetalle = alumno.grupos_detalle ?? []
-  const grupoDetalle = gruposDetalle[0] ?? null // used only for the WhatsApp-reply modal's context line
   const yearsOld = age(alumno.fnac)
   const pagos = resumen?.pagos ?? []
   const fechas = resumen?.fechas_importantes ?? []
@@ -494,9 +491,6 @@ export default function AlumnoDetailPage() {
         <div className="flex gap-2 flex-wrap">
           <button className="btn-ghost disabled:opacity-50" disabled={!pagador?.email} onClick={() => setShowEmailModal(true)}>
             Enviar email
-          </button>
-          <button className="btn-ghost" onClick={() => setShowWhatsappModal(true)}>
-            Generar respuesta WhatsApp
           </button>
           {alumno.activo === false ? (
             <button className="btn-ghost" disabled={reactivarMut.isPending} onClick={() => reactivarMut.mutate()}>
@@ -1046,14 +1040,6 @@ export default function AlumnoDetailPage() {
           to={pagador.email}
           onSend={(asunto, cuerpo) => alumnosApi.enviarEmail(alumnoId, asunto, cuerpo).then(() => {})}
           onClose={() => setShowEmailModal(false)}
-        />
-      )}
-      {showWhatsappModal && (
-        <WhatsappReplyModal
-          alumno={alumno}
-          pagadorNombre={pagador?.nombre ?? null}
-          grupoNombre={grupoDetalle?.grupo_nombre ?? null}
-          onClose={() => setShowWhatsappModal(false)}
         />
       )}
       {selectedPago && (
