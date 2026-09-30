@@ -7,7 +7,7 @@ import { tarifasApi } from "@/features/tarifas/api"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur } from "@/lib/utils"
 import MatriculaLinea from "@/features/pagos/MatriculaLinea"
-import { esMatricula, matriculaSinImporte, nuevaMatricula, type ExtraLine } from "@/features/pagos/matricula"
+import { esMatricula, nuevaMatricula, type ExtraLine } from "@/features/pagos/matricula"
 import type { Alumno, AlumnoCuota, CargoExtra, Pago, Tarifa } from "@/types"
 
 // Atajo desde la sección "Cuota" de la ficha, en dos pasos:
@@ -291,7 +291,7 @@ export default function GenerarFacturaModal({
                 </div>
                 {primerPago && extras.some(esMatricula) && (
                   <p className="text-[14px] text-ink-soft mb-2">
-                    Primer pago de este alumno: se ha añadido la matrícula. Pon el importe, o quítala si no se cobra.
+                    Primer pago de este alumno: se ha añadido la matrícula. Ajusta lo que se cobra, o quítala si no aplica.
                   </p>
                 )}
                 {extras.map((ex, i) => esMatricula(ex) ? (
@@ -387,7 +387,7 @@ export default function GenerarFacturaModal({
             {doc ? "Cerrar" : pagoCreado ? "Cerrar sin generar documento" : "Cancelar"}
           </button>
           {!pagoCreado && (
-            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || sinPagador || !periodo || matriculaSinImporte(extras)}
+            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || sinPagador || !periodo}
               className="btn-primary disabled:opacity-50">
               {crearMut.isPending ? "Creando..." : "💳 Crear pago"}
             </button>

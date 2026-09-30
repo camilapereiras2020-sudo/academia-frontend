@@ -10,7 +10,7 @@ import { tarifasApi } from "@/features/tarifas/api"
 import type { Tarifa, Marca } from "@/types"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import MatriculaLinea from "../MatriculaLinea"
-import { esMatricula, matriculaSinImporte, nuevaMatricula, type ExtraLine } from "../matricula"
+import { esMatricula, nuevaMatricula, type ExtraLine } from "../matricula"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
 const MARCAS: { value: Marca; label: string }[] = [
@@ -129,7 +129,6 @@ export default function NuevoPagoPage() {
       setError("Completa todos los campos obligatorios")
       return
     }
-    if (matriculaSinImporte(extras)) { setError("Pon el importe de la matrícula, o quítala si no se cobra."); return }
     setError("")
     saveMut.mutate(false)
   }
@@ -269,7 +268,7 @@ export default function NuevoPagoPage() {
           </div>
           {extras.some(esMatricula) && matriculaAutoAddedFor === alumno && (
             <p className="text-[14px] text-ink-soft mb-2">
-              Primer pago de este alumno: se ha añadido la matrícula. Pon el importe, o quítala si no se cobra.
+              Primer pago de este alumno: se ha añadido la matrícula. Ajusta lo que se cobra, o quítala si no aplica.
             </p>
           )}
           {extras.map((ex, i) => (
