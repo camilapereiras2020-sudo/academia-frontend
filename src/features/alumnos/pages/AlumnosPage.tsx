@@ -6,7 +6,10 @@ import { alumnosApi } from "../alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
 import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
 import PagadorFieldsEditor, { type PagadorDraft } from "@/features/pagadores/PagadorFieldsEditor"
-import type { Alumno, Pagador, Marca } from "@/types"
+import type { Alumno, Pagador, Marca, NivelObjetivo, ExamenObjetivo, Curso } from "@/types"
+import { NIVELES, EXAMENES, CURSOS, COLEGIOS_SUGERIDOS } from "../opciones"
+import { datoSaludApi } from "../ficha_api"
+import { NivelSelect } from "@/features/niveles/NivelSelect"
 import EmailModal from "@/components/shared/EmailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import { useAuthStore } from "@/store/authStore"
@@ -47,6 +50,14 @@ interface FormState {
   marca: Marca | ""
   pagador: number | null; pagadorDraft: PagadorDraft
   es_adulto: boolean; aviso_cumple_dias: number | null
+  // Dirección del adulto que paga él mismo — se guarda en su Pagador (el de
+  // un menor va en pagadorDraft.direccion). Igual que en la ficha.
+  direccion: string
+  colegio_origen: string; curso: Curso | ""; idioma_nativo: string
+  nivel: string; nivel_objetivo: NivelObjetivo | ""; examen_objetivo: ExamenObjetivo | ""
+  contacto_emergencia_nombre: string; contacto_emergencia_telefono: string
+  // Salud: solo en el alta (en la ficha tiene su propia sección).
+  alergias: string; condiciones_medicas: string; medicacion: string
 }
 
 const emptyForm = (): FormState => ({
@@ -54,6 +65,11 @@ const emptyForm = (): FormState => ({
   marca: "",
   pagador: null, pagadorDraft: emptyPagadorDraft(),
   es_adulto: false, aviso_cumple_dias: null,
+  direccion: "",
+  colegio_origen: "", curso: "", idioma_nativo: "",
+  nivel: "", nivel_objetivo: "", examen_objetivo: "",
+  contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
+  alergias: "", condiciones_medicas: "", medicacion: "",
 })
 
 export default function AlumnosPage() {
@@ -121,6 +137,10 @@ export default function AlumnosPage() {
         email: f.email, dni: f.dni, notas: f.notas, es_adulto: f.es_adulto,
         marca: f.marca as Marca,
         aviso_cumple_dias: f.aviso_cumple_dias,
+        colegio_origen: f.colegio_origen, curso: f.curso, idioma_nativo: f.idioma_nativo,
+        nivel: f.nivel, nivel_objetivo: f.nivel_objetivo, examen_objetivo: f.examen_objetivo,
+        contacto_emergencia_nombre: f.contacto_emergencia_nombre,
+        contacto_emergencia_telefono: f.contacto_emergencia_telefono,
       }
       // Adult self-pay: deliberately omit `pagador` — the backend auto-
       // creates/links one from the alumno's own contact data. Sending null
@@ -129,9 +149,23 @@ export default function AlumnosPage() {
       if (!f.es_adulto) {
         payload.pagador = f.pagador
       }
-      return editing
+      const { data: guardado } = editing
         ? await alumnosApi.update(editing.id, payload)
         : await alumnosApi.create(payload)
+      // Adulto: la dirección va a su Pagador, que el backend acaba de
+      // crear/vincular — por eso se guarda después, con el id devuelto.
+      if (f.es_adulto && guardado.pagador) {
+        const actual = pagadores.find(p => p.id === guardado.pagador)?.direccion ?? ""
+        if (f.direccion.trim() !== actual) {
+          await pagadoresApi.update(guardado.pagador, { direccion: f.direccion.trim() })
+        }
+      }
+      if (!editing && (f.alergias.trim() || f.condiciones_medicas.trim() || f.medicacion.trim())) {
+        await datoSaludApi.update(guardado.id, {
+          alergias: f.alergias.trim(), condiciones_medicas: f.condiciones_medicas.trim(), medicacion: f.medicacion.trim(),
+        })
+      }
+      return guardado
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["alumnos"] })
@@ -163,6 +197,12 @@ export default function AlumnosPage() {
         ? { telefono: linkedPagador.telefono, email: linkedPagador.email, direccion: linkedPagador.direccion, nif: linkedPagador.nif }
         : emptyPagadorDraft(),
       es_adulto: a.es_adulto ?? false, aviso_cumple_dias: a.aviso_cumple_dias ?? null,
+      direccion: linkedPagador?.direccion ?? "",
+      colegio_origen: a.colegio_origen ?? "", curso: a.curso ?? "", idioma_nativo: a.idioma_nativo ?? "",
+      nivel: a.nivel ?? "", nivel_objetivo: a.nivel_objetivo ?? "", examen_objetivo: a.examen_objetivo ?? "",
+      contacto_emergencia_nombre: a.contacto_emergencia_nombre ?? "",
+      contacto_emergencia_telefono: a.contacto_emergencia_telefono ?? "",
+      alergias: "", condiciones_medicas: "", medicacion: "",
     })
     setFormError(""); setShowModal(true)
   }
@@ -447,6 +487,90 @@ export default function AlumnosPage() {
                 </div>
               </section>
 
+              {!isReception && (
+                <section>
+                  <p className={SECTION_CLS}>Estudios y nivel</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL_CLS}>Colegio de origen</label>
+                      <input type="text" list="colegios-sugeridos-alta" value={form.colegio_origen}
+                        onChange={e => setForm(f => ({ ...f, colegio_origen: e.target.value }))} className="input" />
+                      <datalist id="colegios-sugeridos-alta">
+                        {COLEGIOS_SUGERIDOS.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>Curso</label>
+                      <select value={form.curso} onChange={e => setForm(f => ({ ...f, curso: e.target.value as Curso | "" }))} className="input">
+                        <option value="">—</option>
+                        {CURSOS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>Idioma nativo</label>
+                      <input type="text" value={form.idioma_nativo}
+                        onChange={e => setForm(f => ({ ...f, idioma_nativo: e.target.value }))} className="input" />
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>Nivel actual</label>
+                      <NivelSelect className="input" value={form.nivel} onChange={v => setForm(f => ({ ...f, nivel: v }))} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={LABEL_CLS}>Nivel / examen objetivo</label>
+                      <div className="flex gap-2">
+                        <select value={form.nivel_objetivo} className="input"
+                          onChange={e => setForm(f => ({ ...f, nivel_objetivo: e.target.value as NivelObjetivo | "" }))}>
+                          <option value="">—</option>
+                          {NIVELES.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                        <select value={form.examen_objetivo} className="input"
+                          onChange={e => setForm(f => ({ ...f, examen_objetivo: e.target.value as ExamenObjetivo | "" }))}>
+                          <option value="">—</option>
+                          {EXAMENES.map(x => <option key={x} value={x}>{x === "ninguno" ? "Ninguno" : x}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {!isReception && (
+                <section>
+                  <p className={SECTION_CLS}>Emergencia{editing ? "" : " y salud"}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL_CLS}>Contacto de emergencia (nombre)</label>
+                      <input type="text" value={form.contacto_emergencia_nombre}
+                        onChange={e => setForm(f => ({ ...f, contacto_emergencia_nombre: e.target.value }))} className="input" />
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>Contacto de emergencia (teléfono)</label>
+                      <input type="tel" value={form.contacto_emergencia_telefono}
+                        onChange={e => setForm(f => ({ ...f, contacto_emergencia_telefono: e.target.value }))} className="input" />
+                    </div>
+                    {!editing && (
+                      <>
+                        <div className="sm:col-span-2">
+                          <label className={LABEL_CLS}>Alergias</label>
+                          <input type="text" value={form.alergias}
+                            onChange={e => setForm(f => ({ ...f, alergias: e.target.value }))} className="input" />
+                        </div>
+                        <div>
+                          <label className={LABEL_CLS}>Condiciones médicas</label>
+                          <input type="text" value={form.condiciones_medicas}
+                            onChange={e => setForm(f => ({ ...f, condiciones_medicas: e.target.value }))} className="input" />
+                        </div>
+                        <div>
+                          <label className={LABEL_CLS}>Medicación</label>
+                          <input type="text" value={form.medicacion}
+                            onChange={e => setForm(f => ({ ...f, medicacion: e.target.value }))} className="input" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </section>
+              )}
+
               {/* Pagador */}
               {!isReception && (
                 <section>
@@ -462,9 +586,16 @@ export default function AlumnosPage() {
                       El alumno es adulto / paga el mismo
                     </label>
                     {form.es_adulto ? (
-                      <p className="text-[14px] text-ink-soft">
-                        Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
-                      </p>
+                      <>
+                        <p className="text-[14px] text-ink-soft">
+                          Se usará el propio alumno como pagador (nombre, teléfono y email indicados arriba).
+                        </p>
+                        <div>
+                          <label className={LABEL_CLS}>Dirección</label>
+                          <input type="text" value={form.direccion}
+                            onChange={e => setForm(f => ({ ...f, direccion: e.target.value }))} className="input" />
+                        </div>
+                      </>
                     ) : (
                       <>
                         <PagadorCombobox value={form.pagador} onChange={selectPagador} />

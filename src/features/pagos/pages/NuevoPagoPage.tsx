@@ -9,7 +9,8 @@ import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
 import type { Tarifa, Marca } from "@/types"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
-import { MATRICULA } from "@/features/tarifas/tarifa"
+import MatriculaLinea from "../MatriculaLinea"
+import { esMatricula, matriculaSinImporte, nuevaMatricula, type ExtraLine } from "../matricula"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
 const MARCAS: { value: Marca; label: string }[] = [
@@ -23,29 +24,6 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
   return t.marca === "cami_and_co" || t.nombre === "clase_privada" || t.nombre === "clase_recuperada"
 }
 
-interface ExtraLine { concepto: string; importe: number }
-
-// One-time enrollment fee, from the official tarifa (features/tarifas/tarifa.ts,
-// mirrored in academia-api modules/tarifas/pricing.py).
-const MATRICULA_FEE = MATRICULA
-const MATRICULA_CONCEPTO = "Matrícula"
-// Tarifa: matrícula completa, 50 % o gratis. Any other amount is typed in the
-// number field next to these — always a judgment call, not an automated rule.
-const MATRICULA_PRESETS = [MATRICULA, MATRICULA / 2, 0]
-
-// The "why" for a non-standard amount lives inside the extra's own concepto
-// — "Matrícula — 3er hermano" — so it prints right on the invoice, exactly
-// where the family reads it, instead of a separate field nobody sees.
-function isMatriculaRow(ex: ExtraLine) {
-  return ex.concepto === MATRICULA_CONCEPTO || ex.concepto.startsWith(`${MATRICULA_CONCEPTO} — `)
-}
-function matriculaDetalle(concepto: string) {
-  const marker = `${MATRICULA_CONCEPTO} — `
-  return concepto.startsWith(marker) ? concepto.slice(marker.length) : ""
-}
-function matriculaConceptoFor(detalle: string) {
-  return detalle.trim() ? `${MATRICULA_CONCEPTO} — ${detalle.trim()}` : MATRICULA_CONCEPTO
-}
 
 export default function NuevoPagoPage() {
   const navigate = useNavigate()
@@ -99,9 +77,9 @@ export default function NuevoPagoPage() {
     setMatriculaAutoAddedFor(alumno)
     if (pagosAlumno.length === 0) {
       setExtras(prev =>
-        prev.some(isMatriculaRow)
+        prev.some(esMatricula)
           ? prev
-          : [...prev, { concepto: MATRICULA_CONCEPTO, importe: MATRICULA_FEE }]
+          : [...prev, nuevaMatricula()]
       )
     }
   }, [alumno, pagosAlumno, matriculaAutoAddedFor])
@@ -151,6 +129,7 @@ export default function NuevoPagoPage() {
       setError("Completa todos los campos obligatorios")
       return
     }
+    if (matriculaSinImporte(extras)) { setError("Pon el importe de la matrícula, o quítala si no se cobra."); return }
     setError("")
     saveMut.mutate(false)
   }
@@ -281,43 +260,23 @@ export default function NuevoPagoPage() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700">Extras</label>
-            <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Añadir extra</button>
+            <div className="flex gap-3">
+              {!extras.some(esMatricula) && (
+                <button onClick={() => setExtras(e => [nuevaMatricula(), ...e])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Matrícula</button>
+              )}
+              <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Añadir extra</button>
+            </div>
           </div>
-          {extras.some(isMatriculaRow) && matriculaAutoAddedFor === alumno && (
+          {extras.some(esMatricula) && matriculaAutoAddedFor === alumno && (
             <p className="text-[14px] text-ink-soft mb-2">
-              Matrícula añadida automáticamente — es el primer pago de este alumno. Quítala si no aplica.
+              Primer pago de este alumno: se ha añadido la matrícula. Pon el importe, o quítala si no se cobra.
             </p>
           )}
           {extras.map((ex, i) => (
-            isMatriculaRow(ex) ? (
-              <div key={i} className="border border-pine-900/15 rounded-[10px] p-3 mb-2 bg-khaki-100">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[15px] font-semibold text-ink">Matrícula</span>
-                  <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label="Quitar" className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-red-700 hover:bg-red-50 text-[15px]">✕</button>
-                </div>
-                <div className="flex gap-1.5 flex-wrap mb-2">
-                  {MATRICULA_PRESETS.map(preset => (
-                    <button key={preset} type="button"
-                      onClick={() => { const n = [...extras]; n[i] = { ...n[i], importe: preset }; setExtras(n) }}
-                      className={`min-h-[40px] px-3.5 rounded-[10px] text-[14px] font-semibold border ${
-                        ex.importe === preset
-                          ? "bg-pine-900 border-pine-900 text-khaki-100"
-                          : "bg-white border-pine-900/20 text-pine-700 hover:bg-khaki-100"
-                      }`}>
-                      {preset}€
-                    </button>
-                  ))}
-                  <input type="number" value={ex.importe} step="0.01"
-                    onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
-                    className="input !w-24 !min-h-[40px] !px-2 text-[14px]" />
-                </div>
-                {ex.importe !== MATRICULA_FEE && (
-                  <input type="text" placeholder="Motivo del descuento (ej. 3er hermano, alumno recurrente...)"
-                    value={matriculaDetalle(ex.concepto)}
-                    onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: matriculaConceptoFor(e.target.value) }; setExtras(n) }}
-                    className="input" />
-                )}
-              </div>
+            esMatricula(ex) ? (
+              <MatriculaLinea key={i} value={ex}
+                onChange={next => { const n = [...extras]; n[i] = next; setExtras(n) }}
+                onRemove={() => setExtras(extras.filter((_, j) => j !== i))} />
             ) : (
               <div key={i} className="flex gap-2 mb-2">
                 <input type="text" placeholder="Concepto" value={ex.concepto}
