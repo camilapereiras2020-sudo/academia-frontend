@@ -305,7 +305,7 @@ export default function GrupoDetailPage() {
             </div>
 
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowTareaForm(false)} className="btn-ghost">Cancelar</button>
+              <button onClick={() => { setShowTareaForm(false); setTareaError("") }} className="btn-ghost">Cancelar</button>
               <button onClick={handleSaveTarea} disabled={tareaMut.isPending}
                 className="btn-primary disabled:opacity-50">
                 {tareaMut.isPending ? "Guardando..." : "Guardar tarea"}
