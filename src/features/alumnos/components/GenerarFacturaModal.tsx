@@ -6,6 +6,8 @@ import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur } from "@/lib/utils"
+import MatriculaLinea from "@/features/pagos/MatriculaLinea"
+import { esMatricula, nuevaMatricula, type ExtraLine } from "@/features/pagos/matricula"
 import type { Alumno, AlumnoCuota, CargoExtra, Pago, Tarifa } from "@/types"
 
 // Atajo desde la sección "Cuota" de la ficha, en dos pasos:
@@ -29,15 +31,16 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
   return t.marca === "cami_and_co" || t.nombre === "clase_privada" || t.nombre === "clase_recuperada"
 }
 
-interface ExtraLine { concepto: string; importe: number }
 interface DocumentoGenerado { id: number; num_doc: string; tipo: "factura" | "recibo"; combinada: boolean }
 
 export default function GenerarFacturaModal({
-  alumno, cuota, cargosExtra, onClose,
+  alumno, cuota, cargosExtra, primerPago = false, onClose,
 }: {
   alumno: Alumno
   cuota: AlumnoCuota | null
   cargosExtra: CargoExtra[]
+  /** Sin pagos previos: se propone añadir la matrícula (importe libre). */
+  primerPago?: boolean
   pagador?: unknown
   onClose: () => void
 }) {
@@ -57,9 +60,10 @@ export default function GenerarFacturaModal({
   const [metodo, setMetodo] = useState("efectivo")
   const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pagado")
   const [notas, setNotas] = useState("")
-  const [extras, setExtras] = useState<ExtraLine[]>(
-    cargosExtra.map(c => ({ concepto: c.concepto, importe: Number(c.monto) }))
-  )
+  const [extras, setExtras] = useState<ExtraLine[]>(() => [
+    ...(primerPago ? [nuevaMatricula()] : []),
+    ...cargosExtra.map(c => ({ concepto: c.concepto, importe: Number(c.monto) })),
+  ])
   const [error, setError] = useState("")
   const [pagoCreado, setPagoCreado] = useState<Pago | null>(null)
   const [doc, setDoc] = useState<DocumentoGenerado | null>(null)
@@ -273,12 +277,28 @@ export default function GenerarFacturaModal({
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="font-label text-[14px] font-semibold text-pine-700">Extras (clases a mayores, etc.)</label>
-                  <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">
-                    + Añadir extra
-                  </button>
+                  <label className="font-label text-[14px] font-semibold text-pine-700">Extras (matrícula, clases a mayores…)</label>
+                  <div className="flex gap-3">
+                    {!extras.some(esMatricula) && (
+                      <button onClick={() => setExtras(e => [nuevaMatricula(), ...e])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">
+                        + Matrícula
+                      </button>
+                    )}
+                    <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">
+                      + Añadir extra
+                    </button>
+                  </div>
                 </div>
-                {extras.map((ex, i) => (
+                {primerPago && extras.some(esMatricula) && (
+                  <p className="text-[14px] text-ink-soft mb-2">
+                    Primer pago de este alumno: se ha añadido la matrícula. Ajusta lo que se cobra, o quítala si no aplica.
+                  </p>
+                )}
+                {extras.map((ex, i) => esMatricula(ex) ? (
+                  <MatriculaLinea key={i} value={ex}
+                    onChange={next => { const n = [...extras]; n[i] = next; setExtras(n) }}
+                    onRemove={() => setExtras(extras.filter((_, j) => j !== i))} />
+                ) : (
                   <div key={i} className="flex gap-2 mb-2">
                     <input type="text" placeholder="Concepto" value={ex.concepto}
                       onChange={e => { const n = [...extras]; n[i] = { ...n[i], concepto: e.target.value }; setExtras(n) }}
