@@ -90,6 +90,19 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
               Sin pagadores registrados.
             </p>
           )}
+          {/* Alumnos de antes sin datos del pagador: se quedan sin pagador
+              vinculado y se cobran igual (pago en mano). No se crea un pagador
+              genérico compartido — juntaría a alumnos sin relación como si
+              fueran hermanos y rompería el cálculo del Bono Familia. */}
+          <button
+            type="button"
+            onMouseDown={e => e.preventDefault()}
+            onClick={clearSelection}
+            className={gold ? "combobox-option" : "w-full min-h-[44px] text-left px-3.5 text-[15px] text-ink-soft hover:bg-khaki-100 border-t border-pine-900/10"}
+            style={gold ? { borderTop: "1px solid var(--border-subtle)" } : undefined}
+          >
+            Otros: sin datos del pagador (pago en mano)
+          </button>
           {q && !exactMatch && (
             <button
               type="button"

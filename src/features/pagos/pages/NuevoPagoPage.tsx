@@ -43,7 +43,8 @@ export default function NuevoPagoPage() {
   const [marca, setMarca] = useState<Marca | "">("")
   useSetActiveBrand(marca || null)
   const [alumno, setAlumno] = useState<number | "">("")
-  const [pagador, setPagador] = useState<number | "">("")
+  // "sin-datos" = Otros: alumno sin datos del pagador, se cobra en mano.
+  const [pagador, setPagador] = useState<number | "" | "sin-datos">("")
   const [grupo, setGrupo] = useState<number | "">("")
   const [tarifa, setTarifa] = useState<number | "">("")
   const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
@@ -105,7 +106,7 @@ export default function NuevoPagoPage() {
     mutationFn: (borrador: boolean) => pagosApi.create({
       marca: marca as Marca,
       alumno: alumno === "" ? null : alumno,
-      pagador: pagador === "" ? null : pagador,
+      pagador: typeof pagador === "number" ? pagador : null,
       grupo: grupo || null,
       tarifa: tarifa || null,
       periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
@@ -172,11 +173,16 @@ export default function NuevoPagoPage() {
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Pagador{alumnoEsAdulto ? "" : " *"}
             </label>
-            <select value={pagador} onChange={e => setPagador(e.target.value ? +e.target.value : "")}
+            <select value={pagador}
+              onChange={e => setPagador(e.target.value === "sin-datos" ? "sin-datos" : e.target.value ? +e.target.value : "")}
               className="input">
               <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
               {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              <option value="sin-datos">Otros: sin datos del pagador (pago en mano)</option>
             </select>
+            {pagador === "sin-datos" && (
+              <p className="text-[14px] text-ink-soft mt-1">El recibo saldrá sin datos del pagador.</p>
+            )}
             {alumnoEsAdulto && !pagador && (
               <p className="text-[14px] text-ink-soft mt-1">Alumno adulto — el pagador es opcional.</p>
             )}

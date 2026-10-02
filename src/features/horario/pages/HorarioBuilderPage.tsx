@@ -21,6 +21,11 @@ import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 // silently blocked. 6 is the hard ceiling — no override past that.
 const SOFT_MAX_PER_CLASS = 5
 const HARD_MAX_PER_CLASS = 6
+
+// "n/5" hasta llenarse; la 6ª plaza es la extra puntual y se muestra "6/6".
+function cupoLabel(n: number) {
+  return n > SOFT_MAX_PER_CLASS ? `${n}/${HARD_MAX_PER_CLASS}` : `${n}/${SOFT_MAX_PER_CLASS}`
+}
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const SIN_PROFESOR_COLOR = { bg: "#e7e3d8", text: "#57534e", border: "#d6d0bf", accent: "#a8a29e" }
 
@@ -642,7 +647,7 @@ export default function HorarioBuilderPage() {
     if (effectiveGruposOf(alumno).has(grupoId)) return // already in this class
     const currentRoster = rosterByGrupo.get(grupoId) ?? []
     if (currentRoster.length >= HARD_MAX_PER_CLASS) {
-      setToast(`"${grupo.nombre}" ya tiene ${HARD_MAX_PER_CLASS} alumnos (tope máximo).`)
+      setToast(`"${grupo.nombre}" ya está llena con plaza extra (${HARD_MAX_PER_CLASS}/${HARD_MAX_PER_CLASS}). No caben más.`)
       return
     }
     if (currentRoster.length >= SOFT_MAX_PER_CLASS) {
@@ -724,8 +729,14 @@ export default function HorarioBuilderPage() {
         <div className="font-head text-[13px] leading-tight truncate pr-6">{arg.event.title}</div>
         {roster && (
           <div className="text-[11px] leading-tight opacity-80 truncate">
-            {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {roster.length}/{HARD_MAX_PER_CLASS}
+            {arg.timeText}{profesorNombre ? ` · ${profesorNombre}` : ""} · {cupoLabel(roster.length)}
           </div>
+        )}
+        {roster && roster.length >= SOFT_MAX_PER_CLASS && (
+          <span className="inline-block mt-[2px] px-[4px] py-[1px] rounded-sm bg-red-700 text-white text-[10px] font-bold uppercase tracking-[0.04em] leading-none"
+            title={roster.length > SOFT_MAX_PER_CLASS ? "Clase llena, con plaza extra ocupada" : "Clase llena"}>
+            {roster.length > SOFT_MAX_PER_CLASS ? "Llena +1" : "Clase llena"}
+          </span>
         )}
         {/* Names right on the block, not just a count — so an assignment
             never looks like it "disappeared" after a drag; you can see who's
@@ -1071,7 +1082,7 @@ export default function HorarioBuilderPage() {
             <div className="p-5 overflow-y-auto flex-1">
               <div className="flex items-center justify-between mb-2">
                 <p className="font-label text-[13px] font-semibold uppercase tracking-[0.1em] text-pine-700">
-                  Alumnos ({selectedRoster.length}/{HARD_MAX_PER_CLASS})
+                  Alumnos ({cupoLabel(selectedRoster.length)})
                 </p>
                 {!addAlumnoOpen && (
                   <button onClick={() => setAddAlumnoOpen(true)}
@@ -1080,6 +1091,13 @@ export default function HorarioBuilderPage() {
                   </button>
                 )}
               </div>
+              {selectedRoster.length >= SOFT_MAX_PER_CLASS && (
+                <p role="status" className="mb-3 rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-[14px] font-semibold text-red-800">
+                  {selectedRoster.length > SOFT_MAX_PER_CLASS
+                    ? `Clase llena con plaza extra (${cupoLabel(selectedRoster.length)}). No caben más alumnos.`
+                    : `Clase llena (${cupoLabel(selectedRoster.length)}). Solo se puede añadir un 6º alumno en casos puntuales.`}
+                </p>
+              )}
               {addAlumnoOpen && (
                 <div className="border border-pine-900/15 rounded-[10px] p-2 bg-khaki-100 mb-3">
                   <div className="flex items-center gap-1 mb-2">
@@ -1419,6 +1437,7 @@ export default function HorarioBuilderPage() {
           {...pendingOverflowOverlayGuard}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 text-center space-y-3">
             <p className="text-3xl">😏</p>
+            <p className="font-head text-[18px] text-red-800">Clase llena (5/5)</p>
             <p className="text-[15px] text-ink">
               La clase está completa, pero sabes que entra uno más… eh eh <span className="whitespace-nowrap">;)</span>
             </p>

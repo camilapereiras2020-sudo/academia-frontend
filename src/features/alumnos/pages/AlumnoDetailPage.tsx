@@ -645,7 +645,9 @@ export default function AlumnoDetailPage() {
                 </p>
               </div>
             ) : (
-              <p className="text-[15px] text-ink-soft mb-3">Sin pagador vinculado.</p>
+              <p className="text-[15px] text-ink-soft mb-3">
+                Sin pagador vinculado: se cobra en mano, sin datos del pagador. Se pueden generar pagos igualmente.
+              </p>
             )}
             <PagadorCombobox theme="gold" value={alumno.pagador} onChange={pagadorId => pagadorMut.mutate(pagadorId)} />
             {pagador && (
