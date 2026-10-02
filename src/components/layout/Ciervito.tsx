@@ -6,16 +6,28 @@ import { useEffect, useRef, useState } from "react"
 // movimiento" del sistema y se puede mandar a dormir hasta mañana.
 
 const FRASES = [
+  // ánimo
   "Keep going, Rangers! 🌲",
   "Coffee break? ☕",
-  "Invoices don't send themselves… 🧾",
   "You're doing great today!",
   "Stay hydrated, rangers 💧",
   "Full class = happy academy 🎉",
   "Explore the World of English 🧭",
-  "Shhh… I'm on patrol 🦌",
-  "Have you taken a break yet?",
-  "Ranger mode: ON 🎒",
+  // tonterías
+  "Guess what? Chicken butt! 🐔",
+  "I'm not lost, I'm exploring 🗺️",
+  "Do I look fawn-tastic in this hat? 🎩",
+  "Oh deer, is it Monday again? 😩",
+  "I've got 99 problems but a fee ain't one 🧾",
+  "Knock knock. Who's there? Deer. Deer who? Deer me, I forgot the joke 🙃",
+  "What do you call a deer with no eyes? No eye-deer 🤷",
+  "Shhh… I'm on a secret ranger mission 🕵️",
+  "Invoices don't send themselves… or do they? 👀",
+  "Have you tried turning it off and on again? 🔌",
+  "My antlers are 100% organic 🌿",
+  "I'd help, but I have hooves 🦌",
+  "Biscuit break? I won't tell 🍪",
+  "Present perfect? More like present PERFECT ✨",
 ]
 
 const CLAVE_DORMIR = "ciervito-duerme-hasta"
