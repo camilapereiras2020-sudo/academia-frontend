@@ -16,6 +16,7 @@ import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
 import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase } from "@/types"
 import { NIVELES, EXAMENES, CURSOS, COLEGIOS_SUGERIDOS } from "../opciones"
+import { nombreUsuario } from "@/lib/nombres"
 
 const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 
@@ -923,7 +924,7 @@ export default function AlumnoDetailPage() {
             <div key={n.id} className="border-l-[3px] border-brass-500 pl-4">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="badge" style={{ background: "var(--surface)", color: "var(--text-dim)" }}>{n.tipo_display}</span>
-                <span className="font-label text-[13px] text-ink-soft">{formatDate(n.fecha)} · {n.autor_nombre}</span>
+                <span className="font-label text-[13px] text-ink-soft">{formatDate(n.fecha)} · {nombreUsuario(n.autor_nombre)}</span>
               </div>
               <p className="text-[15px] text-ink">{n.contenido}</p>
             </div>

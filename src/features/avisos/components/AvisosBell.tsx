@@ -4,6 +4,7 @@ import { Bell } from "lucide-react"
 import { avisosApi } from "../api"
 import { useAuthStore } from "@/store/authStore"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
+import { nombreUsuario } from "@/lib/nombres"
 
 function formatFecha(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "short" })
@@ -102,7 +103,7 @@ export default function AvisosBell() {
                   >
                     <option value="">Para quién...</option>
                     {equipo.map((u) => (
-                      <option key={u.id} value={u.id}>{u.username}</option>
+                      <option key={u.id} value={u.id}>{nombreUsuario(u.username)}</option>
                     ))}
                   </select>
                   <input
@@ -132,7 +133,7 @@ export default function AvisosBell() {
                   <div className="min-w-0">
                     <p className="text-sm text-pine-900">{a.titulo}</p>
                     <p className="text-xs text-pine-600 mt-0.5">
-                      De {a.creado_por_nombre}{a.fecha ? ` · ${formatFecha(a.fecha)}` : ""}
+                      De {nombreUsuario(a.creado_por_nombre)}{a.fecha ? ` · ${formatFecha(a.fecha)}` : ""}
                     </p>
                   </div>
                   <button

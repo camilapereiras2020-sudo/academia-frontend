@@ -6,6 +6,7 @@ import {
   Users, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
   Coins, FileText, Cake, Settings, X, Landmark, Store,
 } from "lucide-react"
+import { nombreUsuario } from "@/lib/nombres"
 
 const LOGO_SRC = "/logos/rangers-academy-logo.png"
 
@@ -118,10 +119,10 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       {/* Usuario */}
       <div className="px-4 py-3.5 border-t border-white/10 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-brass-500 flex items-center justify-center font-head text-pine-900 text-sm flex-shrink-0">
-          {(user?.username || "?").charAt(0).toUpperCase()}
+          {(nombreUsuario(user?.username) || "?").charAt(0)}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] text-khaki-100 font-semibold truncate">{user?.username || "Recepción"}</div>
+          <div className="text-[14px] text-khaki-100 font-semibold truncate">{nombreUsuario(user?.username) || "Recepción"}</div>
           {canAccess(role, "/config") && (
             <NavLink
               to="/config"
