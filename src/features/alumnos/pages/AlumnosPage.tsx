@@ -260,7 +260,7 @@ export default function AlumnosPage() {
       {/* Search + brand filter */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <input
-          type="text" placeholder="Buscar por nombre, email o teléfono..." value={search}
+          type="text" placeholder="Buscar por alumno, pagador, teléfono o DNI…" value={search}
           onChange={e => setSearch(e.target.value)}
           className="input !w-full md:!w-[360px]"
         />

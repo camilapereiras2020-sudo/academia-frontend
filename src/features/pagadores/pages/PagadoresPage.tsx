@@ -13,8 +13,15 @@ export default function PagadoresPage() {
     queryFn: () => pagadoresApi.list().then((r) => r.data),
   })
 
+  // Busca por nombre, NIF/DNI, email o teléfono (este último sin espacios).
+  const q = search.trim().toLowerCase()
+  const qTel = q.replace(/\s/g, "")
   const visibles = (pagadores ?? []).filter((p) =>
-    !search.trim() || p.nombre.toLowerCase().includes(search.trim().toLowerCase())
+    !q
+    || p.nombre.toLowerCase().includes(q)
+    || (p.nif ?? "").toLowerCase().includes(q)
+    || (p.email ?? "").toLowerCase().includes(q)
+    || (!!qTel && (p.telefono ?? "").replace(/\s/g, "").includes(qTel))
   )
 
   return (
@@ -31,7 +38,7 @@ export default function PagadoresPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar pagador..."
+          placeholder="Buscar por nombre, teléfono o DNI…"
           className="input !pl-10"
         />
       </div>
