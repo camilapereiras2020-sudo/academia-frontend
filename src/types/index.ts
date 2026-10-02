@@ -64,6 +64,7 @@ export interface Alumno {
   id: number; nombre: string; marca: Marca; marca_display?: string
   fnac: string | null; telefono: string; email: string; dni: string; nivel: string
   notas: string; aviso_cumple_dias: number | null; pagador: number | null
+  pagador_nombre?: string | null
   es_adulto: boolean
   activo: boolean
   motivo_baja: string
