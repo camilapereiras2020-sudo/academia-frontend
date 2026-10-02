@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { avisosApi } from "@/features/avisos/api"
+import { nombreUsuario } from "@/lib/nombres"
+import type { Aviso } from "@/types"
 
 // Mascota del equipo: un ciervito ranger que cruza de vez en cuando la parte
 // de abajo de la pantalla. Al hacerle clic se para y dice algo. Solo es para
 // el equipo (vive dentro de AppShell, detrás del login). Respeta "reducir
 // movimiento" del sistema y se puede mandar a dormir hasta mañana.
+// Cuando tienes avisos sin leer (los de la campanita) sale antes y te los
+// entrega uno a uno; cada aviso lo trae una sola vez por sesión.
 
 const FRASES = [
   // ánimo
@@ -31,10 +37,19 @@ const FRASES = [
 ]
 
 const CLAVE_DORMIR = "ciervito-duerme-hasta"
+const CLAVE_ENTREGADOS = "ciervito-avisos-entregados"
 const DURACION_PASEO_MS = 14000
 
 function hoy() {
   return new Date().toISOString().slice(0, 10)
+}
+
+function entregados(): number[] {
+  try { return JSON.parse(sessionStorage.getItem(CLAVE_ENTREGADOS) ?? "[]") } catch { return [] }
+}
+
+function marcarEntregado(id: number) {
+  try { sessionStorage.setItem(CLAVE_ENTREGADOS, JSON.stringify([...entregados(), id])) } catch { /* sin storage */ }
 }
 
 function estaDormido() {
@@ -45,9 +60,24 @@ export default function Ciervito() {
   const [paseando, setPaseando] = useState(false)
   const [haciaIzquierda, setHaciaIzquierda] = useState(false)
   const [frase, setFrase] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<Aviso | null>(null)
   const [dormido, setDormido] = useState(estaDormido)
   const timer = useRef<number | undefined>(undefined)
   const yaPaseo = useRef(false)
+
+  const qc = useQueryClient()
+  // Misma consulta (y caché) que la campanita.
+  const { data: pendientes } = useQuery({
+    queryKey: ["avisos", "para-mi"],
+    queryFn: () => avisosApi.list({ para_mi: true }).then((r) => r.data),
+    refetchInterval: 60_000,
+  })
+  const porEntregar = (pendientes ?? []).find(a => !entregados().includes(a.id))
+  const hayPorEntregar = !!porEntregar
+  const leidoMut = useMutation({
+    mutationFn: (id: number) => avisosApi.update(id, { hecha: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["avisos"] }),
+  })
 
   const reducirMovimiento = typeof window !== "undefined"
     && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
@@ -66,14 +96,34 @@ export default function Ciervito() {
       }, ms)
     }
     const primero = window.location.search.includes("ciervito") ? 1000 : 20000
-    if (!paseando) programar(!yaPaseo.current ? primero : 240000 + Math.random() * 240000)
+    // Con un aviso por entregar sale enseguida (5 s) en vez de esperar su turno.
+    const siguiente = hayPorEntregar ? 5000 : 240000 + Math.random() * 240000
+    if (!paseando) programar(!yaPaseo.current ? Math.min(primero, siguiente) : siguiente)
     return () => { cancelado = true; window.clearTimeout(timer.current) }
-  }, [paseando, dormido, reducirMovimiento])
+  }, [paseando, dormido, reducirMovimiento, hayPorEntregar])
+
+  // Se para hacia la mitad de la pantalla (lejos de la barra lateral) y entrega el aviso.
+  useEffect(() => {
+    if (!paseando || !porEntregar) return
+    const t = window.setTimeout(() => {
+      marcarEntregado(porEntregar.id)
+      setAviso(porEntregar)
+    }, DURACION_PASEO_MS * 0.45)
+    return () => window.clearTimeout(t)
+  }, [paseando, porEntregar])
 
   if (dormido || reducirMovimiento || !paseando) return null
 
   function decirAlgo() {
+    // Si hay avisos sin leer, al tocarlo te recuerda el primero.
+    const primero = pendientes?.[0]
+    if (primero) { setAviso(primero); return }
     setFrase(FRASES[Math.floor(Math.random() * FRASES.length)])
+  }
+
+  function seguir() {
+    setFrase(null)
+    setAviso(null)
   }
 
   function dormirHastaManana() {
@@ -88,7 +138,7 @@ export default function Ciervito() {
       style={{
         left: 0,
         animation: `ciervito-cruza-${haciaIzquierda ? "izq" : "der"} ${DURACION_PASEO_MS}ms linear forwards`,
-        animationPlayState: frase ? "paused" : "running",
+        animationPlayState: frase || aviso ? "paused" : "running",
       }}
       onAnimationEnd={() => setPaseando(false)}
     >
@@ -104,15 +154,38 @@ export default function Ciervito() {
         .ciervito-parado .ciervito-cuerpo, .ciervito-parado .ciervito-pata-a, .ciervito-parado .ciervito-pata-b { animation-play-state: paused }
       `}</style>
 
-      {frase && (
+      {frase && !aviso && (
         <div className="pointer-events-auto absolute bottom-[100px] left-0 w-max max-w-[220px] bg-white text-ink text-[14px] font-semibold rounded-[12px] border border-pine-900/15 shadow-lg px-3 py-2">
           {frase}
           <div className="flex gap-3 mt-1.5">
-            <button type="button" onClick={() => setFrase(null)} className="font-label text-[12px] text-brass-700 hover:underline">
+            <button type="button" onClick={seguir} className="font-label text-[12px] text-brass-700 hover:underline">
               Keep walking
             </button>
             <button type="button" onClick={dormirHastaManana} className="font-label text-[12px] text-ink-soft hover:underline">
               Sleep till tomorrow
+            </button>
+          </div>
+        </div>
+      )}
+
+      {aviso && (
+        <div className="pointer-events-auto absolute bottom-[100px] left-0 w-max max-w-[260px] bg-white text-ink rounded-[12px] border-2 border-brass-500 shadow-lg px-3 py-2">
+          <div className="font-label text-[12px] font-semibold uppercase tracking-[0.08em] text-brass-700">
+            📬 Aviso de {nombreUsuario(aviso.creado_por_nombre)}
+          </div>
+          <div className="text-[14px] font-semibold mt-0.5">{aviso.titulo}</div>
+          {aviso.fecha && (
+            <div className="text-[12px] text-ink-soft">
+              {new Date(aviso.fecha + "T00:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })}
+            </div>
+          )}
+          <div className="flex gap-3 mt-1.5">
+            <button type="button" onClick={() => { leidoMut.mutate(aviso.id); seguir() }}
+              className="font-label text-[12px] text-brass-700 font-semibold hover:underline">
+              Listo
+            </button>
+            <button type="button" onClick={seguir} className="font-label text-[12px] text-ink-soft hover:underline">
+              Luego
             </button>
           </div>
         </div>
@@ -123,7 +196,7 @@ export default function Ciervito() {
         onClick={decirAlgo}
         aria-label="Ranger deer"
         title="Hi there!"
-        className={`pointer-events-auto block ${frase ? "ciervito-parado" : ""}`}
+        className={`pointer-events-auto block ${frase || aviso ? "ciervito-parado" : ""}`}
         style={{ transform: haciaIzquierda ? "scaleX(-1)" : undefined }}
       >
         <svg width="100" height="95" viewBox="0 0 76 72" aria-hidden="true">

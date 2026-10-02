@@ -7,6 +7,7 @@ import RegisterPage from "@/features/auth/pages/RegisterPage"
 import DashboardPage from "@/features/dashboard/pages/DashboardPage"
 import BrandOverviewPage from "@/features/dashboard/pages/BrandOverviewPage"
 import AlumnosPage from "@/features/alumnos/pages/AlumnosPage"
+import ListadosPage from "@/features/alumnos/pages/ListadosPage"
 import AlumnoDetailPage from "@/features/alumnos/pages/AlumnoDetailPage"
 import GruposPage from "@/features/grupos/pages/GruposPage"
 import GrupoDetailPage from "@/features/grupos/pages/GrupoDetailPage"
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="/cami-and-co" element={<BrandOverviewPage marca="cami_and_co" titulo="Cami & Co" />} />
             <Route path="/alumnos" element={<AlumnosPage />} />
             <Route path="/alumnos/:id" element={<AlumnoDetailPage />} />
+            <Route path="/listados" element={<ListadosPage />} />
             <Route path="/grupos" element={<GruposPage />} />
             <Route path="/grupos/:id" element={<GrupoDetailPage />} />
             <Route path="/calendario" element={<CalendarioPage />} />

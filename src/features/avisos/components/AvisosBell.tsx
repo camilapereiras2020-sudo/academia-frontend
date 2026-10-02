@@ -16,7 +16,7 @@ export default function AvisosBell() {
   const [open, setOpen] = useState(false)
   const [showCompose, setShowCompose] = useState(false)
   const [titulo, setTitulo] = useState("")
-  const [para, setPara] = useState<number | "">("")
+  const [para, setPara] = useState<number | "todos" | "">("")
   const [fecha, setFecha] = useState("")
   const panelOverlayGuard = useOverlayMouseGuard(() => setOpen(false))
   const panelRef = useRef<HTMLDivElement>(null)
@@ -41,7 +41,13 @@ export default function AvisosBell() {
   })
 
   const enviarMut = useMutation({
-    mutationFn: () => avisosApi.create({ titulo: titulo.trim(), para: para || null, fecha: fecha || null }),
+    // "Todo el equipo" = una copia por compañera, cada una la marca como leída.
+    mutationFn: async () => {
+      const destinos = para === "todos" ? equipo.map((u) => u.id) : [para as number]
+      for (const id of destinos) {
+        await avisosApi.create({ titulo: titulo.trim(), para: id, fecha: fecha || null })
+      }
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["avisos"] })
       setTitulo(""); setPara(""); setFecha(""); setShowCompose(false)
@@ -98,10 +104,11 @@ export default function AvisosBell() {
                 <div className="flex gap-2">
                   <select
                     value={para}
-                    onChange={(e) => setPara(e.target.value ? Number(e.target.value) : "")}
+                    onChange={(e) => setPara(e.target.value === "todos" ? "todos" : e.target.value ? Number(e.target.value) : "")}
                     className="flex-1 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
                   >
                     <option value="">Para quién...</option>
+                    {equipo.length > 1 && <option value="todos">Todo el equipo</option>}
                     {equipo.map((u) => (
                       <option key={u.id} value={u.id}>{nombreUsuario(u.username)}</option>
                     ))}

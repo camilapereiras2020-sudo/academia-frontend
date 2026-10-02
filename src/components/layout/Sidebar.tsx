@@ -4,7 +4,7 @@ import { canAccess } from "@/lib/roles"
 import {
   LayoutDashboard, GraduationCap, CreditCard, Building2,
   Users, CheckSquare, Tag, UserSearch, CalendarDays, CalendarClock,
-  Coins, FileText, Cake, Settings, X, Landmark, Store,
+  Coins, FileText, Cake, Settings, X, Landmark, Store, ListOrdered,
 } from "lucide-react"
 import { nombreUsuario } from "@/lib/nombres"
 
@@ -24,6 +24,7 @@ const NAV_SECTIONS = [
     label: "Personas",
     items: [
       { to: "/alumnos", icon: GraduationCap, label: "Alumnos" },
+      { to: "/listados", icon: ListOrdered, label: "Listados" },
       { to: "/grupos", icon: Users, label: "Grupos" },
       { to: "/crm", icon: UserSearch, label: "CRM" },
       { to: "/cumpleanos", icon: Cake, label: "Cumpleaños" },
