@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import Topbar from "./Topbar"
 import RemindersModal from "@/features/crm/components/RemindersModal"
+import Ciervito from "./Ciervito"
 
 // Below `xl` (1280px) — every tablet (iPad included, both orientations) and
 // phone — the sidebar hides behind a hamburger instead of eating 250px of a
@@ -32,6 +33,7 @@ export default function AppShell() {
         </main>
       </div>
       <RemindersModal />
+      <Ciervito />
     </div>
   )
 }
