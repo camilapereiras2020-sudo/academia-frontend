@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { gruposApi } from "@/features/grupos/api"
 import { PALETTE } from "@/features/grupos/palette"
 import { avisosApi } from "@/features/avisos/api"
+import { agruparAvisos, idsEditables } from "@/features/avisos/equipo"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 import { useAuthStore } from "@/store/authStore"
 import { nombreUsuario } from "@/lib/nombres"
@@ -85,11 +86,12 @@ export default function CalendarioPage() {
     },
   })
   const toggleTareaMut = useMutation({
-    mutationFn: ({ id, hecha }: { id: number; hecha: boolean }) => avisosApi.update(id, { hecha }),
+    mutationFn: ({ ids, hecha }: { ids: number[]; hecha: boolean }) =>
+      Promise.all(ids.map(id => avisosApi.update(id, { hecha }))),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["avisos"] }),
   })
   const eliminarTareaMut = useMutation({
-    mutationFn: (id: number) => avisosApi.delete(id),
+    mutationFn: (ids: number[]) => Promise.all(ids.map(id => avisosApi.delete(id))),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["avisos"] }),
   })
   const crearQuickMut = useMutation({
@@ -105,7 +107,7 @@ export default function CalendarioPage() {
 
   function tareasForDay(day: number) {
     const iso = isoDate(year, month, day)
-    return tareas.filter(t => t.fecha === iso)
+    return agruparAvisos(tareas.filter(t => t.fecha === iso))
   }
 
   function openDay(day: number | null) {
@@ -286,15 +288,17 @@ export default function CalendarioPage() {
                     <input
                       type="checkbox"
                       checked={t.hecha}
-                      onChange={() => toggleTareaMut.mutate({ id: t.id, hecha: !t.hecha })}
+                      onChange={() => toggleTareaMut.mutate({ ids: idsEditables(t, tareas, myId), hecha: !t.hecha })}
                       className="w-5 h-5 accent-pine-900 flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <p className={`text-[15px] truncate ${t.hecha ? "line-through text-ink-soft" : "text-ink"}`}>{t.titulo}</p>
-                      {t.para_nombre && <p className="text-[14px] text-ink-soft">Para {nombreUsuario(t.para_nombre)}</p>}
+                      {t.paraTodos
+                        ? <p className="text-[14px] text-ink-soft">Para todo el equipo</p>
+                        : t.para_nombre && <p className="text-[14px] text-ink-soft">Para {nombreUsuario(t.para_nombre)}</p>}
                     </div>
                     <button
-                      onClick={() => eliminarTareaMut.mutate(t.id)}
+                      onClick={() => eliminarTareaMut.mutate(idsEditables(t, tareas, myId))}
                       aria-label="Quitar tarea"
                       className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-red-50 hover:text-red-700 text-[15px]"
                     >✕</button>
