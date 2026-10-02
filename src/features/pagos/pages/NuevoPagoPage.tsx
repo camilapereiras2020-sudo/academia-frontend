@@ -11,6 +11,7 @@ import type { Tarifa, Marca } from "@/types"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import MatriculaLinea from "../MatriculaLinea"
 import { esMatricula, nuevaMatricula, type ExtraLine } from "../matricula"
+import { OTROS, notasConOtros } from "../pagadorOtros"
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
 const MARCAS: { value: Marca; label: string }[] = [
@@ -43,8 +44,9 @@ export default function NuevoPagoPage() {
   const [marca, setMarca] = useState<Marca | "">("")
   useSetActiveBrand(marca || null)
   const [alumno, setAlumno] = useState<number | "">("")
-  // "sin-datos" = Otros: alumno sin datos del pagador, se cobra en mano.
-  const [pagador, setPagador] = useState<number | "" | "sin-datos">("")
+  // OTROS = alumno sin datos del pagador, se cobra en mano (motivo opcional).
+  const [pagador, setPagador] = useState<number | "" | typeof OTROS>("")
+  const [motivoOtros, setMotivoOtros] = useState("")
   const [grupo, setGrupo] = useState<number | "">("")
   const [tarifa, setTarifa] = useState<number | "">("")
   const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
@@ -109,7 +111,8 @@ export default function NuevoPagoPage() {
       pagador: typeof pagador === "number" ? pagador : null,
       grupo: grupo || null,
       tarifa: tarifa || null,
-      periodo, mensualidad, descuento, extras, total, metodo, notas, estado,
+      periodo, mensualidad, descuento, extras, total, metodo, estado,
+      notas: notasConOtros(notas, pagador === OTROS, motivoOtros),
       horas_trabajadas: horas === "" ? 0 : horas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
       ...(borrador ? { guardar_como_borrador: true } : {}),
@@ -174,14 +177,16 @@ export default function NuevoPagoPage() {
               Pagador{alumnoEsAdulto ? "" : " *"}
             </label>
             <select value={pagador}
-              onChange={e => setPagador(e.target.value === "sin-datos" ? "sin-datos" : e.target.value ? +e.target.value : "")}
+              onChange={e => setPagador(e.target.value === OTROS ? OTROS : e.target.value ? +e.target.value : "")}
               className="input">
               <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
               {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-              <option value="sin-datos">Otros: sin datos del pagador (pago en mano)</option>
+              <option value={OTROS}>Otros (sin datos del pagador)</option>
             </select>
-            {pagador === "sin-datos" && (
-              <p className="text-[14px] text-ink-soft mt-1">El recibo saldrá sin datos del pagador.</p>
+            {pagador === OTROS && (
+              <input type="text" value={motivoOtros} onChange={e => setMotivoOtros(e.target.value)}
+                placeholder="Motivo (opcional): alumno antiguo, paga en mano…" aria-label="Motivo de pagador Otros"
+                className="input mt-2" />
             )}
             {alumnoEsAdulto && !pagador && (
               <p className="text-[14px] text-ink-soft mt-1">Alumno adulto — el pagador es opcional.</p>

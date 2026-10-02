@@ -16,15 +16,18 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
   const qc = useQueryClient()
   const [query, setQuery] = useState("")
   const [open, setOpen] = useState(false)
+  // Eligió "Otros" en esta sesión: se queda sin pagador, pero se muestra claro.
+  const [otros, setOtros] = useState(false)
 
   const { data } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(data) ? data : []
   const selected = pagadores.find(p => p.id === value) ?? null
-  const displayValue = open ? query : (selected?.nombre ?? "")
+  const displayValue = open ? query : (selected?.nombre ?? (otros ? "Otros (sin datos del pagador)" : ""))
 
   const createMut = useMutation({
     mutationFn: (nombre: string) => pagadoresApi.create({ nombre }),
     onSuccess: (res) => {
+      setOtros(false)
       qc.invalidateQueries({ queryKey: ["pagadores"] })
       onChange(res.data.id)
       setQuery(res.data.nombre)
@@ -37,6 +40,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
   const exactMatch = pagadores.some(p => p.nombre.toLowerCase() === q)
 
   function selectPagador(p: Pagador) {
+    setOtros(false)
     onChange(p.id)
     setQuery(p.nombre)
     setOpen(false)
@@ -60,8 +64,8 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
           placeholder="Buscar o crear pagador..."
           className="input"
         />
-        {selected && (
-          <button type="button" onClick={clearSelection}
+        {(selected || otros) && (
+          <button type="button" onClick={() => { clearSelection(); setOtros(false) }}
             className="w-11 h-11 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 flex-shrink-0">
             ✕
           </button>
@@ -97,11 +101,11 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
           <button
             type="button"
             onMouseDown={e => e.preventDefault()}
-            onClick={clearSelection}
+            onClick={() => { clearSelection(); setOtros(true) }}
             className={gold ? "combobox-option" : "w-full min-h-[44px] text-left px-3.5 text-[15px] text-ink-soft hover:bg-khaki-100 border-t border-pine-900/10"}
             style={gold ? { borderTop: "1px solid var(--border-subtle)" } : undefined}
           >
-            Otros: sin datos del pagador (pago en mano)
+            Otros (sin datos del pagador)
           </button>
           {q && !exactMatch && (
             <button
