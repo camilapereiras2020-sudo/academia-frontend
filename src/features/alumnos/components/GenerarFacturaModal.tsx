@@ -301,17 +301,17 @@ export default function GenerarFacturaModal({
                 <p className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-2">Horas del mes</p>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <span className="block font-label text-[12px] text-ink-soft mb-1">Clases por semana</span>
-                    <div className="input !bg-khaki-100 flex items-center">{slots.length || "—"}</div>
+                    <span className="block font-label text-[12px] text-ink-soft mb-1">Clases/semana</span>
+                    <div className="input !bg-khaki-100 flex items-center whitespace-nowrap">{slots.length || "—"}</div>
                   </div>
                   <div>
-                    <span className="block font-label text-[12px] text-ink-soft mb-1">Duración de clase</span>
-                    <div className="input !bg-khaki-100 flex items-center">
-                      {duraciones.length === 1 ? duracionTexto(duraciones[0]) : duraciones.length ? "Variable" : "—"}
+                    <span className="block font-label text-[12px] text-ink-soft mb-1">Duración</span>
+                    <div className="input !bg-khaki-100 flex items-center whitespace-nowrap">
+                      {duraciones.length === 1 ? duracionTexto(duraciones[0]).replace(" min", "′") : duraciones.length ? "Variable" : "—"}
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="horas-mes" className="block font-label text-[12px] text-ink-soft mb-1">Horas este mes</label>
+                    <label htmlFor="horas-mes" className="block font-label text-[12px] text-ink-soft mb-1">Total horas</label>
                     <input id="horas-mes" type="number" min="0" step="0.5" value={horas}
                       onChange={e => setHorasManual(e.target.value === "" ? 0 : +e.target.value)}
                       className="input" />
@@ -331,7 +331,7 @@ export default function GenerarFacturaModal({
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between flex-wrap gap-x-3 mb-2">
                   <label className="font-label text-[14px] font-semibold text-pine-700">Extras (matrícula, clases a mayores…)</label>
                   <div className="flex gap-3">
                     {!extras.some(esMatricula) && (
