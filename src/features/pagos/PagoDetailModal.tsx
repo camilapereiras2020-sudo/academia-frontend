@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi, documentosApi } from "./api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
 import { pagadoresApi } from "@/features/pagadores/api"
+import { OTROS, leerOtros, notasConOtros, notasSinOtros } from "./pagadorOtros"
 import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
@@ -56,7 +57,10 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const docs: Documento[] = Array.isArray(docsRaw) ? docsRaw : (docsRaw as any)?.results ?? []
 
   const [alumno, setAlumno] = useState<number | "">(initial.alumno ?? "")
-  const [pagador, setPagador] = useState<number | "">(initial.pagador ?? "")
+  const otrosInicial = leerOtros(initial.notas)
+  const [pagador, setPagador] = useState<number | "" | typeof OTROS>(
+    initial.pagador ?? (otrosInicial.activo ? OTROS : ""))
+  const [motivoOtros, setMotivoOtros] = useState(otrosInicial.motivo)
   const [grupo, setGrupo] = useState<number | "">(initial.grupo ?? "")
   const [tarifa, setTarifa] = useState<number | "">(initial.tarifa ?? "")
   const [periodo, setPeriodo] = useState(initial.periodo)
@@ -66,7 +70,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const [descuento, setDescuento] = useState(Number(initial.descuento) || 0)
   const [metodo, setMetodo] = useState(initial.metodo)
   const [estadoPago, setEstadoPago] = useState<"pagado" | "pendiente" | "parcial">(initial.estado)
-  const [notas, setNotas] = useState(initial.notas)
+  const [notas, setNotas] = useState(notasSinOtros(initial.notas))
   const [conceptoLibre, setConceptoLibre] = useState(initial.concepto_libre)
   const [extras, setExtras] = useState<ExtraLine[]>(initial.extras ?? [])
 
@@ -96,7 +100,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const saveMut = useMutation({
     mutationFn: () => pagosApi.update(pago.id, {
       alumno: alumno as number,
-      pagador: pagador === "" ? null : pagador,
+      pagador: typeof pagador === "number" ? pagador : null,
       grupo: grupo === "" ? null : (grupo as number),
       tarifa: tarifa === "" ? null : (tarifa as number),
       periodo,
@@ -106,7 +110,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
       total,
       metodo,
       estado: estadoPago,
-      notas,
+      notas: notasConOtros(notas, pagador === OTROS, motivoOtros),
       concepto_libre: conceptoLibre,
       horas_trabajadas: horas === "" ? 0 : horas,
     }),
@@ -233,11 +237,18 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
               <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
                 Pagador{alumnoEsAdulto ? "" : " *"}
               </label>
-              <select value={pagador} onChange={e => setPagador(e.target.value ? +e.target.value : "")}
+              <select value={pagador}
+                onChange={e => setPagador(e.target.value === OTROS ? OTROS : e.target.value ? +e.target.value : "")}
                 className="input">
                 <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
                 {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                <option value={OTROS}>Otros (sin datos del pagador)</option>
               </select>
+              {pagador === OTROS && (
+                <input type="text" value={motivoOtros} onChange={e => setMotivoOtros(e.target.value)}
+                  placeholder="Motivo (opcional): alumno antiguo, paga en mano…" aria-label="Motivo de pagador Otros"
+                  className="input mt-2" />
+              )}
               {alumnoEsAdulto && !pagador && (
                 <p className="text-[14px] text-ink-soft mt-1">Alumno adulto — el pagador es opcional.</p>
               )}

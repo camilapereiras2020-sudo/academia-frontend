@@ -7,6 +7,10 @@ import { tarifasApi } from "@/features/tarifas/api"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur } from "@/lib/utils"
 import MatriculaLinea from "@/features/pagos/MatriculaLinea"
+import { asistenciaApi } from "@/features/asistencia/api"
+import {
+  asistenciasDelMes, conceptoClases, duracionTexto, horasPrevistas, horasTexto, slotsSemanales,
+} from "@/features/pagos/horasMes"
 import { esMatricula, nuevaMatricula, type ExtraLine } from "@/features/pagos/matricula"
 import type { Alumno, AlumnoCuota, CargoExtra, Pago, Tarifa } from "@/types"
 
@@ -53,7 +57,9 @@ export default function GenerarFacturaModal({
 
   const [grupo, setGrupo] = useState<number | "">("")
   const [tarifa, setTarifa] = useState<number | "">("")
-  const [horas, setHoras] = useState<number | "">("")
+  // null = automático (asistencia del mes, o horario previsto si aún no hay
+  // asistencia marcada); un número = lo ha cambiado a mano.
+  const [horasManual, setHorasManual] = useState<number | null>(null)
   const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
   const [mensualidad, setMensualidad] = useState(cuota?.cuota ?? 0)
   const [descuento, setDescuento] = useState(0)
@@ -84,6 +90,27 @@ export default function GenerarFacturaModal({
   const total = mensualidad - descuento + extrasTotal
   const sinPagador = !alumno.pagador && !alumno.es_adulto
 
+  // ── Horas del mes: horario del alumno + asistencia marcada ─────────────
+  const gruposAlumno = alumno.grupos_detalle ?? []
+  const gruposUsados = grupo ? gruposAlumno.filter(g => g.grupo === grupo) : gruposAlumno
+  const slots = slotsSemanales(gruposUsados)
+  const { data: sesionesRaw } = useQuery({
+    queryKey: ["asistencia", "alumno-mes", alumno.id, periodo],
+    queryFn: () => asistenciaApi.list({ alumno: alumno.id, mes: periodo }).then(r => r.data),
+    enabled: !!periodo,
+  })
+  const sesiones = (Array.isArray(sesionesRaw) ? sesionesRaw : []).filter(s => !grupo || s.grupo === grupo)
+  const asistencias = asistenciasDelMes(sesiones, alumno.id, slots)
+  const horasAuto = asistencias.length
+    ? asistencias.reduce((t, a) => t + a.min, 0) / 60
+    : horasPrevistas(slots, periodo)
+  const horas = horasManual ?? Math.round(horasAuto * 10) / 10
+  const duraciones = Array.from(new Set(slots.map(x => x.min)))
+  const grupoNombreConcepto = grupo
+    ? gruposAlumno.find(g => g.grupo === grupo)?.grupo_nombre ?? null
+    : gruposAlumno.length === 1 ? gruposAlumno[0].grupo_nombre : null
+  const concepto = conceptoClases(periodo, grupoNombreConcepto, slots, horas)
+
   const crearMut = useMutation({
     mutationFn: () => pagosApi.create({
       marca: alumno.marca,
@@ -91,7 +118,8 @@ export default function GenerarFacturaModal({
       pagador: alumno.pagador,
       grupo: grupo || null,
       tarifa: tarifa || null,
-      horas_trabajadas: horas === "" ? 0 : horas,
+      horas_trabajadas: horas,
+      concepto_libre: concepto,
       periodo, mensualidad, descuento, extras, total, metodo, estado, notas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
     }),
@@ -196,9 +224,9 @@ export default function GenerarFacturaModal({
 
         <div className="p-6 space-y-4">
           {sinPagador && !pagoCreado && (
-            <p className="text-[15px] text-amber-800 bg-amber-50 border border-amber-200 rounded-[10px] px-4 py-3">
-              ⚠ Este alumno no tiene pagador vinculado (y no es adulto que pague por sí mismo). Cargá un pagador en
-              "Datos generales" antes de crear el pago.
+            <p className="text-[15px] text-ink bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-3">
+              Sin pagador vinculado: se registra como pago en mano y el recibo saldrá sin datos del pagador.
+              Si los tienes, añádelos en la sección "Pagador" de la ficha.
             </p>
           )}
           {error && <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px]">{error}</p>}
@@ -235,12 +263,6 @@ export default function GenerarFacturaModal({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Horas</label>
-                  <input type="number" value={horas} onChange={e => setHoras(e.target.value === "" ? "" : +e.target.value)}
-                    min="0" step="0.1" placeholder="Ej: 1.5"
-                    className="input" />
-                </div>
-                <div>
                   <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Periodo *</label>
                   <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
                     className="input" />
@@ -273,6 +295,39 @@ export default function GenerarFacturaModal({
                     <option value="parcial">Pago parcial</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="rounded-[12px] border border-pine-900/15 p-3">
+                <p className="font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-2">Horas del mes</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="block font-label text-[12px] text-ink-soft mb-1">Clases por semana</span>
+                    <div className="input !bg-khaki-100 flex items-center">{slots.length || "—"}</div>
+                  </div>
+                  <div>
+                    <span className="block font-label text-[12px] text-ink-soft mb-1">Duración de clase</span>
+                    <div className="input !bg-khaki-100 flex items-center">
+                      {duraciones.length === 1 ? duracionTexto(duraciones[0]) : duraciones.length ? "Variable" : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="horas-mes" className="block font-label text-[12px] text-ink-soft mb-1">Horas este mes</label>
+                    <input id="horas-mes" type="number" min="0" step="0.5" value={horas}
+                      onChange={e => setHorasManual(e.target.value === "" ? 0 : +e.target.value)}
+                      className="input" />
+                  </div>
+                </div>
+                <p className="text-[13px] text-ink-soft mt-2">
+                  {asistencias.length
+                    ? `Asistencia: ${asistencias.length} clase${asistencias.length === 1 ? "" : "s"} (días ${asistencias.map(a => Number(a.fecha.slice(8))).join(", ")}) · ${horasTexto(asistencias.reduce((t, a) => t + a.min, 0) / 60)}`
+                    : slots.length ? "Sin asistencia marcada este mes: horas previstas según su horario." : "Sin clases en su horario: pon las horas a mano."}
+                  {horasManual !== null && (
+                    <button type="button" onClick={() => setHorasManual(null)} className="ml-2 font-semibold text-brass-700 underline">
+                      Volver a automático
+                    </button>
+                  )}
+                </p>
+                <p className="text-[13px] text-ink mt-1"><span className="text-ink-soft">En la factura:</span> {concepto}</p>
               </div>
 
               <div>
@@ -387,7 +442,7 @@ export default function GenerarFacturaModal({
             {doc ? "Cerrar" : pagoCreado ? "Cerrar sin generar documento" : "Cancelar"}
           </button>
           {!pagoCreado && (
-            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || sinPagador || !periodo}
+            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || !periodo}
               className="btn-primary disabled:opacity-50">
               {crearMut.isPending ? "Creando..." : "💳 Crear pago"}
             </button>

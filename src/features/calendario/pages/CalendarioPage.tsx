@@ -7,6 +7,7 @@ import { PALETTE } from "@/features/grupos/palette"
 import { avisosApi } from "@/features/avisos/api"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
 import { useAuthStore } from "@/store/authStore"
+import { nombreUsuario } from "@/lib/nombres"
 
 function pad(n: number) { return String(n).padStart(2, "0") }
 function isoDate(year: number, month: number, day: number) { return `${year}-${pad(month + 1)}-${pad(day)}` }
@@ -173,7 +174,7 @@ export default function CalendarioPage() {
                     className="input flex-1 !px-2.5"
                   >
                     <option value="">Sin asignar</option>
-                    {equipo.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                    {equipo.map(u => <option key={u.id} value={u.id}>{nombreUsuario(u.username)}</option>)}
                   </select>
                 </div>
                 <button
@@ -290,7 +291,7 @@ export default function CalendarioPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className={`text-[15px] truncate ${t.hecha ? "line-through text-ink-soft" : "text-ink"}`}>{t.titulo}</p>
-                      {t.para_nombre && <p className="text-[14px] text-ink-soft">Para {t.para_nombre}</p>}
+                      {t.para_nombre && <p className="text-[14px] text-ink-soft">Para {nombreUsuario(t.para_nombre)}</p>}
                     </div>
                     <button
                       onClick={() => eliminarTareaMut.mutate(t.id)}
@@ -313,7 +314,7 @@ export default function CalendarioPage() {
                     className="input !w-auto"
                   >
                     <option value="">Sin asignar</option>
-                    {equipo.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                    {equipo.map(u => <option key={u.id} value={u.id}>{nombreUsuario(u.username)}</option>)}
                   </select>
                   <button
                     onClick={() => crearTareaMut.mutate()}

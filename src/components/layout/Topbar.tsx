@@ -5,6 +5,7 @@ import { LogOut, Menu } from "lucide-react"
 import { useAuthStore } from "@/store/authStore"
 import { queryClient } from "@/lib/queryClient"
 import AvisosBell from "@/features/avisos/components/AvisosBell"
+import { nombreUsuario } from "@/lib/nombres"
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -60,7 +61,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const now = useClock()
 
   const title = pageTitle(location.pathname)
-  const initial = (user?.username || "?").charAt(0).toUpperCase()
+  const initial = (nombreUsuario(user?.username) || "?").charAt(0)
 
   const todayFull = now.toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -124,7 +125,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
         <div
           className="xl:hidden w-9 h-9 ml-1 rounded-full bg-brass-500 flex items-center justify-center font-head text-pine-900 text-sm flex-shrink-0"
-          aria-label={user?.username || "Usuario"}
+          aria-label={nombreUsuario(user?.username) || "Usuario"}
         >
           {initial}
         </div>
