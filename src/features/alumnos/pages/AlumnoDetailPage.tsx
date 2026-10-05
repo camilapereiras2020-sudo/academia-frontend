@@ -10,12 +10,11 @@ import EmailModal from "@/components/shared/EmailModal"
 import PagoDetailModal from "@/features/pagos/PagoDetailModal"
 import GenerarFacturaModal from "../components/GenerarFacturaModal"
 import { useAuthStore } from "@/store/authStore"
-import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
-import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase, Alumno } from "@/types"
-import { NIVELES, EXAMENES, CURSOS, COLEGIOS_SUGERIDOS } from "../opciones"
+import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, Alumno } from "@/types"
+import { CURSOS, COLEGIOS_SUGERIDOS } from "../opciones"
 import { nombreUsuario } from "@/lib/nombres"
 
 const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
@@ -54,19 +53,6 @@ const TIPO_FECHA_STYLE: Record<TipoFechaImportante, { background: string; color:
 
 const TIPO_NOTA_LABELS: Record<TipoNotaAlumno, string> = { progreso: "Progreso", reunion: "Reunión", general: "General" }
 
-const CODIGO_CLASE_LABELS: Record<Exclude<CodigoClase, "">, string> = {
-  HORA: "Clase grupo (1h/semana)",
-  HORA_Y_MEDIA: "Clase grupo (1h30/semana)",
-  PRIVADA: "Clase privada (30 €/h)",
-  PRIVADA_PROFESIONAL: "Clase privada profesional o especialización (35 €/h)",
-}
-const CUOTA_TIPO_LABELS: Record<string, string> = {
-  manual: "Precio manual",
-  privada_manual: "Clase privada — precio manual",
-  bono_familia: "Bono Familia",
-  clase_grupo: "Clase Grupo",
-  sin_tabla: "Sin calcular",
-}
 
 const TIPO_CONSENTIMIENTO_LABELS: Record<TipoConsentimiento, string> = {
   autorizacion_imagen: "Autorización de imagen",
@@ -294,22 +280,11 @@ export default function AlumnoDetailPage() {
     },
   })
 
-  const codigoClaseMut = useMutation({
-    mutationFn: (codigo_clase: CodigoClase) => alumnosApi.update(alumnoId, { codigo_clase }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
-      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
-    },
-  })
-
-  const [cuotaManualEditing, setCuotaManualEditing] = useState(false)
-  const [cuotaManualDraft, setCuotaManualDraft] = useState("")
   const cuotaManualMut = useMutation({
     mutationFn: (cuota_manual: number | null) => alumnosApi.update(alumnoId, { cuota_manual }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
       qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
-      setCuotaManualEditing(false)
     },
   })
 
@@ -595,29 +570,8 @@ export default function AlumnoDetailPage() {
                   {CURSOS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
-              <TextInput label="Idioma nativo" value={generalForm.idioma_nativo} onChange={v => setGeneralForm(f => ({ ...f, idioma_nativo: v }))} />
               <TextInput label="Contacto de emergencia (nombre)" value={generalForm.contacto_emergencia_nombre} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_nombre: v }))} />
               <TextInput label="Contacto de emergencia (teléfono)" value={generalForm.contacto_emergencia_telefono} onChange={v => setGeneralForm(f => ({ ...f, contacto_emergencia_telefono: v }))} />
-              <div>
-                <p className={LABEL_CLS}>Nivel actual</p>
-                <NivelSelect className="input" value={generalForm.nivel}
-                  onChange={v => setGeneralForm(f => ({ ...f, nivel: v }))} />
-              </div>
-              <div>
-                <p className={LABEL_CLS}>Nivel / examen objetivo</p>
-                <div className="flex gap-2">
-                  <select className="input" value={generalForm.nivel_objetivo}
-                    onChange={e => setGeneralForm(f => ({ ...f, nivel_objetivo: e.target.value as NivelObjetivo | "" }))}>
-                    <option value="">—</option>
-                    {NIVELES.map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                  <select className="input" value={generalForm.examen_objetivo}
-                    onChange={e => setGeneralForm(f => ({ ...f, examen_objetivo: e.target.value as ExamenObjetivo | "" }))}>
-                    <option value="">—</option>
-                    {EXAMENES.map(ex => <option key={ex} value={ex}>{ex === "ninguno" ? "Ninguno" : ex}</option>)}
-                  </select>
-                </div>
-              </div>
             </div>
             <Textarea label="Notas" value={generalForm.notas} onChange={v => setGeneralForm(f => ({ ...f, notas: v }))} />
             <label className="flex items-center gap-2.5 min-h-[44px] text-[15px] text-ink cursor-pointer">
@@ -641,13 +595,8 @@ export default function AlumnoDetailPage() {
             value={alumno.fnac ? `${formatDate(alumno.fnac)}${yearsOld !== null ? ` · ${yearsOld} años` : ""}` : "—"} />
           <Field label="Dirección" value={pagador?.direccion || "—"} />
           <Field label="¿Es adulto / paga el mismo?" value={alumno.es_adulto ? "Sí" : "No"} />
-          <Field label="Nivel actual" value={alumno.nivel || "—"} />
-          <Field label="Nivel / examen objetivo"
-            value={[alumno.nivel_objetivo, alumno.examen_objetivo && alumno.examen_objetivo !== "ninguno" ? alumno.examen_objetivo : null]
-              .filter(Boolean).join(" · ") || "—"} />
           <Field label="Curso" value={alumno.curso_display || "—"} />
           <Field label="Colegio de origen" value={alumno.colegio_origen || "—"} />
-          <Field label="Idioma nativo" value={alumno.idioma_nativo || "—"} />
           <Field label="Contacto de emergencia"
             value={alumno.contacto_emergencia_nombre || alumno.contacto_emergencia_telefono
               ? `${alumno.contacto_emergencia_nombre} ${alumno.contacto_emergencia_telefono}`.trim()
@@ -700,65 +649,21 @@ export default function AlumnoDetailPage() {
           </button>
         </div>
 
-        <div className="grid-2col mb-4">
-          <div>
-            <p className={LABEL_CLS}>Tipo de clase</p>
-            <select className="input" value={alumno.codigo_clase}
-              onChange={e => codigoClaseMut.mutate(e.target.value as CodigoClase)}>
-              <option value="">— Sin definir —</option>
-              {Object.entries(CODIGO_CLASE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <p className={LABEL_CLS}>Cuota mensual</p>
-            {cuota?.cuota != null && !cuotaManualEditing ? (
-              <p className="font-head text-[24px] leading-tight text-pine-900">
-                {formatEur(cuota.cuota)}
-                <span className="font-label text-[14px] font-semibold text-ink-soft ml-2">
-                  {CUOTA_TIPO_LABELS[cuota.tipo] ?? cuota.tipo}
-                </span>
-              </p>
-            ) : cuotaManualEditing ? (
-              <div className="flex gap-2 items-center flex-wrap">
-                <input type="number" step="0.01" className="input !w-32"
-                  value={cuotaManualDraft} onChange={e => setCuotaManualDraft(e.target.value)} autoFocus />
-                <button className="btn-primary"
-                  disabled={cuotaManualMut.isPending}
-                  onClick={() => cuotaManualMut.mutate(cuotaManualDraft.trim() === "" ? null : Number(cuotaManualDraft))}>
-                  Guardar
-                </button>
-                <button className="btn-ghost" onClick={() => setCuotaManualEditing(false)}>
-                  Cancelar
-                </button>
-              </div>
-            ) : (
-              <p className="text-[15px] text-ink-soft">Precio manual — sin cargar aún.</p>
-            )}
-            {!cuotaManualEditing && (
-              <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px] mt-2"
-                onClick={() => { setCuotaManualDraft(alumno.cuota_manual != null ? String(alumno.cuota_manual) : ""); setCuotaManualEditing(true) }}>
-                {alumno.cuota_manual != null ? "Editar precio manual" : "Cargar precio manual"}
-              </button>
-            )}
-          </div>
+        <div className="mb-4">
+          <p className={LABEL_CLS}>Cuota mensual (€)</p>
+          <input
+            key={`cuota-manual-${alumno.id}-${alumno.cuota_manual}`}
+            type="number" step="0.01" className="input !w-40"
+            defaultValue={alumno.cuota_manual ?? ""}
+            placeholder="Sin definir"
+            onFocus={e => e.target.select()}
+            onBlur={e => {
+              const v = e.target.value.trim()
+              const next = v === "" ? null : Number(v)
+              if (next !== (alumno.cuota_manual ?? null)) cuotaManualMut.mutate(next)
+            }}
+          />
         </div>
-
-        {cuota?.tipo === "bono_familia" && (
-          <p className="text-[14px] text-ink bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-2.5 mb-3">
-            Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"}{" "}
-            {cuota.avisos.length
-              ? "estimado (sin tarifa oficial publicada para este caso), repartido en proporción a la cuota individual de cada uno."
-              : "según la tarifa, repartido a partes iguales."}
-          </p>
-        )}
-        {!!cuota?.avisos.length && (
-          <div className="mb-3">
-            {cuota.avisos.map((a, i) => (
-              <p key={i} className="text-[14px] text-amber-800">⚠ {a}</p>
-            ))}
-          </div>
-        )}
 
         {cuota?.ranger_express != null && (
           <div className="flex items-center justify-between gap-3 bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-2.5 mb-3">
