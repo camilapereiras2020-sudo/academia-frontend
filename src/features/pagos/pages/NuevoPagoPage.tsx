@@ -3,15 +3,24 @@ import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { pagosApi } from "../api"
 import { alumnosApi } from "@/features/alumnos/alumnos_api"
-import { pagadoresApi } from "@/features/pagadores/api"
 import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
-import type { Tarifa, Marca } from "@/types"
+import PagadorCombobox from "@/features/pagadores/PagadorCombobox"
+import type { Tarifa, Marca, Grupo } from "@/types"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import MatriculaLinea from "../MatriculaLinea"
 import { esMatricula, nuevaMatricula, type ExtraLine } from "../matricula"
 import { OTROS, notasConOtros } from "../pagadorOtros"
+
+// Recogida puntual del colegio Doroteas (complemento a la cuota, no es The
+// Ranger Express) — extra de uso frecuente, mismo patrón que "+ Matrícula".
+const RECOGIDA_DOROTEAS_CONCEPTO = "Recogida Doroteas"
+const RECOGIDA_DOROTEAS_IMPORTE = 10
+function esRecogidaDoroteas(ex: ExtraLine) { return ex.concepto === RECOGIDA_DOROTEAS_CONCEPTO }
+function nuevaRecogidaDoroteas(): ExtraLine {
+  return { concepto: RECOGIDA_DOROTEAS_CONCEPTO, importe: RECOGIDA_DOROTEAS_IMPORTE }
+}
 
 const METODOS = ["efectivo","transferencia","bizum","domiciliacion","tarjeta"]
 const MARCAS: { value: Marca; label: string }[] = [
@@ -25,6 +34,14 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
   return t.marca === "cami_and_co" || t.nombre === "clase_privada" || t.nombre === "clase_recuperada"
 }
 
+// (día, hora de inicio) del horario más temprano del grupo — sin horario
+// configurado se manda al final del desplegable, no al principio.
+function primerHorario(g: Grupo): [number, string] {
+  if (!g.horarios?.length) return [99, "99:99"]
+  const ordenado = [...g.horarios].sort((a, b) => a.dia - b.dia || a.ini.localeCompare(b.ini))
+  return [ordenado[0].dia, ordenado[0].ini]
+}
+
 
 export default function NuevoPagoPage() {
   const navigate = useNavigate()
@@ -32,14 +49,21 @@ export default function NuevoPagoPage() {
   const [error, setError] = useState("")
 
   const { data: alumnosRaw } = useQuery({ queryKey: ["alumnos"], queryFn: () => alumnosApi.list().then(r => r.data) })
-  const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
   const { data: tarifasRaw, isLoading: tarifasLoading } = useQuery({ queryKey: ["tarifas"], queryFn: () => tarifasApi.list().then(r => r.data) })
 
   const alumnos = Array.isArray(alumnosRaw) ? alumnosRaw : (alumnosRaw as any)?.results || []
-  const pagadores = Array.isArray(pagadoresRaw) ? pagadoresRaw : (pagadoresRaw as any)?.results || []
-  const grupos = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
+  const gruposSinOrdenar: Grupo[] = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
   const tarifas: Tarifa[] = Array.isArray(tarifasRaw) ? tarifasRaw : (tarifasRaw as any)?.results || []
+
+  // Sofía (recepción) no se sabe de memoria qué grupo (Forest/Explorers/Wild...)
+  // corresponde a qué día — ordenar por día/hora de su primer horario en vez
+  // de por nombre hace que el desplegable siga el horario real de la semana.
+  const grupos = [...gruposSinOrdenar].sort((a, b) => {
+    const [diaA, horaA] = primerHorario(a)
+    const [diaB, horaB] = primerHorario(b)
+    return diaA - diaB || horaA.localeCompare(horaB)
+  })
 
   const [marca, setMarca] = useState<Marca | "">("")
   useSetActiveBrand(marca || null)
@@ -60,9 +84,6 @@ export default function NuevoPagoPage() {
   // Which alumno we've already auto-added the matrícula line for — so it's
   // added once per selection, and doesn't reappear if staff deletes it.
   const [matriculaAutoAddedFor, setMatriculaAutoAddedFor] = useState<number | null>(null)
-
-  const selectedTarifa = tarifas.find(t => t.id === tarifa)
-  const montoEditable = tarifaAmountIsEditable(selectedTarifa)
 
   const selectedAlumno = alumnos.find((a: any) => a.id === alumno)
   const alumnoEsAdulto = !!selectedAlumno?.es_adulto
@@ -99,6 +120,17 @@ export default function NuevoPagoPage() {
     setTarifa(tid)
     const t = tarifas.find(x => x.id === tid)
     if (t && !tarifaAmountIsEditable(t)) setMensualidad(Number(t.precio))
+  }
+
+  // La tabla genérica "Tarifa" se desactualiza (ver seed_tarifas) — la cuota
+  // real de una clase concreta vive en Grupo.tarifa (lo mismo que ya usa
+  // generar-mes al crear los borradores mensuales). Autocompletar desde ahí
+  // en vez de depender solo del desplegable de Tarifa; sigue siendo
+  // editable a mano por si hay que corregirlo.
+  function onGrupoChange(gid: number) {
+    setGrupo(gid)
+    const g = grupos.find(x => x.id === gid)
+    if (g?.tipo_cobro === "mensual" && Number(g.tarifa) > 0) setMensualidad(Number(g.tarifa))
   }
 
   const extrasTotal = extras.reduce((s, e) => s + e.importe, 0)
@@ -176,13 +208,10 @@ export default function NuevoPagoPage() {
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
               Pagador{alumnoEsAdulto ? "" : " *"}
             </label>
-            <select value={pagador}
-              onChange={e => setPagador(e.target.value === OTROS ? OTROS : e.target.value ? +e.target.value : "")}
-              className="input">
-              <option value="">{alumnoEsAdulto ? "El alumno paga por sí mismo" : "Seleccionar..."}</option>
-              {pagadores.map((p: any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-              <option value={OTROS}>Otros (sin datos del pagador)</option>
-            </select>
+            <PagadorCombobox
+              value={typeof pagador === "number" ? pagador : null}
+              onChange={(id, otros) => setPagador(otros ? OTROS : id ?? "")}
+            />
             {pagador === OTROS && (
               <input type="text" value={motivoOtros} onChange={e => setMotivoOtros(e.target.value)}
                 placeholder="Motivo (opcional): alumno antiguo, paga en mano…" aria-label="Motivo de pagador Otros"
@@ -194,10 +223,10 @@ export default function NuevoPagoPage() {
           </div>
           <div>
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Grupo</label>
-            <select value={grupo} onChange={e => setGrupo(+e.target.value)}
+            <select value={grupo} onChange={e => onGrupoChange(+e.target.value)}
               className="input">
               <option value="">Sin grupo</option>
-              {grupos.map((g: any) => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
+              {grupos.map(g => <option key={g.id} value={g.id}>{grupoLabel(g)}</option>)}
             </select>
           </div>
           <div>
@@ -236,13 +265,17 @@ export default function NuevoPagoPage() {
           </div>
           <div>
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Mensualidad (€)</label>
-            <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)} min="0" step="0.01"
-              disabled={!montoEditable}
-              className="input disabled:!bg-khaki-100 disabled:text-ink-soft" />
+            {/* Siempre editable — la tarifa/grupo solo sugieren el importe
+                (ver onTarifaChange/onGrupoChange); si la sugerencia está mal,
+                se escribe el correcto a mano en vez de quedar bloqueado. */}
+            <input type="number" value={mensualidad} onChange={e => setMensualidad(+e.target.value)}
+              onFocus={e => e.target.select()} min="0" step="0.01"
+              className="input" />
           </div>
           <div>
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Descuento (€)</label>
-            <input type="number" value={descuento} onChange={e => setDescuento(+e.target.value)} min="0" step="0.01"
+            <input type="number" value={descuento} onChange={e => setDescuento(+e.target.value)}
+              onFocus={e => e.target.select()} min="0" step="0.01"
               className="input" />
           </div>
           <div>
@@ -274,6 +307,9 @@ export default function NuevoPagoPage() {
               {!extras.some(esMatricula) && (
                 <button onClick={() => setExtras(e => [nuevaMatricula(), ...e])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Matrícula</button>
               )}
+              {!extras.some(esRecogidaDoroteas) && (
+                <button onClick={() => setExtras(e => [...e, nuevaRecogidaDoroteas()])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Recogida Doroteas</button>
+              )}
               <button onClick={() => setExtras(e => [...e, { concepto: "", importe: 0 }])} className="min-h-[40px] px-1 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">+ Añadir extra</button>
             </div>
           </div>
@@ -294,6 +330,7 @@ export default function NuevoPagoPage() {
                   className="input flex-1" />
                 <input type="number" placeholder="€" value={ex.importe} min="0" step="0.01"
                   onChange={e => { const n = [...extras]; n[i] = { ...n[i], importe: +e.target.value }; setExtras(n) }}
+                  onFocus={e => e.target.select()}
                   className="input !w-28" />
                 <button onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label="Quitar" className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-red-700 hover:bg-red-50 text-[15px]">✕</button>
               </div>

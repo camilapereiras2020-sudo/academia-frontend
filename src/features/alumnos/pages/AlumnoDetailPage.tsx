@@ -14,7 +14,7 @@ import { NivelSelect } from "@/features/niveles/NivelSelect"
 import { api } from "@/lib/axios"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur, formatDate, formatMonth, getInitials } from "@/lib/utils"
-import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase } from "@/types"
+import type { TipoFechaImportante, TipoNotaAlumno, TipoConsentimiento, NivelObjetivo, ExamenObjetivo, Curso, Pago, CodigoClase, Alumno } from "@/types"
 import { NIVELES, EXAMENES, CURSOS, COLEGIOS_SUGERIDOS } from "../opciones"
 import { nombreUsuario } from "@/lib/nombres"
 
@@ -332,6 +332,34 @@ export default function AlumnoDetailPage() {
     mutationFn: (id: number) => cargoExtraApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] }),
   })
+
+  const rangerExpressMut = useMutation({
+    mutationFn: (patch: Partial<Pick<Alumno, "ranger_express" | "recogida_colegio" | "recogida_hora" | "recogida_dias" | "recogida_precio">>) =>
+      alumnosApi.update(alumnoId, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alumno", alumnoId] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumnoId] })
+    },
+  })
+  // Colegio/hora/precio se escriben en un draft local y se guardan al salir
+  // del campo (onBlur) — mismo patrón que PagadorFieldsEditor — para no
+  // mandar un PATCH por cada tecla; el toggle y los días se guardan al toque.
+  const [expressDraft, setExpressDraft] = useState({ colegio: "", hora: "", precio: "" })
+  useEffect(() => {
+    if (!alumno) return
+    setExpressDraft({
+      colegio: alumno.recogida_colegio ?? "",
+      hora: alumno.recogida_hora ?? "",
+      precio: alumno.recogida_precio != null ? String(alumno.recogida_precio) : "",
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumno?.id, alumno?.recogida_colegio, alumno?.recogida_hora, alumno?.recogida_precio])
+
+  function toggleRecogidaDia(dia: number) {
+    const dias = alumno?.recogida_dias ?? []
+    const next = dias.includes(dia) ? dias.filter(d => d !== dia) : [...dias, dia].sort()
+    rangerExpressMut.mutate({ recogida_dias: next })
+  }
 
   const saludMut = useMutation({
     mutationFn: () => datoSaludApi.update(alumnoId, saludForm),
@@ -719,7 +747,9 @@ export default function AlumnoDetailPage() {
         {cuota?.tipo === "bono_familia" && (
           <p className="text-[14px] text-ink bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-2.5 mb-3">
             Bono Familia entre {cuota.n_hermanos} hermanos — total {cuota.total_bono != null ? formatEur(cuota.total_bono) : "—"}{" "}
-            según la tarifa, repartido a partes iguales.
+            {cuota.avisos.length
+              ? "estimado (sin tarifa oficial publicada para este caso), repartido en proporción a la cuota individual de cada uno."
+              : "según la tarifa, repartido a partes iguales."}
           </p>
         )}
         {!!cuota?.avisos.length && (
@@ -727,6 +757,13 @@ export default function AlumnoDetailPage() {
             {cuota.avisos.map((a, i) => (
               <p key={i} className="text-[14px] text-amber-800">⚠ {a}</p>
             ))}
+          </div>
+        )}
+
+        {cuota?.ranger_express != null && (
+          <div className="flex items-center justify-between gap-3 bg-khaki-100 border border-pine-900/10 rounded-[10px] px-4 py-2.5 mb-3">
+            <span className="text-[15px] text-ink">The Ranger Express</span>
+            <span className="font-semibold text-ink">{formatEur(cuota.ranger_express)}</span>
           </div>
         )}
 
@@ -774,6 +811,61 @@ export default function AlumnoDetailPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* The Ranger Express — servicio de recogida del cole, tarifa plana
+          aparte de la cuota de clases (ver bloque Cuota arriba). */}
+      <section className="card !bg-white p-5 mb-4">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="font-head text-[20px] leading-tight text-pine-900">The Ranger Express</h2>
+          <label className="flex items-center gap-2 text-[15px] text-ink cursor-pointer">
+            <input type="checkbox" checked={alumno.ranger_express}
+              disabled={rangerExpressMut.isPending}
+              onChange={e => rangerExpressMut.mutate({ ranger_express: e.target.checked })} />
+            Activo
+          </label>
+        </div>
+
+        {!alumno.ranger_express ? (
+          <p className="text-[15px] text-ink-soft">Este alumno no tiene el servicio de recogida.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className={LABEL_CLS}>Colegio</label>
+                <input type="text" className="input" value={expressDraft.colegio}
+                  onChange={e => setExpressDraft(f => ({ ...f, colegio: e.target.value }))}
+                  onBlur={() => rangerExpressMut.mutate({ recogida_colegio: expressDraft.colegio })} />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Hora de salida</label>
+                <input type="time" className="input" value={expressDraft.hora}
+                  onChange={e => setExpressDraft(f => ({ ...f, hora: e.target.value }))}
+                  onBlur={() => rangerExpressMut.mutate({ recogida_hora: expressDraft.hora || null })} />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Precio mensual (€)</label>
+                <input type="number" step="0.01" className="input" value={expressDraft.precio}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setExpressDraft(f => ({ ...f, precio: e.target.value }))}
+                  onBlur={() => rangerExpressMut.mutate({ recogida_precio: Number(expressDraft.precio) || 0 })} />
+              </div>
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Días</label>
+              <div className="flex gap-3 flex-wrap">
+                {DIA_LABELS.slice(0, 5).map((label, dia) => (
+                  <label key={dia} className="flex items-center gap-1.5 text-[15px] text-ink cursor-pointer">
+                    <input type="checkbox" checked={alumno.recogida_dias.includes(dia)}
+                      disabled={rangerExpressMut.isPending}
+                      onChange={() => toggleRecogidaDia(dia)} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </section>

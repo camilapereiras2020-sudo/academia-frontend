@@ -14,7 +14,7 @@ import EmailModal from "@/components/shared/EmailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import { useAuthStore } from "@/store/authStore"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
-import { Phone, Mail, CreditCard, GraduationCap } from "lucide-react"
+import { Phone, Mail, CreditCard, GraduationCap, Euro } from "lucide-react"
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 const AVATAR_COLORS = [
@@ -109,10 +109,12 @@ export default function AlumnosPage() {
   // just kept out of the everyday list. This checkbox is the only way back
   // to them from here (or the "Reactivar" button on their own ficha).
   const [mostrarExAlumnos, setMostrarExAlumnos] = useState(false)
+  const [soloExpress, setSoloExpress] = useState(false)
   const alumnosFiltrados = (soloIncompletos
     ? alumnos.filter(a => !a.telefono || !a.email)
     : alumnos
   ).filter(a => mostrarExAlumnos || a.activo !== false)
+    .filter(a => !soloExpress || a.ranger_express)
 
   const { data: pagadoresRaw } = useQuery({ queryKey: ["pagadores"], queryFn: () => pagadoresApi.list().then(r => r.data) })
   const pagadores: Pagador[] = Array.isArray(pagadoresRaw) ? pagadoresRaw : []
@@ -179,6 +181,16 @@ export default function AlumnosPage() {
     mutationFn: (id: number) => alumnosApi.delete(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["alumnos"] }); setConfirmDelete(null); setDeleteError("") },
     onError: (err: any) => setDeleteError(err.response?.data?.error ?? "Error al eliminar el alumno."),
+  })
+
+  // Carga masiva de cuotas: con ~160 alumnos, entrar a cada ficha es un lío —
+  // se escribe el importe acá mismo y se guarda solo al salir del campo
+  // (cuota_manual ya tiene prioridad absoluta sobre el cálculo automático,
+  // ver tarifas.pricing.calcular_cuota_alumno — no hace falta tocar nada ahí).
+  const cuotaManualMut = useMutation({
+    mutationFn: ({ id, cuota_manual }: { id: number; cuota_manual: number | null }) =>
+      alumnosApi.update(id, { cuota_manual }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["alumnos"] }),
   })
 
   function openNew() {
@@ -280,6 +292,10 @@ export default function AlumnosPage() {
           <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={mostrarExAlumnos} onChange={e => setMostrarExAlumnos(e.target.checked)} />
           Mostrar ex-alumnos
         </label>
+        <label className="flex items-center gap-2 min-h-[44px] text-[15px] text-pine-700 cursor-pointer select-none">
+          <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={soloExpress} onChange={e => setSoloExpress(e.target.checked)} />
+          Con recogida
+        </label>
       </div>
 
       {soloIncompletos && (
@@ -330,6 +346,11 @@ export default function AlumnosPage() {
                       Ex-alumno
                     </span>
                   )}
+                  {a.ranger_express && (
+                    <span className="badge bg-brass-300/40 text-brass-700">
+                      Express
+                    </span>
+                  )}
                   {yearsOld !== null && (
                     <span className="text-[14px] text-ink-soft">{yearsOld} años</span>
                   )}
@@ -352,6 +373,21 @@ export default function AlumnosPage() {
                   {pag && (
                     <span className="inline-flex items-center gap-1.5 text-[14px] text-pine-700"><CreditCard size={14} strokeWidth={2} className="text-brass-700" />{pag}</span>
                   )}
+                  <span className="inline-flex items-center gap-1.5 text-[14px] text-pine-700" onClick={e => e.stopPropagation()}>
+                    <Euro size={14} strokeWidth={2} className="text-brass-700" />
+                    <input
+                      key={`cuota-${a.id}-${a.cuota_manual}`}
+                      type="number" step="0.01" defaultValue={a.cuota_manual ?? ""}
+                      placeholder="Cuota sin definir"
+                      onFocus={e => e.target.select()}
+                      onBlur={e => {
+                        const v = e.target.value.trim()
+                        const next = v === "" ? null : Number(v)
+                        if (next !== (a.cuota_manual ?? null)) cuotaManualMut.mutate({ id: a.id, cuota_manual: next })
+                      }}
+                      className="input !w-28 !h-8 !py-0 !text-[14px]"
+                    />
+                  </span>
                 </div>
 
                 {a.notas && (

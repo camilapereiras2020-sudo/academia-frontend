@@ -18,7 +18,7 @@ export interface Pagador {
 
 export interface Grupo {
   id: number; nombre: string; nivel: string; profesor: number | null; profesor_nombre?: string | null
-  tarifa: number; aula: string
+  tipo_cobro: "mensual" | "por_hora"; tarifa: number; precio_hora: number; aula: string
   marca: Marca; marca_display?: string
   color_idx: number; horarios: { dia: number; ini: string; fin: string }[]; alumnos_count: number
 }
@@ -81,6 +81,13 @@ export interface Alumno {
   contacto_emergencia_telefono: string
   codigo_clase: CodigoClase
   cuota_manual: number | null
+  // The Ranger Express — servicio de recogida del cole, tarifa plana aparte
+  // de la cuota de clases (ver tarifas.pricing.cuota_ranger_express).
+  ranger_express: boolean
+  recogida_colegio: string
+  recogida_hora: string | null
+  recogida_dias: number[]
+  recogida_precio: number
 }
 
 // modules.tarifas.pricing.calcular_cuota_alumno — nunca lanza, cuota=null +
@@ -95,6 +102,9 @@ export interface AlumnoCuota {
   total_bono?: number
   tarifa_hora_referencia?: number
   avisos: string[]
+  // null = sin el servicio; si lo tiene, siempre sale aparte de `cuota`
+  // (nunca se mezcla con el prorrateo de Bono Familia).
+  ranger_express: number | null
 }
 
 export interface CargoExtra {
