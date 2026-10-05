@@ -208,15 +208,12 @@ export interface NotaDificultad {
 }
 
 export interface PagadorCalculoItem {
-  tipo: "clase_grupo" | "bono_familia"
-  alumnos: string[]
-  dias_semana?: number
-  duracion_min?: number
-  precio: number
-  n_hermanos?: number
-  // bono_familia: precio de la tarifa repartido a partes iguales entre los 2 hermanos.
-  perfiles?: { alumno: string; dias_semana: number; duracion_min: number; cuota: number }[]
+  tipo: "manual" | "privada_manual" | "bono_familia" | "clase_grupo" | "sin_tabla" | "ranger_express"
+  alumno: string
+  cuota: number | null
 }
+
+export type EstadoPagoFamilia = "sin_generar" | "pendiente" | "parcial" | "pagado"
 
 export interface PagadorCalculo {
   pagador_id: number
@@ -224,6 +221,9 @@ export interface PagadorCalculo {
   items: PagadorCalculoItem[]
   cuota_mensual_estimada: number
   avisos: string[]
+  periodo: string
+  estado_pago: EstadoPagoFamilia
+  documento_generado: boolean
 }
 
 export interface PaginatedResponse<T> {
