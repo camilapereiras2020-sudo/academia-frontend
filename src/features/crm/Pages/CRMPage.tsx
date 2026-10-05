@@ -169,7 +169,7 @@ export default function CRMPage() {
 
   // matricular (convertir a alumno) modal
   const [matricularLead, setMatricularLead] = useState<Lead | null>(null)
-  const [mForm, setMForm] = useState({ grupo_id: "", mensualidad: "", fecha_inicio: "" })
+  const [mForm, setMForm] = useState({ grupo_id: "", mensualidad: "", fecha_inicio: "", ranger_express: false })
   const [mError, setMError] = useState("")
   const [matriculaResult, setMatriculaResult] = useState<{
     alumno_id: number; alumno_nombre: string; pagador_nombre: string | null; pagador_autocompletado: boolean
@@ -272,7 +272,7 @@ export default function CRMPage() {
   })
 
   const matricularMut = useMutation({
-    mutationFn: (data: { grupo_id: number; mensualidad: number; fecha_inicio: string }) =>
+    mutationFn: (data: { grupo_id: number; mensualidad: number; fecha_inicio: string; ranger_express: boolean }) =>
       api.post(`/leads/${matricularLead!.id}/convertir-alumno/`, data).then(r => r.data),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["leads"] })
@@ -364,7 +364,7 @@ export default function CRMPage() {
 
   function openMatricular(lead: Lead) {
     setMatricularLead(lead)
-    setMForm({ grupo_id: "", mensualidad: "", fecha_inicio: "" })
+    setMForm({ grupo_id: "", mensualidad: "", fecha_inicio: "", ranger_express: false })
     setMError("")
   }
 
@@ -386,6 +386,7 @@ export default function CRMPage() {
       grupo_id: Number(mForm.grupo_id),
       mensualidad: Number(mForm.mensualidad),
       fecha_inicio: mForm.fecha_inicio,
+      ranger_express: mForm.ranger_express,
     })
   }
 
@@ -876,6 +877,11 @@ export default function CRMPage() {
                   onChange={e => setMForm(f => ({ ...f, fecha_inicio: e.target.value }))}
                   className="input" />
               </div>
+              <label className="flex items-center gap-2 text-[15px] text-ink cursor-pointer">
+                <input type="checkbox" checked={mForm.ranger_express}
+                  onChange={e => setMForm(f => ({ ...f, ranger_express: e.target.checked }))} />
+                The Ranger Express (recogida del cole) — se completa colegio/hora/días luego en su ficha
+              </label>
             </div>
 
             <div className="px-6 py-4 border-t border-pine-900/10 flex gap-3 flex-shrink-0">

@@ -5,7 +5,10 @@ import type { Pagador } from "@/types"
 
 interface Props {
   value: number | null
-  onChange: (pagadorId: number | null) => void
+  /** otros=true cuando se elige explícitamente "Otros (sin datos del pagador)"
+   * — distinto de limpiar la selección (ambos mandan id=null, pero el
+   * llamador puede necesitar distinguirlos, p. ej. para pedir un motivo). */
+  onChange: (pagadorId: number | null, otros?: boolean) => void
   /** "tailwind" matches AlumnosPage's raw-Tailwind modal (default). "gold" matches the
    * .card/.input gold-dark system used by AlumnoDetailPage/DashboardPage. */
   theme?: "tailwind" | "gold"
@@ -101,7 +104,7 @@ export default function PagadorCombobox({ value, onChange, theme = "tailwind" }:
           <button
             type="button"
             onMouseDown={e => e.preventDefault()}
-            onClick={() => { clearSelection(); setOtros(true) }}
+            onClick={() => { onChange(null, true); setQuery(""); setOtros(true); setOpen(false) }}
             className={gold ? "combobox-option" : "w-full min-h-[44px] text-left px-3.5 text-[15px] text-ink-soft hover:bg-khaki-100 border-t border-pine-900/10"}
             style={gold ? { borderTop: "1px solid var(--border-subtle)" } : undefined}
           >

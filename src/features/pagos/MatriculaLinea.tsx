@@ -39,12 +39,14 @@ export default function MatriculaLinea({ value, onChange, onRemove }: {
               const cant = Math.max(1, Math.floor(+e.target.value || 1))
               set(MATRICULA * cant, cant, detalle)
             }}
+            onFocus={e => e.target.select()}
             className="input" />
         </div>
         <div>
           <label className={CAMPO} htmlFor="matricula-total">Total (€)</label>
           <input id="matricula-total" type="number" min="0" step="0.01" value={value.importe}
             onChange={e => set(+e.target.value, cantidad, detalle)}
+            onFocus={e => e.target.select()}
             className="input" />
         </div>
         <div>
