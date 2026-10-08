@@ -3,6 +3,7 @@ import { Receipt, FileText } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { descargarDocumento } from "@/lib/descargarDocumento"
+import { useAuthStore } from "@/store/authStore"
 
 type Documento = {
   id: number
@@ -12,6 +13,7 @@ type Documento = {
   created_at: string
   emitida_at: string | null
   estado: string
+  provisional?: boolean
   drive_url?: string | null
   pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
 }
@@ -36,7 +38,11 @@ const TIPO_LABEL_SINGULAR: Record<string, string> = {
 export default function DocumentosPage() {
   const qc = useQueryClient()
   const [tipoFilter, setTipoFilter] = useState("")
-  const [estadoTab, setEstadoTab] = useState<"activas" | "anuladas">("activas")
+  const { user } = useAuthStore()
+  const puedeConfirmar = user?.role !== "reception"
+  const [estadoTab, setEstadoTab] = useState<"activas" | "cuarentena" | "anuladas">("activas")
+  const [seleccion, setSeleccion] = useState<Set<number>>(new Set())
+  const [confirmarIds, setConfirmarIds] = useState<number[] | null>(null)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [downloadError, setDownloadError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
@@ -49,9 +55,13 @@ export default function DocumentosPage() {
     queryFn: () => api.get("/documentos/").then(r => r.data),
   })
   const all: Documento[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
-  const activasCount = all.filter(d => d.estado !== "anulada").length
+  const activasCount = all.filter(d => d.estado !== "anulada" && d.estado !== "cuarentena").length
+  const cuarentenaCount = all.filter(d => d.estado === "cuarentena").length
   const anuladasCount = all.filter(d => d.estado === "anulada").length
-  const visibles = all.filter(d => (estadoTab === "anuladas" ? d.estado === "anulada" : d.estado !== "anulada"))
+  const visibles = all.filter(d =>
+    estadoTab === "anuladas" ? d.estado === "anulada"
+    : estadoTab === "cuarentena" ? d.estado === "cuarentena"
+    : d.estado !== "anulada" && d.estado !== "cuarentena")
   const docs = tipoFilter ? visibles.filter(d => d.tipo === tipoFilter) : visibles
 
   // Only a "borrador" (never actually issued — no Drive file) can be hard
@@ -82,6 +92,38 @@ export default function DocumentosPage() {
     onError: (err: any) =>
       setActionError(err.response?.data?.error ?? "Error al anular el documento."),
   })
+
+  // "Aceptar y confirmar": el backend asigna los números definitivos, en orden
+  // de creación y en una sola transacción (todo o nada).
+  const confirmarMut = useMutation({
+    mutationFn: (ids: number[]) => api.post("/documentos/confirmar/", { ids }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documentos"] })
+      qc.invalidateQueries({ queryKey: ["pagos"] })
+      qc.invalidateQueries({ queryKey: ["alumno-resumen"] })
+      setConfirmarIds(null)
+      setSeleccion(new Set())
+      setActionError("")
+    },
+    onError: (err: any) =>
+      setActionError(err.response?.data?.error ?? "Error al confirmar los documentos."),
+  })
+
+  // Bono Familia: junta documentos en cuarentena del mismo pagador en uno.
+  const juntarMut = useMutation({
+    mutationFn: (ids: number[]) => api.post("/documentos/juntar/", { ids }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documentos"] })
+      setSeleccion(new Set())
+      setActionError("")
+    },
+    onError: (err: any) =>
+      setActionError(err.response?.data?.error ?? "Error al juntar los documentos."),
+  })
+
+  function toggleSel(id: number) {
+    setSeleccion(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
 
   const enviarMut = useMutation({
     mutationFn: (id: number) => api.post(`/documentos/${id}/enviar/`),
@@ -130,12 +172,15 @@ export default function DocumentosPage() {
         <div className="flex gap-2 ml-auto">
           {([
             ["activas", `Activas (${activasCount})`],
+            ["cuarentena", `Cuarentena (${cuarentenaCount})`],
             ["anuladas", `Anuladas (${anuladasCount})`],
           ] as const).map(([value, label]) => (
-            <button key={value} onClick={() => setEstadoTab(value)}
+            <button key={value} onClick={() => { setEstadoTab(value); setSeleccion(new Set()) }}
               className={`min-h-[40px] px-4 rounded-full font-label text-[14px] font-semibold border transition-colors ${
                 estadoTab === value
-                  ? value === "anuladas" ? "bg-red-700 text-white border-red-700" : "bg-pine-900 text-khaki-100 border-pine-900"
+                  ? value === "anuladas" ? "bg-red-700 text-white border-red-700"
+                    : value === "cuarentena" ? "bg-brass-500 text-white border-brass-500"
+                    : "bg-pine-900 text-khaki-100 border-pine-900"
                   : "bg-white text-pine-700 border-pine-900/20 hover:bg-khaki-100"
               }`}>
               {label}
@@ -153,23 +198,63 @@ export default function DocumentosPage() {
               ? `Sin ${TIPO_LABEL[tipoFilter].toLowerCase()} generados.`
               : estadoTab === "anuladas"
                 ? "Sin documentos anulados."
+                : estadoTab === "cuarentena"
+                  ? "Nada en cuarentena."
                 : "Sin documentos. Genera facturas o recibos desde Pagos."}
           </p>
         </div>
+      )}
+
+      {estadoTab === "cuarentena" && cuarentenaCount > 0 && (
+        <div className="card !bg-white p-3 mb-3 flex items-center gap-3 flex-wrap">
+          <label className="inline-flex items-center gap-2 text-[15px] text-ink">
+            <input type="checkbox" className="w-5 h-5"
+              checked={docs.length > 0 && docs.every(d => seleccion.has(d.id))}
+              onChange={e => setSeleccion(e.target.checked ? new Set(docs.map(d => d.id)) : new Set())} />
+            Seleccionar todos
+          </label>
+          <span className="text-[14px] text-ink-soft">{seleccion.size} seleccionados</span>
+          <div className="flex gap-2 ml-auto">
+            <button
+              onClick={() => juntarMut.mutate([...seleccion])}
+              disabled={seleccion.size < 2 || juntarMut.isPending}
+              className="min-h-[40px] px-4 rounded-[10px] border text-[14px] font-semibold border-pine-900/25 text-pine-900 hover:bg-khaki-100 disabled:opacity-40">
+              {juntarMut.isPending ? "..." : "Juntar (mismo pagador)"}
+            </button>
+            {puedeConfirmar && (
+              <button
+                onClick={() => { setActionError(""); setConfirmarIds([...seleccion]) }}
+                disabled={!seleccion.size}
+                className="min-h-[40px] px-4 rounded-[10px] bg-brass-500 text-white text-[14px] font-bold hover:bg-brass-700 disabled:opacity-40">
+                Aceptar y confirmar ({seleccion.size})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {actionError && !confirmarIds && !confirmDelete && !confirmAnular && (
+        <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-3">{actionError}</p>
       )}
 
       <div className="space-y-2">
         {docs.map(d => (
           <div key={d.id} className={`card !bg-white p-4 flex items-center justify-between flex-wrap gap-3 ${d.estado === "anulada" ? "opacity-60" : ""}`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
+              {d.estado === "cuarentena" && (
+                <input type="checkbox" className="w-5 h-5 flex-shrink-0" aria-label="Seleccionar documento"
+                  checked={seleccion.has(d.id)} onChange={() => toggleSel(d.id)} />
+              )}
               <div className="w-11 h-11 rounded-[10px] bg-pine-900 text-brass-500 flex items-center justify-center flex-shrink-0">
                 {d.tipo === "factura" ? <Receipt size={20} strokeWidth={1.75} /> : <FileText size={20} strokeWidth={1.75} />}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`font-semibold text-ink font-mono text-[15px] ${d.estado === "anulada" ? "line-through" : ""}`}>
-                    {d.num_doc || d.nombre}
+                    {d.estado === "cuarentena" ? "Provisional" : (d.num_doc || d.nombre)}
                   </span>
+                  {d.estado === "cuarentena" && (
+                    <span className="badge bg-amber-100 text-amber-800">EN CUARENTENA</span>
+                  )}
                   <span className={`badge ${TIPO_CLS[d.tipo] ?? "bg-khaki-100 text-pine-700"}`}>
                     {TIPO_LABEL_SINGULAR[d.tipo] ?? d.tipo}
                   </span>
@@ -207,7 +292,14 @@ export default function DocumentosPage() {
                   Ver en Drive
                 </a>
               )}
-              {d.estado !== "anulada" && (
+              {d.estado === "cuarentena" && puedeConfirmar && (
+                <button
+                  onClick={() => { setActionError(""); setConfirmarIds([d.id]) }}
+                  className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] bg-brass-500 text-white text-[14px] font-bold hover:bg-brass-700">
+                  Aceptar y confirmar
+                </button>
+              )}
+              {d.estado !== "anulada" && d.estado !== "cuarentena" && (
                 <button
                   onClick={() => enviarMut.mutate(d.id)}
                   disabled={enviarMut.isPending && enviarMut.variables === d.id}
@@ -217,7 +309,7 @@ export default function DocumentosPage() {
                     : justSentId === d.id ? "✓ Enviado" : "Enviar"}
                 </button>
               )}
-              {d.estado === "anulada" ? null : d.estado === "borrador" ? (
+              {d.estado === "anulada" ? null : (d.estado === "borrador" || d.estado === "cuarentena") ? (
                 <button
                   onClick={() => { setActionError(""); setConfirmDelete(d) }}
                   aria-label="Eliminar documento" title="Eliminar documento"
@@ -237,6 +329,29 @@ export default function DocumentosPage() {
         ))}
       </div>
 
+      {/* Confirmar modal */}
+      {confirmarIds && (
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Aceptar y confirmar</h3>
+            <p className="text-[15px] text-ink mb-1">
+              Se asignarán los números definitivos a <strong>{confirmarIds.length}</strong> {confirmarIds.length === 1 ? "documento" : "documentos"}, en orden de creación.
+            </p>
+            <p className="text-[14px] text-ink-soft mb-5">
+              Después quedan cerrados: no se pueden borrar ni renumerar, solo anular con motivo.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmarIds(null)} className="btn-ghost">Cancelar</button>
+              <button onClick={() => confirmarMut.mutate(confirmarIds)} disabled={confirmarMut.isPending}
+                className="min-h-[44px] px-5 rounded-[10px] bg-brass-500 text-white text-[15px] font-bold hover:bg-brass-700 disabled:opacity-50">
+                {confirmarMut.isPending ? "Confirmando..." : "Confirmar"}
+              </button>
+            </div>
+            {actionError && <p className="text-red-700 text-[14px] mt-3">{actionError}</p>}
+          </div>
+        </div>
+      )}
+
       {/* Delete modal */}
       {confirmDelete && (
         <div className="modal-overlay">
@@ -245,7 +360,7 @@ export default function DocumentosPage() {
             <p className="text-[15px] text-ink mb-1">
               ¿Eliminar <strong>{confirmDelete.num_doc || confirmDelete.nombre}</strong>?
             </p>
-            <p className="text-[14px] text-ink-soft mb-5">Se eliminará el archivo físico y el registro. No se puede deshacer.</p>
+            <p className="text-[14px] text-ink-soft mb-5">{confirmDelete.estado === "cuarentena" ? "Aún no tiene número, así que no deja hueco en la secuencia. No se puede deshacer." : "Se eliminará el archivo físico y el registro. No se puede deshacer."}</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)}
                 className="btn-ghost">

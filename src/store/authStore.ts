@@ -15,6 +15,7 @@ interface User {
   academia_dir: string
   academia_tel: string
   academia_logo: string
+  modo_cuarentena: boolean
 }
 
 interface AuthState {
