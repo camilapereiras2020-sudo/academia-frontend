@@ -80,7 +80,7 @@ export default function AvisosBell() {
           <div className="fixed inset-0 z-40" {...panelOverlayGuard} />
           <div
             ref={panelRef}
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(26rem,92vw)] bg-white rounded-xl border shadow-xl max-h-[70vh] flex flex-col"
+            className="fixed inset-x-3 top-[68px] xl:absolute xl:inset-x-auto xl:right-0 xl:top-[calc(100%+8px)] z-50 xl:w-[26rem] bg-white rounded-xl border shadow-xl max-h-[70vh] flex flex-col"
           >
             <div className="px-4 py-3 border-b flex items-center justify-between flex-shrink-0">
               <p className="text-base font-semibold text-pine-900">Avisos</p>
