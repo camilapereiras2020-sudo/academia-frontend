@@ -88,13 +88,13 @@ export default function ListadosPage() {
 
   const filas: Fila[] = useMemo(() => {
     const profDeGrupo = new Map((grupos ?? []).map(g => [g.id, g.profesor_nombre ?? ""]))
-    const calcDe = new Map((calculo ?? []).map(c => [c.pagador_id, c]))
+    const calcDe = new Map((Array.isArray(calculo) ? calculo : []).map(c => [c.pagador_id, c]))
     return (alumnos ?? [])
       .filter(a => conBajas || a.activo)
       .filter(a => !profesor || a.grupos_detalle.some(g => profDeGrupo.get(g.grupo) === profesor))
       .map(a => {
         const c = a.pagador ? calcDe.get(a.pagador) : undefined
-        const item = c?.items.find(i => i.alumno === a.nombre)
+        const item = c?.items?.find(i => i.alumno === a.nombre)
         return {
           nombre: a.nombre, edad: edad(a.fnac), pagador: pagadorDe(a),
           cuota: item?.cuota ?? a.cuota_manual ?? null,
