@@ -48,13 +48,13 @@ export default function AuditoriaAlumnos() {
   const filas = useMemo(() => {
     const profDeGrupo = new Map((grupos ?? []).map(g => [g.id, g.profesor_nombre ?? ""]))
     const pagDe = new Map((pagadores ?? []).map(p => [p.id, p]))
-    const calcDe = new Map((calculo ?? []).map(c => [c.pagador_id, c]))
+    const calcDe = new Map((Array.isArray(calculo) ? calculo : []).map(c => [c.pagador_id, c]))
     return (alumnos ?? [])
       .filter(a => conBajas || a.activo)
       .map(a => {
         const p = a.pagador ? pagDe.get(a.pagador) : undefined
         const sinPagadorAdulto = !a.pagador && a.es_adulto
-        const item = a.pagador ? calcDe.get(a.pagador)?.items.find(i => i.alumno === a.nombre) : undefined
+        const item = a.pagador ? calcDe.get(a.pagador)?.items?.find(i => i.alumno === a.nombre) : undefined
         const e: Record<Campo, Estado> = {
           pagador: !!a.pagador || a.es_adulto,
           telefono: lleno(a.telefono) || lleno(p?.telefono),
