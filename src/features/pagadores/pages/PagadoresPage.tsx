@@ -18,10 +18,14 @@ const ESTADO_PAGO_LABEL: Record<EstadoPagoFamilia, string> = {
   sin_generar: "Sin generar",
 }
 
+// Orden en la lista: primero a quien hay que reclamar.
+const ORDEN_ESTADO: Record<EstadoPagoFamilia, number> = { pendiente: 0, parcial: 1, sin_generar: 2, pagado: 3 }
+
 export default function PagadoresPage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
   const [abierto, setAbierto] = useState<number | null>(null)
+  const [estadoFiltro, setEstadoFiltro] = useState<"" | EstadoPagoFamilia>("")
 
   const { data: pagadores, isLoading } = useQuery({
     queryKey: ["pagadores"],
@@ -37,13 +41,29 @@ export default function PagadoresPage() {
   // Busca por nombre, NIF/DNI, email o teléfono (este último sin espacios).
   const q = search.trim().toLowerCase()
   const qTel = q.replace(/\s/g, "")
-  const visibles = (pagadores ?? []).filter((p) =>
-    !q
-    || p.nombre.toLowerCase().includes(q)
-    || (p.nif ?? "").toLowerCase().includes(q)
-    || (p.email ?? "").toLowerCase().includes(q)
-    || (!!qTel && (p.telefono ?? "").replace(/\s/g, "").includes(qTel))
-  )
+  const visibles = (pagadores ?? [])
+    .filter((p) =>
+      !q
+      || p.nombre.toLowerCase().includes(q)
+      || (p.nif ?? "").toLowerCase().includes(q)
+      || (p.email ?? "").toLowerCase().includes(q)
+      || (!!qTel && (p.telefono ?? "").replace(/\s/g, "").includes(qTel))
+    )
+    .filter((p) => !estadoFiltro || calculoPorId.get(p.id)?.estado_pago === estadoFiltro)
+    .sort((a, b) => {
+      const ea = calculoPorId.get(a.id)?.estado_pago, eb = calculoPorId.get(b.id)?.estado_pago
+      return (ea ? ORDEN_ESTADO[ea] : 9) - (eb ? ORDEN_ESTADO[eb] : 9)
+    })
+
+  // Resumen del mes: cuántas familias en cada estado y cuánto queda por cobrar
+  // (suma de la cuota estimada de quien debe o ha pagado solo una parte).
+  const cuenta: Record<EstadoPagoFamilia, number> = { pendiente: 0, parcial: 0, sin_generar: 0, pagado: 0 }
+  let porCobrar = 0
+  for (const c of calculo ?? []) {
+    cuenta[c.estado_pago] += 1
+    if (c.estado_pago === "pendiente" || c.estado_pago === "parcial") porCobrar += c.cuota_mensual_estimada
+  }
+  const periodo = calculo?.[0]?.periodo
 
   return (
     <div>
@@ -63,6 +83,34 @@ export default function PagadoresPage() {
           className="input !pl-10"
         />
       </div>
+
+      {calculo && (
+        <div className="mb-5">
+          <p className="text-[15px] text-ink mb-3">
+            {periodo && <span className="text-ink-soft">{periodo} · </span>}
+            <strong>{cuenta.pendiente + cuenta.parcial}</strong> sin pagar del todo
+            {" · "}Por cobrar (estimado): <strong>{porCobrar.toFixed(2)} €</strong>
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {([
+              ["", `Todos (${calculo.length})`],
+              ["pendiente", `Debe este mes (${cuenta.pendiente})`],
+              ["parcial", `Pago parcial (${cuenta.parcial})`],
+              ["sin_generar", `Sin generar (${cuenta.sin_generar})`],
+              ["pagado", `Pagado (${cuenta.pagado})`],
+            ] as const).map(([v, label]) => (
+              <button key={v} onClick={() => setEstadoFiltro(v)}
+                className={`min-h-[40px] px-4 rounded-full font-label text-[14px] font-semibold border transition-colors ${
+                  estadoFiltro === v
+                    ? "bg-pine-900 text-khaki-100 border-pine-900"
+                    : "bg-white text-pine-700 border-pine-900/20 hover:bg-khaki-100"
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
 

@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store/authStore"
 import NivelesConfigSection from "@/features/niveles/NivelesConfigSection"
 import ProfesoresConfigSection from "@/features/profesores/ProfesoresConfigSection"
+import CuarentenaConfigSection from "@/features/config/CuarentenaConfigSection"
 import EmisoresConfigSection from "@/features/pagos/EmisoresConfigSection"
 
 export default function ConfigPage() {
@@ -25,6 +26,8 @@ export default function ConfigPage() {
           Academy), since they're two separate fiscal identities. This
           replaced the old single "Datos de la academia" fields, which were
           never actually read by invoice generation. */}
+      <CuarentenaConfigSection />
+
       <EmisoresConfigSection />
 
       <NivelesConfigSection />
