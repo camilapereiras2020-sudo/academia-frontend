@@ -28,6 +28,13 @@ const PAGO_CLS: Record<EstadoPagoFamilia, string> = {
   pendiente: "bg-red-100 text-red-700", sin_generar: "bg-khaki-200 text-ink-soft",
 }
 
+// DRF devuelve los DecimalField como texto ("50.00"): hay que convertirlos.
+const aNumero = (v: unknown): number | null => {
+  if (v == null || v === "") return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
 function edad(fnac: string | null) {
   if (!fnac) return null
   const [y, m, d] = fnac.split("-").map(Number)
@@ -97,7 +104,7 @@ export default function ListadosPage() {
         const item = c?.items?.find(i => i.alumno === a.nombre)
         return {
           nombre: a.nombre, edad: edad(a.fnac), pagador: pagadorDe(a),
-          cuota: item?.cuota ?? a.cuota_manual ?? null,
+          cuota: aNumero(item?.cuota) ?? aNumero(a.cuota_manual),
           horario: horarioDe(a),
           pago: c?.estado_pago ?? null,
         }
