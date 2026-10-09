@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut, Menu } from "lucide-react"
 import { useAuthStore } from "@/store/authStore"
@@ -54,7 +53,6 @@ function useClock() {
 // Below `xl` (tablet/phone) the bar is pine with hamburger, small logo and
 // avatar; from `xl` up it's khaki with the page title in Bevan.
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
-  const { i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAuthStore((s) => s.user)
@@ -105,14 +103,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
 
         <AvisosBell />
-
-        <button
-          onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}
-          aria-label="Cambiar idioma"
-          className="hidden sm:flex items-center justify-center h-11 min-w-11 px-2.5 rounded-[10px] font-label text-[14px] font-semibold uppercase tracking-[0.1em] border border-khaki-100/30 xl:border-pine-900/25 hover:bg-white/10 xl:hover:bg-pine-900/5"
-        >
-          {i18n.language === 'es' ? 'ES' : 'EN'}
-        </button>
 
         <button
           onClick={handleLogout}
