@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
-import { Check, X } from "lucide-react"
+import { Check, Printer, X } from "lucide-react"
 import { alumnosApi } from "../alumnos_api"
 import { gruposApi } from "@/features/grupos/api"
 import { pagadoresApi } from "@/features/pagadores/api"
@@ -28,11 +28,13 @@ type Campo = typeof CAMPOS[number]["key"]
 type Estado = boolean | null // true = ok, false = falta, null = no aplica
 
 const lleno = (s?: string | null) => !!s && s.trim() !== ""
+const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!))
 
 export default function AuditoriaAlumnos() {
   const navigate = useNavigate()
   const [conBajas, setConBajas] = useState(false)
   const [falta, setFalta] = useState<"" | "ok" | Campo>("")
+  const [profesor, setProfesor] = useState("")
 
   const { data: alumnos, isLoading } = useQuery({
     queryKey: ["alumnos", "listado"],
@@ -45,7 +47,12 @@ export default function AuditoriaAlumnos() {
     queryFn: () => pagadoresApi.calculadora().then(r => r.data),
   })
 
-  const filas = useMemo(() => {
+  const profesores = useMemo(() => {
+    const set = new Set((grupos ?? []).map(g => g.profesor_nombre).filter((n): n is string => !!n))
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"))
+  }, [grupos])
+
+  const todas = useMemo(() => {
     const profDeGrupo = new Map((grupos ?? []).map(g => [g.id, g.profesor_nombre ?? ""]))
     const pagDe = new Map((pagadores ?? []).map(p => [p.id, p]))
     const calcDe = new Map((Array.isArray(calculo) ? calculo : []).map(c => [c.pagador_id, c]))
@@ -67,14 +74,42 @@ export default function AuditoriaAlumnos() {
           profe: a.grupos_detalle.some(g => lleno(profDeGrupo.get(g.grupo))),
         }
         const faltan = CAMPOS.filter(c => e[c.key] === false).map(c => c.key)
-        return { id: a.id, nombre: a.nombre, e, faltan }
+        const profes = a.grupos_detalle.map(g => profDeGrupo.get(g.grupo) ?? "").filter(Boolean)
+        return { id: a.id, nombre: a.nombre, e, faltan, profes }
       })
       .sort((x, y) => x.nombre.localeCompare(y.nombre, "es", { sensitivity: "base" }))
   }, [alumnos, grupos, pagadores, calculo, conBajas])
 
+  // Todo (contadores, chips y tabla) respeta el filtro de profesora.
+  const filas = useMemo(() => todas.filter(f => !profesor || f.profes.includes(profesor)), [todas, profesor])
   const completos = filas.filter(f => !f.faltan.length).length
   const visibles = filas.filter(f => !falta ? true : falta === "ok" ? !f.faltan.length : f.faltan.includes(falta))
   const cargando = isLoading || !grupos || !pagadores || !calculo
+
+  function imprimir() {
+    const w = window.open("", "_blank")
+    if (!w) return
+    const fecha = new Date().toLocaleDateString("es-ES")
+    const titulo = `Datos que faltan · ${profesor || "Toda la academia"}`
+    const filtro = falta === "" ? "Todos los alumnos" : falta === "ok" ? "Solo los que tienen todo" : `Solo los que no tienen ${CAMPOS.find(c => c.key === falta)?.label}`
+    const marca = (v: Estado) => (v === null ? "·" : v ? "✓" : "✗")
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(titulo)}</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 24px; color: #1f2a22 }
+  h1 { font-size: 20px; margin: 0 0 4px } p { margin: 0 0 16px; color: #555; font-size: 13px }
+  table { width: 100%; border-collapse: collapse; font-size: 12px }
+  th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #ddd }
+  th { background: #f1ece0 } td.c, th.c { text-align: center } td.n { color: #888; width: 28px }
+  .no { color: #b91c1c; font-weight: 700 } .si { color: #166534 }
+</style></head><body>
+<h1>${esc(titulo)}</h1><p>${visibles.length} alumnos · ${esc(filtro)} · ${fecha}</p>
+<table><thead><tr><th></th><th>Alumno</th>${CAMPOS.map(c => `<th class="c">${esc(c.label)}</th>`).join("")}<th>Faltan</th></tr></thead><tbody>
+${visibles.map((f, i) => `<tr><td class="n">${i + 1}</td><td>${esc(f.nombre)}</td>${CAMPOS.map(c => `<td class="c ${f.e[c.key] === false ? "no" : "si"}">${marca(f.e[c.key])}</td>`).join("")}<td>${f.faltan.length ? esc(f.faltan.map(k => CAMPOS.find(c => c.key === k)!.label).join(", ")) : "Todo OK"}</td></tr>`).join("")}
+</tbody></table></body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+  }
 
   return (
     <div>
@@ -82,6 +117,21 @@ export default function AuditoriaAlumnos() {
         <strong>{completos}</strong> de {filas.length} alumnos con todo completo
         {" · "}<strong>{filas.length - completos}</strong> con datos por completar
       </p>
+
+      <div className="flex flex-wrap items-end gap-4 mb-4">
+        <div>
+          <label htmlFor="auditoria-profesor" className="block font-label text-[12px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
+            Profesora
+          </label>
+          <select id="auditoria-profesor" value={profesor} onChange={e => setProfesor(e.target.value)} className="input min-w-[220px]">
+            <option value="">Toda la academia</option>
+            {profesores.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <button type="button" onClick={imprimir} disabled={cargando || !visibles.length} className="btn-ghost inline-flex items-center gap-2">
+          <Printer size={16} /> Imprimir
+        </button>
+      </div>
 
       <div className="flex gap-2 flex-wrap items-center mb-4">
         {([["", `Todos (${filas.length})`], ["ok", `Todo OK (${completos})`],
