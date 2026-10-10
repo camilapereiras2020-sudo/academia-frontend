@@ -1,7 +1,17 @@
 export interface Aviso {
-  id: number; titulo: string; fecha: string | null; hecha: boolean
+  id: number; titulo: string; fecha: string | null
+  hecha: boolean            // resuelto para todos
   para: number | null; para_nombre: string | null
+  para_todos: boolean       // hilo compartido con todo el equipo
   creado_por: number; creado_por_nombre: string; created_at: string
+  ultima_actividad: string
+  mensajes_count: number; ultimo_texto: string | null
+  no_leido: boolean         // lo último del hilo no es mío y no lo he abierto
+}
+
+export interface AvisoMensaje {
+  id: number; aviso: number; autor: number; autor_nombre: string
+  texto: string; created_at: string
 }
 
 export interface EquipoUser {

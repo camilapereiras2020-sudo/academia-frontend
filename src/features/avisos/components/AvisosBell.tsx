@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Bell } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
 import { avisosApi } from "../api"
 import { useAuthStore } from "@/store/authStore"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
@@ -12,6 +13,7 @@ function formatFecha(iso: string) {
 
 export default function AvisosBell() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const myId = useAuthStore((s) => s.user?.id)
   const [open, setOpen] = useState(false)
   const [showCompose, setShowCompose] = useState(false)
@@ -36,17 +38,18 @@ export default function AvisosBell() {
   const equipo = (equipoRaw ?? []).filter((u) => u.id !== myId)
 
   const marcarLeidoMut = useMutation({
-    mutationFn: (id: number) => avisosApi.update(id, { hecha: true }),
+    mutationFn: (id: number) => avisosApi.leido(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["avisos"] }),
   })
 
   const enviarMut = useMutation({
-    // "Todo el equipo" = una copia por compañera, cada una la marca como leída.
+    // "Todo el equipo" = un solo hilo compartido donde contestan todas.
     mutationFn: async () => {
-      const destinos = para === "todos" ? equipo.map((u) => u.id) : [para as number]
-      for (const id of destinos) {
-        await avisosApi.create({ titulo: titulo.trim(), para: id, fecha: fecha || null })
-      }
+      await avisosApi.create(
+        para === "todos"
+          ? { titulo: titulo.trim(), para_todos: true, fecha: fecha || null }
+          : { titulo: titulo.trim(), para: para as number, fecha: fecha || null },
+      )
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["avisos"] })
@@ -137,22 +140,37 @@ export default function AvisosBell() {
               )}
               {pendientes.map((a) => (
                 <div key={a.id} className="px-4 py-3 border-b last:border-b-0 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => { setOpen(false); navigate(`/avisos?aviso=${a.id}`) }}
+                    className="min-w-0 text-left"
+                    title="Abrir conversación"
+                  >
                     <p className="text-base text-pine-900">{a.titulo}</p>
                     <p className="text-sm text-pine-600 mt-0.5">
                       De {nombreUsuario(a.creado_por_nombre)}{a.fecha ? ` · ${formatFecha(a.fecha)}` : ""}
                     </p>
-                  </div>
+                    {a.mensajes_count > 0 && a.ultimo_texto && (
+                      <p className="text-sm text-pine-700 mt-0.5 truncate">💬 {a.ultimo_texto}</p>
+                    )}
+                  </button>
                   <button
                     onClick={() => marcarLeidoMut.mutate(a.id)}
                     disabled={marcarLeidoMut.isPending}
                     className="text-sm font-semibold text-pine-700 hover:text-brass-700 flex-shrink-0"
                   >
-                    Listo
+                    Visto
                   </button>
                 </div>
               ))}
             </div>
+            <Link
+              to="/avisos"
+              onClick={() => setOpen(false)}
+              className="px-4 py-3 border-t text-center text-sm font-semibold text-brass-700 hover:text-brass-900 flex-shrink-0"
+            >
+              Ver todos los avisos y conversaciones
+            </Link>
           </div>
         </>
       )}
