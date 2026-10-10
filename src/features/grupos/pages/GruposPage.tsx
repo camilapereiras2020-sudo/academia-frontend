@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { gruposApi } from "../api"
@@ -15,6 +15,8 @@ interface GrupoForm {
   aula: string; color_idx: number; horarios: HorarioSlot[]
 }
 
+const SIN_PROFE = "__sin_profe__"
+
 const emptyForm = (nextColorIdx = 0): GrupoForm => ({
   nombre: "", nivel: "", profesor: null, tarifa: 0, aula: "", color_idx: nextColorIdx, horarios: [],
 })
@@ -24,6 +26,8 @@ export default function GruposPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
+  const [profesorFiltro, setProfesorFiltro] = useState("")      // "" = todas, SIN_PROFE = sin profesora
+  const [diasFiltro, setDiasFiltro] = useState<number[]>([])    // vacío = cualquier día
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Grupo | null>(null)
   const [form, setForm] = useState<GrupoForm>(emptyForm())
@@ -37,10 +41,23 @@ export default function GruposPage() {
     queryFn: () => gruposApi.list().then(r => r.data),
   })
   const all: Grupo[] = Array.isArray(data) ? data : []
-  const grupos = search
-    ? all.filter(g => g.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        (g.nivel ?? "").toLowerCase().includes(search.toLowerCase()))
-    : all
+  const profesores = useMemo(() => {
+    const set = new Set(all.map(g => g.profesor_nombre).filter((n): n is string => !!n))
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"))
+  }, [all])
+
+  // Buscador + profesora + días se combinan (todos tienen que cumplirse).
+  // Días: el grupo pasa si tiene clase en alguno de los días marcados.
+  const grupos = all
+    .filter(g => !search || g.nombre.toLowerCase().includes(search.toLowerCase()) ||
+      (g.nivel ?? "").toLowerCase().includes(search.toLowerCase()))
+    .filter(g => !profesorFiltro || (profesorFiltro === SIN_PROFE ? !g.profesor_nombre : g.profesor_nombre === profesorFiltro))
+    .filter(g => !diasFiltro.length || (Array.isArray(g.horarios) ? g.horarios : []).some(h => diasFiltro.includes(h?.dia)))
+  const hayFiltros = !!(search || profesorFiltro || diasFiltro.length)
+
+  function toggleDia(d: number) {
+    setDiasFiltro(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
+  }
 
   const saveMut = useMutation({
     mutationFn: (d: GrupoForm) => editing ? gruposApi.update(editing.id, d) : gruposApi.create(d),
@@ -129,7 +146,9 @@ export default function GruposPage() {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="page-title">Grupos</h1>
-          <p className="page-subtitle">{all.length} grupos activos</p>
+          <p className="page-subtitle">
+            {hayFiltros ? `${grupos.length} de ${all.length} grupos` : `${all.length} grupos activos`}
+          </p>
         </div>
         {!isReception && (
           <button onClick={openNew}
@@ -139,16 +158,49 @@ export default function GruposPage() {
         )}
       </div>
 
-      {/* Search */}
-      <input type="text" placeholder="Buscar por nombre o nivel…" value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="input mb-5 !w-full md:!w-[360px]" />
+      {/* Filtros: buscador, profesora y días */}
+      <div className="flex flex-wrap items-end gap-4 mb-3">
+        <input type="text" placeholder="Buscar por nombre o nivel…" value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="input !w-full md:!w-[320px]" />
+        <div>
+          <label htmlFor="grupos-profesor" className="block font-label text-[12px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
+            Profesora
+          </label>
+          <select id="grupos-profesor" value={profesorFiltro} onChange={e => setProfesorFiltro(e.target.value)}
+            className="input min-w-[220px]">
+            <option value="">Todas</option>
+            {profesores.map(p => <option key={p} value={p}>{p}</option>)}
+            <option value={SIN_PROFE}>Sin profesora</option>
+          </select>
+        </div>
+      </div>
+      <div className="flex gap-2 flex-wrap items-center mb-5">
+        <span className="font-label text-[12px] font-semibold uppercase tracking-[0.08em] text-pine-700 mr-1">Días</span>
+        {DIAS.map((d, i) => {
+          const on = diasFiltro.includes(i)
+          return (
+            <button key={d} type="button" onClick={() => toggleDia(i)} aria-pressed={on}
+              className={`min-h-[40px] px-4 rounded-full font-label text-[14px] font-semibold border transition-colors ${
+                on ? "bg-pine-900 text-khaki-100 border-pine-900" : "bg-white text-pine-700 border-pine-900/20 hover:bg-khaki-100"
+              }`}>
+              {d}
+            </button>
+          )
+        })}
+        {hayFiltros && (
+          <button type="button" onClick={() => { setSearch(""); setProfesorFiltro(""); setDiasFiltro([]) }}
+            className="min-h-[40px] px-3 font-label text-[14px] font-semibold text-brass-700 hover:text-pine-900">
+            Quitar filtros
+          </button>
+        )}
+      </div>
 
       {isLoading && <p className="text-ink-soft text-[15px]">Cargando...</p>}
 
       {!isLoading && !grupos.length && (
         <div className="card !bg-white flex flex-col items-center justify-center py-16 text-ink-soft">
-          <p className="text-[15px]">{search ? "Sin resultados para esa búsqueda." : "Sin grupos. Crea el primero."}</p>
+          <p className="text-[15px]">{hayFiltros ? "Sin grupos con esos filtros." : "Sin grupos. Crea el primero."}</p>
         </div>
       )}
 
