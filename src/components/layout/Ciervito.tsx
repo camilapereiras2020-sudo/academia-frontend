@@ -75,7 +75,7 @@ export default function Ciervito() {
   const porEntregar = (pendientes ?? []).find(a => !entregados().includes(a.id))
   const hayPorEntregar = !!porEntregar
   const leidoMut = useMutation({
-    mutationFn: (id: number) => avisosApi.update(id, { hecha: true }),
+    mutationFn: (id: number) => avisosApi.leido(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["avisos"] }),
   })
 

@@ -9,6 +9,7 @@ import BrandOverviewPage from "@/features/dashboard/pages/BrandOverviewPage"
 import AlumnosPage from "@/features/alumnos/pages/AlumnosPage"
 import ListadosPage from "@/features/alumnos/pages/ListadosPage"
 import AlumnoDetailPage from "@/features/alumnos/pages/AlumnoDetailPage"
+import AvisosPage from "@/features/avisos/pages/AvisosPage"
 import GruposPage from "@/features/grupos/pages/GruposPage"
 import GrupoDetailPage from "@/features/grupos/pages/GrupoDetailPage"
 import HorarioBuilderPage from "@/features/horario/pages/HorarioBuilderPage"
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/alumnos" element={<AlumnosPage />} />
             <Route path="/alumnos/:id" element={<AlumnoDetailPage />} />
             <Route path="/listados" element={<ListadosPage />} />
+            <Route path="/avisos" element={<AvisosPage />} />
             <Route path="/grupos" element={<GruposPage />} />
             <Route path="/grupos/:id" element={<GrupoDetailPage />} />
             <Route path="/calendario" element={<CalendarioPage />} />
