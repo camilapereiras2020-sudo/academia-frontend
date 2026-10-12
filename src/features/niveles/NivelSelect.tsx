@@ -1,9 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { nivelesApi } from "./api"
-import type { CategoriaNivel } from "@/types"
-
-const CATEGORIA_LABELS: Record<CategoriaNivel, string> = { kids: "Kids", teens: "Teens", adults: "Adults" }
-const CATEGORIA_ORDEN: CategoriaNivel[] = ["kids", "teens", "adults"]
+import { CATEGORIA_LABELS, CATEGORIA_ORDEN } from "./categorias"
 
 export function NivelSelect({ value, onChange, className, disabled }: {
   value: string
