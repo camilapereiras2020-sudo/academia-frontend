@@ -72,6 +72,30 @@ const emptyForm = (): FormState => ({
   alergias: "", condiciones_medicas: "", medicacion: "",
 })
 
+const FIELD_LABELS: Record<string, string> = {
+  nombre: "Nombre", marca: "Marca / Emisor", fnac: "Fecha de nacimiento", fecha_nacimiento: "Fecha de nacimiento",
+  telefono: "Teléfono", email: "Email", dni: "DNI", notas: "Notas", pagador: "Pagador",
+  aviso_cumple_dias: "Aviso cumpleaños", es_adulto: "Adulto",
+}
+
+// DRF devuelve los errores de validación como { campo: ["mensaje", ...] };
+// los mostramos tal cual para saber qué campo falla en vez de un genérico.
+function describeSaveError(err: any): string {
+  const data = err?.response?.data
+  if (!data) return "Error al guardar el alumno: no hay respuesta del servidor."
+  if (typeof data === "string") return `Error al guardar el alumno: ${data.slice(0, 200)}`
+  if (typeof data === "object") {
+    const parts = Object.entries(data).map(([field, msg]) => {
+      const text = Array.isArray(msg) ? msg.join(" ") : typeof msg === "string" ? msg : JSON.stringify(msg)
+      return field === "detail" || field === "error" || field === "non_field_errors"
+        ? text
+        : `${FIELD_LABELS[field] ?? field}: ${text}`
+    })
+    if (parts.length) return `Error al guardar el alumno — ${parts.join(" · ")}`
+  }
+  return "Error al guardar el alumno."
+}
+
 export default function AlumnosPage() {
   const isReception = useAuthStore((s) => s.user?.role === "reception")
   const navigate = useNavigate()
@@ -174,7 +198,7 @@ export default function AlumnosPage() {
       qc.invalidateQueries({ queryKey: ["pagadores"] })
       closeModal()
     },
-    onError: () => setFormError("Error al guardar el alumno."),
+    onError: (err: any) => setFormError(describeSaveError(err)),
   })
 
   const deleteMut = useMutation({
