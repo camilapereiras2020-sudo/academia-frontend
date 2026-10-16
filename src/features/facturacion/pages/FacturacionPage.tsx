@@ -40,6 +40,17 @@ export default function FacturacionPage() {
     onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al generar el documento."),
   })
 
+  // Recepción también confirma los documentos en cuarentena (asigna el número).
+  const confirmarMut = useMutation({
+    mutationFn: (docId: number) => documentosApi.confirmar([docId]),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pagos", "facturacion"] })
+      qc.invalidateQueries({ queryKey: ["documentos", "facturacion"] })
+      setActionError("")
+    },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al confirmar el documento."),
+  })
+
   async function handleDescargar(doc: DocumentoLite, cliente?: string | null) {
     setDownloadingId(doc.id)
     setDownloadError("")
@@ -148,6 +159,17 @@ export default function FacturacionPage() {
                         : doc.num_doc}
                     </td>
                     <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1.5">
+                      {doc.estado === "cuarentena" && (
+                        <button
+                          onClick={() => confirmarMut.mutate(doc.id)}
+                          disabled={confirmarMut.isPending && confirmarMut.variables === doc.id}
+                          className="btn-primary !min-h-[40px] !px-3 !text-[14px] disabled:opacity-50 whitespace-nowrap"
+                          title="Asigna el número definitivo y deja el documento cerrado"
+                        >
+                          {confirmarMut.isPending && confirmarMut.variables === doc.id ? "Confirmando..." : "Aceptar y confirmar"}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDescargar(doc, p.alumno_nombre ?? p.pagador_nombre)}
                         disabled={downloadingId === doc.id}
@@ -155,6 +177,7 @@ export default function FacturacionPage() {
                       >
                         {downloadingId === doc.id ? "..." : "Descargar"}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 )
