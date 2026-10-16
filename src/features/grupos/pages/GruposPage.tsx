@@ -23,9 +23,9 @@ type EdadFiltro = "" | CategoriaNivel | typeof SIN_NIVEL
 const EDAD_VALIDAS: string[] = [...CATEGORIA_ORDEN, SIN_NIVEL]
 
 // Un mismo nivel se escribe de varias formas ("a1", "A1 ") y los exámenes de
-// Cambridge equivalen a un nivel: PET = B1, FCE = B2, CAE = C1. Se comparan por
-// esta clave, tanto el nombre del Nivel como el texto de Grupo.nivel.
-const NIVEL_EQUIVALENTE: Record<string, string> = { pet: "b1", fce: "b2", cae: "c1" }
+// Cambridge equivalen a un nivel: KET = A2, PET = B1, FCE = B2, CAE = C1. Se
+// comparan por esta clave, tanto el nombre del Nivel como el texto de Grupo.nivel.
+const NIVEL_EQUIVALENTE: Record<string, string> = { ket: "a2", pet: "b1", fce: "b2", cae: "c1" }
 const claveNivel = (s?: string | null) => {
   const k = (s ?? "").trim().toLowerCase()
   return NIVEL_EQUIVALENTE[k] ?? k
