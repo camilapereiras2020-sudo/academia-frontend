@@ -404,7 +404,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                   <p className="text-[15px] font-semibold text-amber-900 mb-1">En cuarentena</p>
                   <p className="text-[14px] text-amber-900">
                     El documento ya está creado, pero es provisional: no tiene número y no se ha enviado ni subido a Drive.
-                    {puedeVerDocumentos ? " Se acepta y se confirma en Documentos." : " Lo confirma la persona de administración."}
+                    {puedeVerDocumentos ? " Se acepta y se confirma en Documentos." : " Se acepta y se confirma en Facturación."}
                   </p>
                   {puedeVerDocumentos && (
                     <Link to="/documentos?estado=cuarentena"

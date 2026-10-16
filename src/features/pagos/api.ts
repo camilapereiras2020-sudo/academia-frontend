@@ -59,6 +59,8 @@ export const documentosApi = {
   // invoice has been reviewed and is ready to go to the family.
   enviar: (id: number) => api.post<{ ok: boolean }>(`/documentos/${id}/enviar/`),
   delete: (id: number) => api.delete(`/documentos/${id}/`),
+  // "Aceptar y confirmar" documentos en cuarentena: asigna los números definitivos.
+  confirmar: (ids: number[]) => api.post("/documentos/confirmar/", { ids }),
 }
 
 // One row per brand's issuing/legal entity (Cami&Co, Rangers Academy) — the

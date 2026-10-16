@@ -4,7 +4,6 @@ import { Receipt, FileText } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { descargarDocumento } from "@/lib/descargarDocumento"
-import { useAuthStore } from "@/store/authStore"
 
 type Documento = {
   id: number
@@ -39,8 +38,6 @@ const TIPO_LABEL_SINGULAR: Record<string, string> = {
 export default function DocumentosPage() {
   const qc = useQueryClient()
   const [tipoFilter, setTipoFilter] = useState("")
-  const { user } = useAuthStore()
-  const puedeConfirmar = user?.role !== "reception"
   const [params] = useSearchParams()
   const [estadoTab, setEstadoTab] = useState<"activas" | "cuarentena" | "anuladas">(
     params.get("estado") === "cuarentena" ? "cuarentena" : "activas",   // enlace desde Pagos
@@ -225,14 +222,12 @@ export default function DocumentosPage() {
               className="min-h-[40px] px-4 rounded-[10px] border text-[14px] font-semibold border-pine-900/25 text-pine-900 hover:bg-khaki-100 disabled:opacity-40">
               {juntarMut.isPending ? "..." : "Juntar (mismo pagador)"}
             </button>
-            {puedeConfirmar && (
-              <button
-                onClick={() => { setActionError(""); setConfirmarIds([...seleccion]) }}
-                disabled={!seleccion.size}
-                className="min-h-[40px] px-4 rounded-[10px] bg-brass-500 text-white text-[14px] font-bold hover:bg-brass-700 disabled:opacity-40">
-                Aceptar y confirmar ({seleccion.size})
-              </button>
-            )}
+            <button
+              onClick={() => { setActionError(""); setConfirmarIds([...seleccion]) }}
+              disabled={!seleccion.size}
+              className="min-h-[40px] px-4 rounded-[10px] bg-brass-500 text-white text-[14px] font-bold hover:bg-brass-700 disabled:opacity-40">
+              Aceptar y confirmar ({seleccion.size})
+            </button>
           </div>
         </div>
       )}
@@ -296,7 +291,7 @@ export default function DocumentosPage() {
                   Ver en Drive
                 </a>
               )}
-              {d.estado === "cuarentena" && puedeConfirmar && (
+              {d.estado === "cuarentena" && (
                 <button
                   onClick={() => { setActionError(""); setConfirmarIds([d.id]) }}
                   className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] bg-brass-500 text-white text-[14px] font-bold hover:bg-brass-700">
