@@ -38,7 +38,6 @@ interface ExtraLine { concepto: string; importe: number }
 
 export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago; onClose: () => void }) {
   const role = useAuthStore((st) => st.user?.role)
-  const modoCuarentena = !!useAuthStore((st) => st.user?.modo_cuarentena)
   const puedeVerDocumentos = canAccess(role, "/documentos")
   const qc = useQueryClient()
   const [pago, setPago] = useState(initial)
@@ -427,9 +426,10 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                       className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-pine-900/25 text-[14px] font-semibold text-pine-900 hover:bg-khaki-100 disabled:opacity-50">
                       {previewLoading ? "..." : "👁 Vista previa (borrador)"}
                     </button>
-                    <button onClick={() => generarMut.mutate()} disabled={generarMut.isPending}
+                    <button onClick={() => generarMut.mutate()} disabled={generarMut.isPending || pago.estado !== "pagado"}
+                      title={pago.estado !== "pagado" ? "El recibo se crea cuando el pago está cobrado" : "Crea el recibo (queda en cuarentena hasta confirmarlo)"}
                       className="btn-primary !min-h-[40px] !px-3 !text-[14px] disabled:opacity-50">
-                      {generarMut.isPending ? "Confirmando..." : modoCuarentena ? "🧾 Pasar a cuarentena" : "🧾 Confirmar factura"}
+                      {generarMut.isPending ? "Creando..." : "🧾 Crear recibo"}
                     </button>
                   </div>
                 </div>

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { pagosApi, documentosApi, emisoresApi } from "@/features/pagos/api"
+import { pagosApi } from "@/features/pagos/api"
 import { gruposApi } from "@/features/grupos/api"
 import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
-import { descargarDocumento } from "@/lib/descargarDocumento"
 import { formatEur } from "@/lib/utils"
 import MatriculaLinea from "@/features/pagos/MatriculaLinea"
 import { asistenciaApi } from "@/features/asistencia/api"
@@ -14,19 +13,10 @@ import {
 import { esMatricula, nuevaMatricula, type ExtraLine } from "@/features/pagos/matricula"
 import type { Alumno, AlumnoCuota, CargoExtra, Pago, Tarifa } from "@/types"
 
-// Atajo desde la sección "Cuota" de la ficha, en dos pasos:
-// 1) Generar pago — crea el Pago de este alumno, sin ningún documento
-//    (un recibo es por cliente, y a veces hace falta una factura por
-//    marca, así que combinar/separar documentos no encaja en este paso).
-// 2) Generar documento — una vez pagado, si el pagador tiene otros pagos de
-//    este mismo mes sin facturar (hermanos), se ofrece combinarlos en una
-//    sola factura (misma regla que Payers: generarCombinado exige 2+ pagos,
-//    siempre genera "factura" — nunca recibo, es así en el backend — y si
-//    están repartidos entre las dos marcas, obliga a elegir el emisor a
-//    mano). Con un solo pago, se genera el documento individual de
-//    siempre (factura o recibo, según tipo_doc_for_metodo — no se
-//    reimplementa esa regla acá, es la fuente de verdad del backend).
-// Para editar un pago ya existente, seguir usando PagoDetailModal.
+// Atajo desde la sección "Cuota" de la ficha: registra el pago de este alumno.
+// Si se registra como cobrado, el backend crea solo su recibo provisional
+// (cuarentena); la factura, si hace falta, se genera a mano desde el recibo
+// confirmado (Documentos). Para editar un pago existente: PagoDetailModal.
 
 const METODOS = ["efectivo", "transferencia", "bizum", "domiciliacion", "tarjeta"]
 
@@ -34,8 +24,6 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
   if (!t) return true
   return t.marca === "cami_and_co" || t.nombre === "clase_privada" || t.nombre === "clase_recuperada"
 }
-
-interface DocumentoGenerado { id: number; num_doc: string; tipo: "factura" | "recibo"; combinada: boolean }
 
 export default function GenerarFacturaModal({
   alumno, cuota, cargosExtra, primerPago = false, onClose,
@@ -72,10 +60,6 @@ export default function GenerarFacturaModal({
   ])
   const [error, setError] = useState("")
   const [pagoCreado, setPagoCreado] = useState<Pago | null>(null)
-  const [doc, setDoc] = useState<DocumentoGenerado | null>(null)
-  const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set())
-  const [emisorOverride, setEmisorOverride] = useState<number | "">("")
-  const [downloading, setDownloading] = useState(false)
 
   const selectedTarifa = tarifas.find(t => t.id === tarifa)
   const montoEditable = tarifaAmountIsEditable(selectedTarifa)
@@ -137,87 +121,12 @@ export default function GenerarFacturaModal({
       ),
   })
 
-  // Paso 2 — otros pagos del mismo pagador y periodo, sin facturar todavía
-  // (hermanos), para ofrecer combinarlos en un solo recibo. Solo tiene
-  // sentido consultarlo cuando hay un pagador real de por medio.
-  const { data: pagosPagadorRaw } = useQuery({
-    queryKey: ["pagos", "pagador-periodo", alumno.pagador, periodo],
-    queryFn: () => pagosApi.list({ pagador: alumno.pagador as number, periodo }).then(r => r.data),
-    enabled: !!pagoCreado && !!alumno.pagador,
-  })
-  const pagosPagador: Pago[] = Array.isArray(pagosPagadorRaw) ? pagosPagadorRaw : []
-  const pendientes = pagoCreado
-    ? (alumno.pagador
-        ? pagosPagador.filter(p => p.estado_carga === "completo" && !p.num_doc)
-        : [pagoCreado])
-    : []
-
-  const { data: emisoresRaw } = useQuery({
-    queryKey: ["emisores"],
-    queryFn: () => emisoresApi.list().then(r => r.data),
-    enabled: !!pagoCreado && pendientes.length >= 2,
-  })
-  const emisores = Array.isArray(emisoresRaw) ? emisoresRaw : []
-
-  // Todos preseleccionados apenas se conocen — staff puede destildar si
-  // alguno de los hermanos no va en este recibo.
-  useEffect(() => {
-    if (pendientes.length) setSeleccionados(new Set(pendientes.map(p => p.id)))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagosPagadorRaw, pagoCreado])
-
-  function toggleSeleccion(id: number) {
-    setSeleccionados(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const elegidos = pendientes.filter(p => seleccionados.has(p.id))
-  const emisorIds = new Set(elegidos.map(p => p.emisor).filter((e): e is number => !!e))
-  const necesitaElegirEmisor = emisorIds.size > 1
-  const totalRecibo = elegidos.reduce((s, p) => s + Number(p.total), 0)
-
-  const generarReciboMut = useMutation({
-    mutationFn: async () => {
-      const combinada = elegidos.length >= 2
-      const res = combinada
-        ? await documentosApi.generarCombinado([...seleccionados], necesitaElegirEmisor ? Number(emisorOverride) : undefined)
-        : await documentosApi.generar((elegidos[0] ?? pagoCreado!).id)
-      return { ...res.data, combinada } as DocumentoGenerado
-    },
-    onSuccess: (generado) => {
-      setDoc(generado)
-      setError("")
-      qc.invalidateQueries({ queryKey: ["alumno-resumen", alumno.id] })
-      qc.invalidateQueries({ queryKey: ["documentos", "alumno", alumno.id] })
-      qc.invalidateQueries({ queryKey: ["pagos"] })
-    },
-    onError: (err: any) =>
-      setError(err.response?.data?.error ?? "Error generando el recibo."),
-  })
-
-  async function handleDescargar() {
-    if (!doc) return
-    setDownloading(true)
-    setError("")
-    try {
-      await descargarDocumento(doc, alumno.nombre)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al descargar el documento.")
-    } finally {
-      setDownloading(false)
-    }
-  }
-
   return (
     <div className="modal-overlay">
       <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 pb-0">
           <h2 className="font-head text-[22px] leading-tight text-pine-900">
-            {pagoCreado ? "Confirmar documento" : "Generar pago"} — {alumno.nombre}
+            {pagoCreado ? "Pago registrado" : "Generar pago"} — {alumno.nombre}
           </h2>
           <button onClick={onClose} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-[10px] text-ink-soft hover:bg-khaki-100 hover:text-pine-900 text-xl leading-none">✕</button>
         </div>
@@ -378,61 +287,13 @@ export default function GenerarFacturaModal({
                 <p className="font-head text-[28px] text-pine-900 mt-1">Total: {total.toFixed(2)} €</p>
               </div>
             </>
-          ) : !doc ? (
+          ) : (
             <div className="border-t pt-4 space-y-3">
               <p className="text-[15px] font-semibold text-green-800">✓ Pago registrado por {formatEur(total)}.</p>
-
-              {pendientes.length >= 2 ? (
-                <>
-                  <p className="text-[14px] text-ink-soft">
-                    Este pagador tiene {pendientes.length} pagos de {periodo} sin facturar (hermanos) — elegí cuáles van
-                    juntos en una misma factura combinada:
-                  </p>
-                  <div className="space-y-1.5">
-                    {pendientes.map(p => (
-                      <label key={p.id} className="flex items-center gap-2.5 min-h-[48px] text-[15px] bg-khaki-100 border border-pine-900/15 rounded-[10px] px-3 py-2">
-                        <input type="checkbox" className="w-5 h-5 accent-pine-900" checked={seleccionados.has(p.id)} onChange={() => toggleSeleccion(p.id)} />
-                        <span className="flex-1">{p.alumno_nombre ?? "—"}</span>
-                        <span className="font-mono text-[13px] text-ink-soft">{p.marca_display}</span>
-                        <span className="font-semibold">{formatEur(Number(p.total))}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {necesitaElegirEmisor && (
-                    <div>
-                      <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
-                        Emisor (los seleccionados están repartidos entre las dos marcas)
-                      </label>
-                      <select value={emisorOverride} onChange={e => setEmisorOverride(e.target.value ? +e.target.value : "")}
-                        className="input">
-                        <option value="">Elegir...</option>
-                        {emisores.map((em: any) => <option key={em.id} value={em.id}>{em.nombre}</option>)}
-                      </select>
-                    </div>
-                  )}
-                  <p className="text-right font-semibold text-pine-900">Total de la factura combinada: {formatEur(totalRecibo)}</p>
-                </>
-              ) : (
-                <p className="text-[14px] text-ink-soft">
-                  Sin otros pagos de {periodo} pendientes de facturar para este pagador — se genera el documento
-                  (factura o recibo, según el método de pago) solo para este pago.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="border-t pt-4">
-              <p className="text-[15px] font-semibold text-green-800 mb-3">
-                ✓ {doc.tipo === "factura" ? "Factura" : "Recibo"}{doc.combinada ? " combinada" : ""} generad{doc.tipo === "factura" ? "a" : "o"} correctamente.
-              </p>
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <span className="font-mono text-[14px] bg-khaki-100 border border-pine-900/10 px-2.5 py-1.5 rounded-[8px]">{doc.num_doc}</span>
-                <button onClick={handleDescargar} disabled={downloading}
-                  className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-brass-500/50 text-[14px] font-semibold text-brass-700 hover:bg-khaki-100 disabled:opacity-50">
-                  {downloading ? "..." : "📥 Ver / Descargar"}
-                </button>
-              </div>
               <p className="text-[14px] text-ink-soft">
-                Las facturas para Hacienda se generan aparte, por marca, desde Payers o "Generar pagos de mes".
+                {pagoCreado.estado === "pagado"
+                  ? "Su recibo ya está creado, en cuarentena (sin número). Confírmalo en Documentos → Cuarentena; la factura, si hace falta, se genera a mano desde el recibo confirmado."
+                  : "Queda pendiente de cobro: el recibo se crea solo cuando lo marques como cobrado."}
               </p>
             </div>
           )}
@@ -440,22 +301,12 @@ export default function GenerarFacturaModal({
 
         <div className="flex justify-end gap-2 p-6 pt-0">
           <button onClick={onClose} className="btn-ghost">
-            {doc ? "Cerrar" : pagoCreado ? "Cerrar sin generar documento" : "Cancelar"}
+            {pagoCreado ? "Cerrar" : "Cancelar"}
           </button>
           {!pagoCreado && (
             <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || !periodo || !estado}
               className="btn-primary disabled:opacity-50">
               {crearMut.isPending ? "Creando..." : "💳 Crear pago"}
-            </button>
-          )}
-          {pagoCreado && !doc && (
-            <button
-              onClick={() => generarReciboMut.mutate()}
-              disabled={generarReciboMut.isPending || !elegidos.length || (necesitaElegirEmisor && !emisorOverride)}
-              className="btn-primary disabled:opacity-50">
-              {generarReciboMut.isPending
-                ? "Generando..."
-                : elegidos.length >= 2 ? "🧾 Generar factura combinada" : "🧾 Generar documento"}
             </button>
           )}
         </div>
