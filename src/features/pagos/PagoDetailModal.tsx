@@ -75,7 +75,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
   const [horas, setHoras] = useState<number | "">(initial.horas_trabajadas ?? "")
   const [descuento, setDescuento] = useState(Number(initial.descuento) || 0)
   const [metodo, setMetodo] = useState(initial.metodo)
-  const [estadoPago, setEstadoPago] = useState<"pagado" | "pendiente" | "parcial">(initial.estado)
+  const [estadoPago, setEstadoPago] = useState<Pago["estado"]>(initial.estado)
   const [notas, setNotas] = useState(notasSinOtros(initial.notas))
   const [conceptoLibre, setConceptoLibre] = useState(initial.concepto_libre)
   const [extras, setExtras] = useState<ExtraLine[]>(initial.extras ?? [])
@@ -115,7 +115,8 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
       extras,
       total,
       metodo,
-      estado: estadoPago,
+      // un cobro anulado no se edita aquí: se restaura desde la lista de Pagos
+      ...(estadoPago === "anulado" ? {} : { estado: estadoPago }),
       notas: notasConOtros(notas, pagador === OTROS, motivoOtros),
       concepto_libre: conceptoLibre,
       horas_trabajadas: horas === "" ? 0 : horas,
@@ -318,8 +319,9 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
             </div>
             <div>
               <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Estado de pago</label>
-              <select value={estadoPago} onChange={e => setEstadoPago(e.target.value as "pagado" | "pendiente" | "parcial")}
-                className="input">
+              <select value={estadoPago} onChange={e => setEstadoPago(e.target.value as Pago["estado"])}
+                disabled={estadoPago === "anulado"} className="input">
+                {estadoPago === "anulado" && <option value="anulado">Anulado (restáuralo desde Pagos)</option>}
                 <option value="pendiente">Pendiente</option>
                 <option value="pagado">Pagado</option>
                 <option value="parcial">Pago parcial</option>

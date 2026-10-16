@@ -64,7 +64,7 @@ export default function GenerarFacturaModal({
   const [mensualidad, setMensualidad] = useState(cuota?.cuota ?? 0)
   const [descuento, setDescuento] = useState(0)
   const [metodo, setMetodo] = useState("efectivo")
-  const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pagado")
+  const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial" | "">("")
   const [notas, setNotas] = useState("")
   const [extras, setExtras] = useState<ExtraLine[]>(() => [
     ...(primerPago ? [nuevaMatricula()] : []),
@@ -120,7 +120,7 @@ export default function GenerarFacturaModal({
       tarifa: tarifa || null,
       horas_trabajadas: horas,
       concepto_libre: concepto,
-      periodo, mensualidad, descuento, extras, total, metodo, estado, notas,
+      periodo, mensualidad, descuento, extras, total, metodo, estado: estado || "pendiente", notas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
     }),
     onSuccess: (res) => {
@@ -290,6 +290,7 @@ export default function GenerarFacturaModal({
                   <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Estado</label>
                   <select value={estado} onChange={e => setEstado(e.target.value as "pagado" | "pendiente" | "parcial")}
                     className="input">
+                    <option value="" disabled>¿Se ha cobrado? Elige…</option>
                     <option value="pagado">Pagado</option>
                     <option value="pendiente">Pendiente</option>
                     <option value="parcial">Pago parcial</option>
@@ -442,7 +443,7 @@ export default function GenerarFacturaModal({
             {doc ? "Cerrar" : pagoCreado ? "Cerrar sin generar documento" : "Cancelar"}
           </button>
           {!pagoCreado && (
-            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || !periodo}
+            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || !periodo || !estado}
               className="btn-primary disabled:opacity-50">
               {crearMut.isPending ? "Creando..." : "💳 Crear pago"}
             </button>
