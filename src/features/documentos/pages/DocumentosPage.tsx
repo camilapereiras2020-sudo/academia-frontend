@@ -13,6 +13,7 @@ type Documento = {
   created_at: string
   emitida_at: string | null
   estado: string
+  pagos_adicionales?: number[]
   provisional?: boolean
   drive_url?: string | null
   pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
@@ -49,6 +50,8 @@ export default function DocumentosPage() {
   const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
   const [confirmAnular, setConfirmAnular] = useState<Documento | null>(null)
   const [motivoAnulacion, setMotivoAnulacion] = useState("")
+  // Sin valor por defecto: hay que contestar explícitamente si el dinero se cobró.
+  const [seCobro, setSeCobro] = useState<"si" | "no" | null>(null)
   const [actionError, setActionError] = useState("")
 
   const { data: raw, isLoading } = useQuery({
@@ -77,8 +80,8 @@ export default function DocumentosPage() {
   })
 
   const anularMut = useMutation({
-    mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
-      api.post(`/documentos/${id}/anular/`, { motivo_anulacion: motivo }),
+    mutationFn: ({ id, motivo, anularCobro }: { id: number; motivo: string; anularCobro: boolean }) =>
+      api.post(`/documentos/${id}/anular/`, { motivo_anulacion: motivo, anular_cobro: anularCobro }),
     onSuccess: () => {
       // El pago detrás de este documento deja de contar como "cobrado" (ver
       // Pago.documento_anulado) — sin esto, Facturación, Rangers/Cami&Co y
@@ -88,6 +91,7 @@ export default function DocumentosPage() {
       qc.invalidateQueries({ queryKey: ["alumno-resumen"] })
       setConfirmAnular(null)
       setMotivoAnulacion("")
+      setSeCobro(null)
       setActionError("")
     },
     onError: (err: any) =>
@@ -317,7 +321,7 @@ export default function DocumentosPage() {
                 </button>
               ) : (
                 <button
-                  onClick={() => { setActionError(""); setMotivoAnulacion(""); setConfirmAnular(d) }}
+                  onClick={() => { setActionError(""); setMotivoAnulacion(""); setSeCobro(null); setConfirmAnular(d) }}
                   title="Anular (mantiene el número en la secuencia, a efectos fiscales)"
                   className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold transition-colors border-red-200 text-red-700 hover:bg-red-50">
                   Anular
@@ -389,14 +393,31 @@ export default function DocumentosPage() {
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Motivo (obligatorio)</label>
             <textarea value={motivoAnulacion} onChange={e => setMotivoAnulacion(e.target.value)} rows={2}
               className="input !py-2.5 resize-none mb-4" />
+            <fieldset className="mb-4">
+              <legend className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
+                ¿Se ha cobrado este dinero? (obligatorio)
+              </legend>
+              <label className="flex items-start gap-2 text-[14px] text-ink mb-1.5 cursor-pointer">
+                <input type="radio" name="se-cobro" className="mt-1" checked={seCobro === "si"} onChange={() => setSeCobro("si")} />
+                <span><strong>Sí, se cobró.</strong> Solo se anula el documento; el ingreso se mantiene.</span>
+              </label>
+              <label className="flex items-start gap-2 text-[14px] text-ink cursor-pointer">
+                <input type="radio" name="se-cobro" className="mt-1" checked={seCobro === "no"} onChange={() => setSeCobro("no")} />
+                <span>
+                  <strong>No se cobró</strong> (o fue un error / duplicado). Se anula también la recepción del dinero: deja de contar como ingreso.
+                  {(confirmAnular.pagos_adicionales?.length ?? 0) > 0 &&
+                    <em className="block text-amber-800">Afecta a {1 + (confirmAnular.pagos_adicionales?.length ?? 0)} pagos (factura combinada).</em>}
+                </span>
+              </label>
+            </fieldset>
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmAnular(null)}
                 className="btn-ghost">
                 Cancelar
               </button>
               <button
-                onClick={() => anularMut.mutate({ id: confirmAnular.id, motivo: motivoAnulacion.trim() })}
-                disabled={anularMut.isPending || !motivoAnulacion.trim()}
+                onClick={() => anularMut.mutate({ id: confirmAnular.id, motivo: motivoAnulacion.trim(), anularCobro: seCobro === "no" })}
+                disabled={anularMut.isPending || !motivoAnulacion.trim() || seCobro === null}
                 className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                 {anularMut.isPending ? "Anulando..." : "Anular"}
               </button>

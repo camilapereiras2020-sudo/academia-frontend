@@ -22,9 +22,10 @@ const ESTADO_CLS: Record<string, string> = {
   pagado: "bg-green-100 text-green-800",
   pendiente: "bg-red-100 text-red-800",
   parcial: "bg-amber-100 text-amber-800",
+  anulado: "bg-gray-200 text-gray-700",
 }
 const ESTADO_LABEL: Record<string, string> = {
-  pagado: "Pagado", pendiente: "Pendiente", parcial: "Parcial",
+  pagado: "Pagado", pendiente: "Pendiente", parcial: "Parcial", anulado: "Anulado",
 }
 
 function Badge({ estado }: { estado: string }) {
@@ -49,6 +50,7 @@ const emptyForm = () => ({
   metodo: "efectivo",
   periodo: new Date().toISOString().slice(0, 7),
   notas: "",
+  cobrado: "" as "" | "si" | "no",   // sin valor por defecto: se pregunta siempre
 })
 
 export default function PagosPage() {
@@ -57,7 +59,8 @@ export default function PagosPage() {
   const puedeVerDocumentos = canAccess(role, "/documentos")   // reception no entra en Documentos
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const [estadoFilter, setEstadoFilter] = useState("")
+  const [estadoFilter, setEstadoFilter] = useState("")   // "" | estado | "borrados"
+  const [restaurar, setRestaurar] = useState<Pago | null>(null)
   const [periodoFilter, setPeriodoFilter] = useState("")
   const [marcaFilter, setMarcaFilter] = useState<Marca | "">("")
   const [showForm, setShowForm] = useState(false)
@@ -75,12 +78,15 @@ export default function PagosPage() {
   const { data: raw, isLoading } = useQuery({
     queryKey: ["pagos", estadoFilter, periodoFilter, marcaFilter],
     queryFn: () => pagosApi.list({
-      estado: estadoFilter || undefined,
+      estado: estadoFilter && estadoFilter !== "borrados" ? estadoFilter : undefined,
+      borrados: estadoFilter === "borrados",
       periodo: periodoFilter || undefined,
       marca: marcaFilter || undefined,
     }).then(r => r.data),
   })
   const pagos: Pago[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? []
+  const estadoBorrados = estadoFilter === "borrados"
+  const confirmDeleteAnulado = pagos.find(p => p.id === confirmDelete)?.estado === "anulado"
 
   useSetActiveBrand(selectedPago?.marca || (showForm && form.marca) || marcaFilter || null)
 
@@ -111,6 +117,12 @@ export default function PagosPage() {
     mutationFn: pagosApi.marcarPagado,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setActionError("") },
     onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al marcar el pago como cobrado."),
+  })
+
+  const restaurarMut = useMutation({
+    mutationFn: ({ id, cobrado }: { id: number; cobrado: boolean }) => pagosApi.restaurarCobro(id, cobrado),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagos"] }); setRestaurar(null); setActionError("") },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al restaurar el cobro."),
   })
 
   const deleteMut = useMutation({
@@ -149,7 +161,7 @@ export default function PagosPage() {
         total: importe,
         metodo: form.metodo,
         notas: form.notas,
-        estado: "pendiente",
+        estado: !borrador && form.cobrado === "si" ? "pagado" : "pendiente",
         ...(borrador ? { guardar_como_borrador: true } : {}),
       })
     },
@@ -169,6 +181,7 @@ export default function PagosPage() {
       setFormError("Alumno, pagador, periodo e importe son obligatorios.")
       return
     }
+    if (!form.cobrado) { setFormError("Indica si este dinero ya se ha cobrado (Sí o No)."); return }
     setFormError("")
     createMut.mutate(false)
   }
@@ -357,6 +370,17 @@ export default function PagosPage() {
               </select>
             </div>
           </div>
+          <fieldset className="mt-4">
+            <legend className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">¿Se ha cobrado este dinero? *</legend>
+            <div className="flex gap-4 text-[15px]">
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="cobrado" checked={form.cobrado === "si"} onChange={() => setForm(f => ({ ...f, cobrado: "si" }))} /> Sí, cobrado
+              </label>
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="cobrado" checked={form.cobrado === "no"} onChange={() => setForm(f => ({ ...f, cobrado: "no" }))} /> No, pendiente
+              </label>
+            </div>
+          </fieldset>
           <div className="mt-4">
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Notas</label>
             <textarea
@@ -394,6 +418,8 @@ export default function PagosPage() {
           <option value="pendiente">Pendiente</option>
           <option value="pagado">Pagado</option>
           <option value="parcial">Parcial</option>
+          <option value="anulado">Anulado</option>
+          <option value="borrados">Borrados (anulados)</option>
         </select>
         <input
           type="month" value={periodoFilter}
@@ -474,7 +500,15 @@ export default function PagosPage() {
                   </td>
                   <td onClick={e => e.stopPropagation()}>
                     <div className="flex gap-1.5 justify-end">
-                      {p.estado !== "pagado" && (
+                      {p.estado === "anulado" && (
+                        <button
+                          onClick={() => { setActionError(""); setRestaurar(p) }}
+                          className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-pine-300 text-[14px] font-semibold text-pine-800 hover:bg-khaki-100 whitespace-nowrap"
+                        >
+                          Restaurar cobro
+                        </button>
+                      )}
+                      {p.estado !== "pagado" && p.estado !== "anulado" && (
                         <button
                           onClick={() => marcarMut.mutate(p.id)}
                           disabled={marcarMut.isPending && marcarMut.variables === p.id}
@@ -499,12 +533,14 @@ export default function PagosPage() {
                           🧾
                         </button>
                       )}
-                      <button
-                        onClick={() => setConfirmDelete(p.id)} aria-label="Eliminar pago" title="Eliminar pago"
+                      {!estadoBorrados && <button
+                        onClick={() => setConfirmDelete(p.id)}
+                        aria-label={p.estado === "anulado" ? "Borrar pago anulado" : "Eliminar pago"}
+                        title={p.estado === "anulado" ? "Borrar (se oculta; sus documentos anulados se conservan)" : "Eliminar pago"}
                         className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] rounded-[10px] border border-red-200 text-[14px] text-red-700 hover:bg-red-50"
                       >
                         ✕
-                      </button>
+                      </button>}
                     </div>
                   </td>
                 </tr>
@@ -518,8 +554,12 @@ export default function PagosPage() {
       {confirmDelete !== null && (
         <div className="modal-overlay">
           <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Eliminar pago</h3>
-            <p className="text-[15px] text-ink-soft mb-4">Esta acción no se puede deshacer.</p>
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">{confirmDeleteAnulado ? "Borrar pago anulado" : "Eliminar pago"}</h3>
+            <p className="text-[15px] text-ink-soft mb-4">
+              {confirmDeleteAnulado
+                ? "El pago deja de verse en la lista. Sus documentos anulados se conservan y puedes verlo en «Borrados»."
+                : "Esta acción no se puede deshacer."}
+            </p>
             {deleteError && (
               <p className="text-red-700 text-[15px] bg-red-50 border border-red-200 px-4 py-3 rounded-[10px] mb-4">{deleteError}</p>
             )}
@@ -536,6 +576,28 @@ export default function PagosPage() {
                 className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50"
               >
                 {deleteMut.isPending ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restaurar cobro: hay que decir explícitamente si se cobró */}
+      {restaurar && (
+        <div className="modal-overlay">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-head text-[22px] leading-tight text-pine-900 mb-2">Restaurar cobro</h3>
+            <p className="text-[15px] text-ink-soft mb-4">¿Se ha cobrado este dinero ({formatEur(Number(restaurar.total))})?</p>
+            {actionError && <p className="text-red-700 text-[14px] mb-3">{actionError}</p>}
+            <div className="flex justify-end gap-2 flex-wrap">
+              <button onClick={() => setRestaurar(null)} className="btn-ghost">Cancelar</button>
+              <button onClick={() => restaurarMut.mutate({ id: restaurar.id, cobrado: false })} disabled={restaurarMut.isPending}
+                className="min-h-[44px] px-4 rounded-[10px] border border-pine-300 text-[15px] font-semibold text-pine-800 hover:bg-khaki-100 disabled:opacity-50">
+                No, pendiente
+              </button>
+              <button onClick={() => restaurarMut.mutate({ id: restaurar.id, cobrado: true })} disabled={restaurarMut.isPending}
+                className="btn-primary disabled:opacity-50">
+                Sí, cobrado
               </button>
             </div>
           </div>

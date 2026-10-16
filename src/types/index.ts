@@ -162,7 +162,8 @@ export interface Pago {
   emisor: number | null; emisor_nombre?: string | null
   grupo: number | null; grupo_nombre: string | null; periodo: string; mensualidad: number; descuento: number
   extras: { concepto: string; importe: number }[]; total: number; metodo: string
-  estado: "pagado" | "pendiente" | "parcial"; fecha: string | null; notas: string
+  estado: "pagado" | "pendiente" | "parcial" | "anulado"; fecha: string | null; notas: string
+  anulado_at?: string | null; motivo_anulacion?: string
   num_doc: string; created_at: string
   tarifa?: number | null; tarifa_nombre?: string | null
   horas_trabajadas?: number

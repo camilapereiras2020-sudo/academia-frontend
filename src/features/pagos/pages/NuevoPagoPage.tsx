@@ -80,7 +80,7 @@ export default function NuevoPagoPage() {
   const [metodo, setMetodo] = useState("efectivo")
   const [notas, setNotas] = useState("")
   const [extras, setExtras] = useState<ExtraLine[]>([])
-  const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial">("pendiente")
+  const [estado, setEstado] = useState<"pagado" | "pendiente" | "parcial" | "">("")
   // Which alumno we've already auto-added the matrícula line for — so it's
   // added once per selection, and doesn't reappear if staff deletes it.
   const [matriculaAutoAddedFor, setMatriculaAutoAddedFor] = useState<number | null>(null)
@@ -143,7 +143,7 @@ export default function NuevoPagoPage() {
       pagador: typeof pagador === "number" ? pagador : null,
       grupo: grupo || null,
       tarifa: tarifa || null,
-      periodo, mensualidad, descuento, extras, total, metodo, estado,
+      periodo, mensualidad, descuento, extras, total, metodo, estado: estado || "pendiente",
       notas: notasConOtros(notas, pagador === OTROS, motivoOtros),
       horas_trabajadas: horas === "" ? 0 : horas,
       fecha: estado === "pagado" ? new Date().toISOString().slice(0, 10) : null,
@@ -165,6 +165,7 @@ export default function NuevoPagoPage() {
       setError("Completa todos los campos obligatorios")
       return
     }
+    if (!estado) { setError("Indica si este dinero ya se ha cobrado (Estado)."); return }
     setError("")
     saveMut.mutate(false)
   }
@@ -289,6 +290,7 @@ export default function NuevoPagoPage() {
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Estado</label>
             <select value={estado} onChange={e => setEstado(e.target.value as "pagado" | "pendiente" | "parcial")}
               className="input">
+              <option value="" disabled>¿Se ha cobrado? Elige…</option>
               <option value="pendiente">Pendiente</option>
               <option value="pagado">Pagado</option>
               <option value="parcial">Pago parcial</option>
