@@ -798,7 +798,7 @@ export default function AlumnoDetailPage() {
                     <td className="font-semibold">{formatEur(Number(p.total))}</td>
                     <td className="capitalize">{p.metodo}</td>
                     <td><span className="badge" style={p.estado === "pagado" ? { background: "var(--sage-muted)", color: "var(--sage)" } : { background: "var(--terracotta-muted)", color: "var(--terracotta)" }}>{p.estado}</span></td>
-                    <td className="font-mono text-[13px]">{p.num_doc || "—"}</td>
+                    <td className="font-mono text-[13px]">{p.num_doc || (p.documento_en_cuarentena ? <span className="badge bg-amber-100 text-amber-800 whitespace-nowrap">En cuarentena</span> : "—")}</td>
                   </tr>
                 ))}
               </tbody>
@@ -824,13 +824,17 @@ export default function AlumnoDetailPage() {
               <tbody>
                 {documentos.map(d => (
                   <tr key={d.id}>
-                    <td className="font-mono text-[13px]">{d.num_doc || d.nombre}</td>
+                    <td className="font-mono text-[13px]">{d.estado === "cuarentena" ? "Provisional" : (d.num_doc || d.nombre)}</td>
                     <td>{DOC_TIPO_LABEL[d.tipo] ?? d.tipo}</td>
                     <td>{formatDocFecha(d.emitida_at)}</td>
                     <td>
-                      <span className="badge" style={d.estado === "anulada" ? { background: "var(--terracotta-muted)", color: "var(--terracotta)" } : { background: "var(--sage-muted)", color: "var(--sage)" }}>
-                        {d.estado}
-                      </span>
+                      {d.estado === "cuarentena"
+                        ? <span className="badge bg-amber-100 text-amber-800 whitespace-nowrap">En cuarentena</span>
+                        : (
+                          <span className="badge" style={d.estado === "anulada" ? { background: "var(--terracotta-muted)", color: "var(--terracotta)" } : { background: "var(--sage-muted)", color: "var(--sage)" }}>
+                            {d.estado}
+                          </span>
+                        )}
                     </td>
                     <td className="flex gap-1.5 flex-wrap">
                       <button className="btn-ghost !min-h-[40px] !px-3 !text-[14px] inline-flex items-center"

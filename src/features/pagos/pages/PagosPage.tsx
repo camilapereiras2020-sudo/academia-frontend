@@ -11,6 +11,8 @@ import type { Pago, Alumno, Pagador, Grupo, Marca } from "@/types"
 import PagoDetailModal from "../PagoDetailModal"
 import { useSetActiveBrand } from "@/store/useSetActiveBrand"
 import { useOverlayMouseGuard } from "@/hooks/useOverlayMouseGuard"
+import { useAuthStore } from "@/store/authStore"
+import { canAccess } from "@/lib/roles"
 
 const METODOS = ["efectivo", "bizum", "transferencia", "domiciliacion"] as const
 const METODO_LABEL: Record<string, string> = {
@@ -50,6 +52,9 @@ const emptyForm = () => ({
 })
 
 export default function PagosPage() {
+  const role = useAuthStore((st) => st.user?.role)
+  const modoCuarentena = !!useAuthStore((st) => st.user?.modo_cuarentena)
+  const puedeVerDocumentos = canAccess(role, "/documentos")   // reception no entra en Documentos
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [estadoFilter, setEstadoFilter] = useState("")
@@ -454,7 +459,9 @@ export default function PagosPage() {
                   <td className="!text-ink-soft" title="Fecha de pago">{p.fecha ? formatDate(p.fecha) : "—"}</td>
                   <td className="font-semibold whitespace-nowrap">{formatEur(Number(p.total))}</td>
                   <td className="!text-ink-soft whitespace-nowrap">{METODO_LABEL[p.metodo] ?? p.metodo}</td>
-                  <td className="font-mono !text-[13px] !text-ink-soft whitespace-nowrap">{p.num_doc || "—"}</td>
+                  <td className="font-mono !text-[13px] !text-ink-soft whitespace-nowrap">
+                    {p.num_doc || (p.documento_en_cuarentena ? <span className="badge bg-amber-100 text-amber-800 whitespace-nowrap" title="Sin número ni enviar: se confirma en Documentos">En cuarentena</span> : "—")}
+                  </td>
                   <td>
                     <div className="flex flex-wrap items-center gap-1">
                     <Badge estado={p.estado} />
@@ -476,12 +483,18 @@ export default function PagosPage() {
                           ✓ Cobrar
                         </button>
                       )}
-                      {!p.num_doc && (
+                      {!p.num_doc && p.documento_en_cuarentena && puedeVerDocumentos && (
+                        <Link to="/documentos?estado=cuarentena" title="Confirmar el documento provisional en Documentos"
+                          className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border border-amber-300 text-[14px] font-semibold text-amber-800 hover:bg-amber-50 whitespace-nowrap">
+                          Confirmar doc.
+                        </Link>
+                      )}
+                      {!p.num_doc && !p.documento_en_cuarentena && (
                         <button
                           onClick={() => generarMut.mutate(p)}
                           disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
                           className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] px-2 rounded-[10px] border border-brass-500/50 text-[15px] text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
-                          title="Confirmar factura o recibo"
+                          title={modoCuarentena ? "Pasar a cuarentena (sin número hasta confirmar)" : "Confirmar factura o recibo"}
                         >
                           🧾
                         </button>

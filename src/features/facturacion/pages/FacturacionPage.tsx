@@ -5,7 +5,7 @@ import { formatMonth } from "@/lib/utils"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import type { Pago } from "@/types"
 
-type DocumentoLite = { id: number; pago: number; num_doc: string; tipo: string }
+type DocumentoLite = { id: number; pago: number; num_doc: string; tipo: string; estado?: string }
 
 export default function FacturacionPage() {
   const qc = useQueryClient()
@@ -142,7 +142,11 @@ export default function FacturacionPage() {
                     <td className="font-semibold">{p.alumno_nombre ?? "—"}</td>
                     <td className="!text-ink-soft">{p.pagador_nombre ?? "—"}</td>
                     <td className="!text-ink-soft">{formatMonth(p.periodo)}</td>
-                    <td className="font-mono !text-[13px] !text-ink-soft whitespace-nowrap">{doc.num_doc}</td>
+                    <td className="font-mono !text-[13px] !text-ink-soft whitespace-nowrap">
+                      {doc.estado === "cuarentena"
+                        ? <>Provisional <span className="badge bg-amber-100 text-amber-800 ml-1">En cuarentena</span></>
+                        : doc.num_doc}
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleDescargar(doc, p.alumno_nombre ?? p.pagador_nombre)}
