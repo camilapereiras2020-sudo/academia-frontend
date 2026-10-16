@@ -15,6 +15,9 @@ export const asistenciaApi = {
     api.post<Sesion>("/asistencia/", data),
   marcar: (data: { grupo: number; fecha: string; alumno: number; estado: string; nota?: string }) =>
     api.post<RegistroAsistencia>("/asistencia/marcar/", data),
+  // Quita a un invitado/recuperación añadido por error (a los alumnos de la clase se les marca ausente).
+  quitar: (data: { grupo: number; fecha: string; alumno: number }) =>
+    api.post("/asistencia/quitar/", data),
   historialAlumno: (alumnoId: number) =>
     api.get(`/asistencia/historial-alumno/?alumno=${alumnoId}`),
 }
