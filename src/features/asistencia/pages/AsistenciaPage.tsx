@@ -44,11 +44,118 @@ const OTRO_OPCIONES: { value: "makeup" | "guest" | "other"; label: string }[] = 
   { value: "other", label: "Otro" },
 ]
 
+// "+ Alumno invitado/recuperación": alumno que no es de esta clase pero viene
+// hoy (recupera una clase, o viene de invitado/traslado). Busca entre los
+// alumnos que no están ya en la lista.
+function InvitadoPicker({ candidatos, marca, onAdd, onCancel, pending }: {
+  candidatos: Alumno[]
+  marca: Marca
+  onAdd: (alumno: Alumno, estado: "makeup" | "guest", nota: string) => void
+  onCancel: () => void
+  pending?: boolean
+}) {
+  const qc = useQueryClient()
+  const [q, setQ] = useState("")
+  const [elegido, setElegido] = useState<Alumno | null>(null)
+  const [creando, setCreando] = useState(false)
+  const [nuevoNombre, setNuevoNombre] = useState("")
+  const [nuevoTel, setNuevoTel] = useState("")
+  const [error, setError] = useState("")
+
+  // Invitado nuevo (no está en el sistema): se crea como alumno inactivo, así
+  // no entra en listados, cobros ni cuotas, pero queda para volver a elegirlo.
+  const crearMut = useMutation({
+    mutationFn: () => alumnosApi.create({
+      nombre: nuevoNombre.trim(), telefono: nuevoTel.trim(), marca, activo: false,
+      notas: "Invitado — creado desde Pasar lista",
+    }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["alumnos"] })
+      setElegido(res.data)
+      setCreando(false)
+      setError("")
+    },
+    onError: (err: any) => setError(err.response?.data?.error ?? JSON.stringify(err.response?.data ?? "Error al crear el invitado.")),
+  })
+  const [tipo, setTipo] = useState<"makeup" | "guest">("makeup")
+  const [nota, setNota] = useState("")
+  const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+  const resultados = q.trim().length >= 1
+    ? candidatos.filter(a => norm(a.nombre).includes(norm(q.trim()))).slice(0, 6)
+    : []
+  return (
+    <div className="mt-2 rounded-[10px] border border-brass-500/40 bg-white p-3 space-y-2">
+      {creando ? (
+        <>
+          <p className="text-[14px] font-semibold text-pine-900">Invitado nuevo</p>
+          <input autoFocus type="text" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
+            placeholder="Nombre y apellidos" className="input" aria-label="Nombre del invitado" />
+          <input type="tel" value={nuevoTel} onChange={e => setNuevoTel(e.target.value)}
+            placeholder="Teléfono (opcional)" className="input" aria-label="Teléfono del invitado" />
+          {error && <p className="text-red-700 text-[14px]">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setCreando(false); setError("") }} className="btn-ghost !min-h-[40px] !text-[14px]">Volver</button>
+            <button onClick={() => crearMut.mutate()} disabled={crearMut.isPending || !nuevoNombre.trim()}
+              className="btn-primary !min-h-[40px] !text-[14px] disabled:opacity-50">
+              {crearMut.isPending ? "Creando..." : "Crear invitado"}
+            </button>
+          </div>
+        </>
+      ) : !elegido ? (
+        <>
+          <input autoFocus type="text" value={q} onChange={e => setQ(e.target.value)}
+            placeholder="Buscar alumno por nombre…" className="input" aria-label="Buscar alumno invitado" />
+          {q.trim() && !resultados.length && <p className="text-[14px] text-ink-soft">Sin resultados.</p>}
+          {resultados.map(a => (
+            <button key={a.id} onClick={() => setElegido(a)}
+              className="w-full text-left min-h-[44px] px-3 rounded-[10px] bg-khaki-100 hover:bg-khaki-200 text-[15px] font-semibold text-ink">
+              {a.nombre}
+              {a.activo === false
+                ? <span className="font-normal text-ink-soft text-[13px]"> · invitado</span>
+                : (a.grupos_detalle ?? []).length > 0 && (
+                  <span className="font-normal text-ink-soft text-[13px]"> · {(a.grupos_detalle ?? []).map(g => g.grupo_nombre).join(", ")}</span>
+                )}
+            </button>
+          ))}
+          <button onClick={() => { setNuevoNombre(q.trim()); setCreando(true) }}
+            className="w-full min-h-[44px] rounded-[10px] border border-dashed border-pine-900/30 text-[15px] font-semibold text-pine-900 hover:bg-khaki-100">
+            + Crear invitado nuevo{q.trim() ? ` «${q.trim()}»` : ""}
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-[15px] font-semibold text-ink">{elegido.nombre}</p>
+          <div className="flex gap-4 text-[15px]">
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="tipo-invitado" checked={tipo === "makeup"} onChange={() => setTipo("makeup")} /> Recuperación
+            </label>
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="tipo-invitado" checked={tipo === "guest"} onChange={() => setTipo("guest")} /> Invitado
+            </label>
+          </div>
+          <input type="text" value={nota} onChange={e => setNota(e.target.value)}
+            placeholder={tipo === "makeup" ? "Qué clase recupera (opcional)…" : "Nota (opcional)…"} className="input" />
+        </>
+      )}
+      <div className="flex justify-end gap-2">
+        <button onClick={onCancel} className="btn-ghost !min-h-[40px] !text-[14px]">Cancelar</button>
+        {elegido && !creando && (
+          <button onClick={() => onAdd(elegido, tipo, nota.trim())} disabled={pending}
+            className="btn-primary !min-h-[40px] !text-[14px] disabled:opacity-50">
+            Añadir
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DiaTab() {
   const qc = useQueryClient()
   const today = todayLocal()
   const [fecha, setFecha] = useState(today)
   const [notaOpenFor, setNotaOpenFor] = useState<string | null>(null) // `${grupoId}-${alumnoId}`
+  const [invitadoParaGrupo, setInvitadoParaGrupo] = useState<string | null>(null) // clave de la tarjeta (grupo-índice)
   const [notaDraft, setNotaDraft] = useState<{ estado: "makeup" | "guest" | "other"; nota: string }>({ estado: "makeup", nota: "" })
 
   const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
@@ -74,6 +181,11 @@ function DiaTab() {
   const marcarMut = useMutation({
     mutationFn: (vars: { grupo: number; alumno: number; estado: string; nota?: string }) =>
       asistenciaApi.marcar({ ...vars, fecha }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sesiones-dia", fecha] }),
+  })
+
+  const quitarMut = useMutation({
+    mutationFn: (vars: { grupo: number; alumno: number }) => asistenciaApi.quitar({ ...vars, fecha }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sesiones-dia", fecha] }),
   })
 
@@ -134,6 +246,10 @@ function DiaTab() {
           {clasesHoy.map(({ grupo, horario }, i) => {
             const roster = allAlumnos.filter(a => (a.grupos_detalle ?? []).some(gd => gd.grupo === grupo.id))
             const activa = isToday && nowStr >= horario.ini && nowStr < horario.fin
+            const cardKey = `${grupo.id}-${i}`
+            const idsRoster = new Set(roster.map(a => a.id))
+            const extras = (sesiones.find(s => s.grupo === grupo.id)?.registros ?? []).filter(r => !idsRoster.has(r.alumno))
+            const candidatos = allAlumnos.filter(a => !idsRoster.has(a.id) && !extras.some(r => r.alumno === a.id))
             return (
               <div key={`${grupo.id}-${i}`}
                 className={`bg-white rounded-[12px] border overflow-hidden shadow-[var(--shadow-card)] ${activa ? "border-brass-500 ring-2 ring-brass-500/40" : "border-pine-900/15"}`}>
@@ -209,6 +325,43 @@ function DiaTab() {
                       </div>
                     )
                   })}
+                  {extras.map(r => (
+                    <div key={`extra-${r.alumno}`} className="bg-purple-100/60 rounded-[10px] px-3 py-2 flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0 text-[15px] font-semibold text-ink">
+                        <span className="w-8 h-8 rounded-full bg-purple-700 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0">
+                          {initials(r.alumno_nombre ?? "?")}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate">{r.alumno_nombre}</span>
+                          <span className="block text-[13px] font-normal text-ink-soft">
+                            {ESTADO_LABELS[r.estado] ?? r.estado}{r.nota ? ` — ${r.nota}` : ""}
+                          </span>
+                        </span>
+                      </span>
+                      <button onClick={() => quitarMut.mutate({ grupo: grupo.id, alumno: r.alumno })}
+                        disabled={quitarMut.isPending} title="Quitar de esta clase (añadido por error)"
+                        className="min-h-[40px] px-3 rounded-[10px] border border-red-200 text-[14px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 flex-shrink-0">
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                  {invitadoParaGrupo === cardKey ? (
+                    <InvitadoPicker
+                      candidatos={candidatos}
+                      marca={grupo.marca}
+                      pending={marcarMut.isPending}
+                      onCancel={() => setInvitadoParaGrupo(null)}
+                      onAdd={(alumno, estado, nota) => {
+                        marcarMut.mutate({ grupo: grupo.id, alumno: alumno.id, estado, nota })
+                        setInvitadoParaGrupo(null)
+                      }}
+                    />
+                  ) : (
+                    <button onClick={() => setInvitadoParaGrupo(cardKey)}
+                      className="w-full min-h-[44px] rounded-[10px] border border-dashed border-brass-500/60 text-[15px] font-semibold text-brass-700 hover:bg-khaki-100">
+                      + Alumno invitado/recuperación
+                    </button>
+                  )}
                 </div>
               </div>
             )
@@ -226,6 +379,7 @@ function HistorialTab() {
   const [showForm, setShowForm] = useState(false)
   const [registros, setRegistros] = useState<{ alumno: number; estado: string; nota: string }[]>([])
   const [saveError, setSaveError] = useState("")
+  const [anadirInvitado, setAnadirInvitado] = useState(false)
 
   const { data: gruposRaw } = useQuery({ queryKey: ["grupos"], queryFn: () => gruposApi.list().then(r => r.data) })
   const grupos: Grupo[] = Array.isArray(gruposRaw) ? gruposRaw : (gruposRaw as any)?.results || []
@@ -244,6 +398,7 @@ function HistorialTab() {
   const grupoAlumnos = allAlumnos.filter(a => (a.grupos_detalle ?? []).some(g => g.grupo === grupoId))
 
   function startNewSession() {
+    setAnadirInvitado(false)
     setRegistros(grupoAlumnos.map(a => ({ alumno: a.id, estado: "present", nota: "" })))
     setShowForm(true)
   }
@@ -316,9 +471,25 @@ function HistorialTab() {
               )
             })}
           </div>
+          {anadirInvitado ? (
+            <InvitadoPicker
+              candidatos={allAlumnos.filter(a => !registros.some(r => r.alumno === a.id))}
+              marca={grupos.find(g => g.id === grupoId)?.marca ?? "rangers_academy"}
+              onCancel={() => setAnadirInvitado(false)}
+              onAdd={(alumno, estado, nota) => {
+                setRegistros(prev => [...prev, { alumno: alumno.id, estado, nota }])
+                setAnadirInvitado(false)
+              }}
+            />
+          ) : (
+            <button onClick={() => setAnadirInvitado(true)}
+              className="mt-3 w-full min-h-[44px] rounded-[10px] border border-dashed border-brass-500/60 text-[15px] font-semibold text-brass-700 hover:bg-khaki-100">
+              + Alumno invitado/recuperación
+            </button>
+          )}
           {saveError && <p className="text-red-700 text-[14px] mt-3">{saveError}</p>}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => { setShowForm(false); setSaveError("") }} className="btn-ghost">Cancelar</button>
+            <button onClick={() => { setShowForm(false); setSaveError(""); setAnadirInvitado(false) }} className="btn-ghost">Cancelar</button>
             <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
               className="btn-primary disabled:opacity-50">
               {saveMut.isPending ? "Guardando..." : "Guardar asistencia"}
