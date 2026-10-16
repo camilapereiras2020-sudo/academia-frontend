@@ -14,6 +14,9 @@ type Documento = {
   emitida_at: string | null
   estado: string
   pagos_adicionales?: number[]
+  recibo_origen?: number | null
+  recibo_origen_num_doc?: string | null
+  factura_vigente_num_doc?: string | null   // factura vigente de este recibo (o "Provisional")
   provisional?: boolean
   drive_url?: string | null
   pago_info?: { alumno: string; pagador: string; periodo: string; total: string | number; fecha: string | null }
@@ -77,6 +80,17 @@ export default function DocumentosPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["documentos"] }); setConfirmDelete(null); setActionError("") },
     onError: (err: any) =>
       setActionError(err.response?.data?.error ?? "Error al eliminar el documento."),
+  })
+
+  // La factura es manual: se genera desde un recibo ya confirmado y nace provisional.
+  const generarFacturaMut = useMutation({
+    mutationFn: (id: number) => api.post(`/documentos/${id}/generar-factura/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documentos"] })
+      setEstadoTab("cuarentena")
+      setActionError("")
+    },
+    onError: (err: any) => setActionError(err.response?.data?.error ?? "Error al generar la factura."),
   })
 
   const anularMut = useMutation({
@@ -266,6 +280,16 @@ export default function DocumentosPage() {
                       ANULADA
                     </span>
                   )}
+                  {d.factura_vigente_num_doc && (
+                    <span className="badge bg-khaki-200 text-brass-700" title="Factura generada desde este recibo">
+                      Factura {d.factura_vigente_num_doc}
+                    </span>
+                  )}
+                  {d.recibo_origen_num_doc && (
+                    <span className="badge bg-purple-100 text-purple-800" title="Recibo de origen de esta factura">
+                      De recibo {d.recibo_origen_num_doc}
+                    </span>
+                  )}
                 </div>
                 <p className="text-[14px] text-ink mt-1 truncate">
                   {d.pago_info
@@ -300,6 +324,15 @@ export default function DocumentosPage() {
                   onClick={() => { setActionError(""); setConfirmarIds([d.id]) }}
                   className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] bg-brass-500 text-white text-[14px] font-bold hover:bg-brass-700">
                   Aceptar y confirmar
+                </button>
+              )}
+              {d.tipo === "recibo" && d.estado === "emitida" && !d.factura_vigente_num_doc && (
+                <button
+                  onClick={() => { setActionError(""); generarFacturaMut.mutate(d.id) }}
+                  disabled={generarFacturaMut.isPending && generarFacturaMut.variables === d.id}
+                  title="Genera una factura a partir de este recibo (nace en cuarentena)"
+                  className="inline-flex items-center min-h-[40px] px-3 rounded-[10px] border text-[14px] font-semibold transition-colors border-brass-500/50 text-brass-700 hover:bg-khaki-100 disabled:opacity-50">
+                  {generarFacturaMut.isPending && generarFacturaMut.variables === d.id ? "..." : "Generar factura"}
                 </button>
               )}
               {d.estado !== "anulada" && d.estado !== "cuarentena" && (
@@ -393,6 +426,18 @@ export default function DocumentosPage() {
             <label className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">Motivo (obligatorio)</label>
             <textarea value={motivoAnulacion} onChange={e => setMotivoAnulacion(e.target.value)} rows={2}
               className="input !py-2.5 resize-none mb-4" />
+            {confirmAnular.recibo_origen_num_doc && (
+              <p className="text-[14px] text-ink bg-khaki-100 border border-pine-900/10 rounded-[10px] px-3 py-2 mb-4">
+                El cobro sigue amparado por su recibo <strong>{confirmAnular.recibo_origen_num_doc}</strong>: anular esta
+                factura no cambia el cobro. Si el dinero no se cobró, anula el recibo.
+              </p>
+            )}
+            {confirmAnular.factura_vigente_num_doc && (
+              <p className="text-[14px] text-red-800 bg-red-50 border border-red-200 rounded-[10px] px-3 py-2 mb-4">
+                Este recibo tiene la factura <strong>{confirmAnular.factura_vigente_num_doc}</strong> vigente: anula primero la factura.
+              </p>
+            )}
+            {!confirmAnular.recibo_origen_num_doc && (
             <fieldset className="mb-4">
               <legend className="block font-label text-[13px] font-semibold uppercase tracking-[0.08em] text-pine-700 mb-1">
                 ¿Se ha cobrado este dinero? (obligatorio)
@@ -410,14 +455,15 @@ export default function DocumentosPage() {
                 </span>
               </label>
             </fieldset>
+            )}
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmAnular(null)}
                 className="btn-ghost">
                 Cancelar
               </button>
               <button
-                onClick={() => anularMut.mutate({ id: confirmAnular.id, motivo: motivoAnulacion.trim(), anularCobro: seCobro === "no" })}
-                disabled={anularMut.isPending || !motivoAnulacion.trim() || seCobro === null}
+                onClick={() => anularMut.mutate({ id: confirmAnular.id, motivo: motivoAnulacion.trim(), anularCobro: !confirmAnular.recibo_origen_num_doc && seCobro === "no" })}
+                disabled={anularMut.isPending || !motivoAnulacion.trim() || (seCobro === null && !confirmAnular.recibo_origen_num_doc) || !!confirmAnular.factura_vigente_num_doc}
                 className="min-h-[44px] px-5 rounded-[10px] bg-red-700 text-white text-[15px] font-bold hover:bg-red-800 disabled:opacity-50">
                 {anularMut.isPending ? "Anulando..." : "Anular"}
               </button>

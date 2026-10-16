@@ -55,7 +55,6 @@ const emptyForm = () => ({
 
 export default function PagosPage() {
   const role = useAuthStore((st) => st.user?.role)
-  const modoCuarentena = !!useAuthStore((st) => st.user?.modo_cuarentena)
   const puedeVerDocumentos = canAccess(role, "/documentos")   // reception no entra en Documentos
   const qc = useQueryClient()
   const navigate = useNavigate()
@@ -523,12 +522,12 @@ export default function PagosPage() {
                           Confirmar doc.
                         </Link>
                       )}
-                      {!p.num_doc && !p.documento_en_cuarentena && (
+                      {!p.num_doc && !p.documento_en_cuarentena && p.estado === "pagado" && (
                         <button
                           onClick={() => generarMut.mutate(p)}
                           disabled={generarMut.isPending && (generarMut.variables as Pago)?.id === p.id}
                           className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] px-2 rounded-[10px] border border-brass-500/50 text-[15px] text-brass-700 hover:bg-khaki-100 disabled:opacity-50 whitespace-nowrap"
-                          title={modoCuarentena ? "Pasar a cuarentena (sin número hasta confirmar)" : "Confirmar factura o recibo"}
+                          title="Crear el recibo (queda en cuarentena, sin número hasta confirmarlo)"
                         >
                           🧾
                         </button>
