@@ -9,6 +9,9 @@ import { grupoLabel } from "@/features/grupos/palette"
 import { tarifasApi } from "@/features/tarifas/api"
 import { descargarDocumento } from "@/lib/descargarDocumento"
 import type { Pago, Tarifa } from "@/types"
+import { Link } from "react-router-dom"
+import { useAuthStore } from "@/store/authStore"
+import { canAccess } from "@/lib/roles"
 
 const METODOS = ["efectivo", "transferencia", "bizum", "domiciliacion", "tarjeta"]
 
@@ -34,6 +37,9 @@ function tarifaAmountIsEditable(t: Tarifa | undefined) {
 interface ExtraLine { concepto: string; importe: number }
 
 export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago; onClose: () => void }) {
+  const role = useAuthStore((st) => st.user?.role)
+  const modoCuarentena = !!useAuthStore((st) => st.user?.modo_cuarentena)
+  const puedeVerDocumentos = canAccess(role, "/documentos")
   const qc = useQueryClient()
   const [pago, setPago] = useState(initial)
   const [error, setError] = useState("")
@@ -393,6 +399,20 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                     </div>
                   )}
                 </div>
+              ) : pago.documento_en_cuarentena ? (
+                <div className="rounded-[10px] border border-amber-200 bg-amber-50 px-3 py-3">
+                  <p className="text-[15px] font-semibold text-amber-900 mb-1">En cuarentena</p>
+                  <p className="text-[14px] text-amber-900">
+                    El documento ya está creado, pero es provisional: no tiene número y no se ha enviado ni subido a Drive.
+                    {puedeVerDocumentos ? " Se acepta y se confirma en Documentos." : " Lo confirma la persona de administración."}
+                  </p>
+                  {puedeVerDocumentos && (
+                    <Link to="/documentos?estado=cuarentena"
+                      className="inline-flex items-center min-h-[40px] px-3 mt-2 rounded-[10px] border border-amber-300 text-[14px] font-semibold text-amber-900 hover:bg-amber-100">
+                      Ir a Documentos
+                    </Link>
+                  )}
+                </div>
               ) : (
                 <div>
                   {facturaNoGenerada && (
@@ -407,7 +427,7 @@ export default function PagoDetailModal({ pago: initial, onClose }: { pago: Pago
                     </button>
                     <button onClick={() => generarMut.mutate()} disabled={generarMut.isPending}
                       className="btn-primary !min-h-[40px] !px-3 !text-[14px] disabled:opacity-50">
-                      {generarMut.isPending ? "Confirmando..." : "🧾 Confirmar factura"}
+                      {generarMut.isPending ? "Confirmando..." : modoCuarentena ? "🧾 Pasar a cuarentena" : "🧾 Confirmar factura"}
                     </button>
                   </div>
                 </div>

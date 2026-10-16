@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Receipt, FileText } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
@@ -40,7 +41,10 @@ export default function DocumentosPage() {
   const [tipoFilter, setTipoFilter] = useState("")
   const { user } = useAuthStore()
   const puedeConfirmar = user?.role !== "reception"
-  const [estadoTab, setEstadoTab] = useState<"activas" | "cuarentena" | "anuladas">("activas")
+  const [params] = useSearchParams()
+  const [estadoTab, setEstadoTab] = useState<"activas" | "cuarentena" | "anuladas">(
+    params.get("estado") === "cuarentena" ? "cuarentena" : "activas",   // enlace desde Pagos
+  )
   const [seleccion, setSeleccion] = useState<Set<number>>(new Set())
   const [confirmarIds, setConfirmarIds] = useState<number[] | null>(null)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)

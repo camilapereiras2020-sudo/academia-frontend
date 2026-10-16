@@ -173,6 +173,7 @@ export interface Pago {
   // true si la última factura/recibo de este pago fue anulada y todavía no
   // se generó una nueva — un "pagado" en este estado no cuenta como ingreso.
   documento_anulado: boolean
+  documento_en_cuarentena?: boolean   // documento provisional (modo cuarentena): sin número ni envío
 }
 
 export type TarifaNombre = "clase_grupo" | "bono_familia" | "clase_privada" | "clase_recuperada"
